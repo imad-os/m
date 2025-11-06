@@ -697,7 +697,7 @@
                 const isFavAway = Storage.isFav('team', teams.away.id);
 
                 return `
-                    <a href="/match/${fixture.id}" class="match-card">
+                    <a href="#/match/${fixture.id}" class="match-card">
                         <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
                             ${fixture.status.long} ${status === 'FT' || status === 'HT' || status.includes('LIVE') ? `(${fixture.status.elapsed || ''})` : ''}
                         </div>
@@ -821,24 +821,7 @@
                         html += `
                             <div class="league-group">
                                 <div class="league-header">
-                                    <span>⭐ Favorites</span>
-                                    <span class="fav-toggle" data-type="league" data-id="0">${isFav ? '⭐' : '☆'}</span>
-                                </div>
-                                <div class="matches-container">
-                                    ${favTeamMatches.map(renderMatchCard).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }
-
-                    // 2. Render Favorite Leagues
-                    for (const leagueId in favLeagueGroups) {
-                        const group = favLeagueGroups[leagueId];
-                        const isFav = Storage.isFav('league', leagueId);
-                        html += `
-                            <div class="league-group">
-                                <div class="league-header">
-                                    <a href="/league/${leagueId}">${group.name}</a>
+                                    <a href="#/league/${leagueId}">${group.name}</a>
                                     <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
                                 </div>
                                 <div class="matches-container">
@@ -855,7 +838,7 @@
                         html += `
                             <div class="league-group">
                                 <div class="league-header">
-                                    <a href="/league/${leagueId}">${group.name}</a>
+                                    <a href="#/league/${leagueId}">${group.name}</a>
                                     <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
                                 </div>
                                 <div class="matches-container">
@@ -880,7 +863,7 @@
              * Controller for the Match Page (/match/:id)
              */
             async function renderMatchPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [matchData] = await apiFetch(`fixtures?id=${id}`);
@@ -913,19 +896,19 @@
                     };
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="/">Home</a> &gt; Match Details</h2>
+                        <h2 class="page-title"><a href="#/">Home</a> &gt; Match Details</h2>
                         <div class="match-details-header">
-                            <div class="league"><a href="/league/${league.id}">${league.name}</a> - ${league.round}</div>
+                            <div class="league"><a href="#/league/${league.id}">${league.name}</a> - ${league.round}</div>
                             <div class="match-details-teams">
                                 <div class="match-details-team">
-                                    <a href="/team/${teams.home.id}">
+                                    <a href="#/team/${teams.home.id}">
                                         <img src="${teams.home.logo}" alt="${teams.home.name}">
                                         <h2>${teams.home.name}</h2>
                                     </a>
                                 </div>
                                 <div class="match-details-score">${goals.home} - ${goals.away}</div>
                                 <div class="match-details-team">
-                                    <a href="/team/${teams.away.id}">
+                                    <a href="#/team/${teams.away.id}">
                                         <img src="${teams.away.logo}" alt="${teams.away.name}">
                                         <h2>${teams.away.name}</h2>
                                     </a>
@@ -952,7 +935,7 @@
              * Controller for the League Page (/league/:id)
              */
             async function renderLeaguePage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 
                 try {
@@ -974,7 +957,7 @@
                     
                     // --- Render Tabs ---
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="/">Home</a> &gt; ${leagueInfo.name}</h2>
+                        <h2 class="page-title"><a href="#/">Home</a> &gt; ${leagueInfo.name}</h2>
                         <div class="tabs">
                             <button class="tab-button active" data-tab="standings">Standings</button>
                             <button class="tab-button" data-tab="scorers">Top Scorers</button>
@@ -1023,7 +1006,7 @@
                                                 <td class="rank">${team.rank}</td>
                                                 <td class="team-cell">
                                                     <img src="${team.team.logo}" alt="${team.team.name}">
-                                                    <a href="/team/${team.team.id}">${team.team.name}</a>
+                                                    <a href="#/team/${team.team.id}">${team.team.name}</a>
                                                 </td>
                                                 <td>${team.all.played}</td>
                                                 <td>${team.all.win}</td>
@@ -1049,7 +1032,7 @@
                                     <div class="rank">${index + 1}</div>
                                     <img src="${item.player.photo}" alt="${item.player.name}">
                                     <div class="stat-item-info">
-                                        <div class="stat-item-player"><a href="/player/${item.player.id}">${item.player.name}</a></div>
+                                        <div class="stat-item-player"><a href="#/player/${item.player.id}">${item.player.name}</a></div>
                                         <div class="stat-item-team">${item.statistics[0].team.name}</div>
                                     </div>
                                     <div class="stat-item-value">${item.statistics[0].goals.total || item.statistics[0].goals.assists}</div>
@@ -1083,7 +1066,7 @@
              * Controller for the Team Page (/team/:id)
              */
             async function renderTeamPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [teamData] = await apiFetch(`teams?id=${id}`);
@@ -1096,8 +1079,8 @@
                     // For a "lite" app, we'll keep it simple.
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="/">Home</a> &gt; Team</h2>
-                        <div class_="team-info-header">
+                        <h2 class="page-title"><a href="#/">Home</a> &gt; Team</h2>
+                        <div class="team-info-header">
                             <img src="${team.logo}" alt="${team.name}">
                             <div class="team-info-details">
                                 <h2>${team.name} <span class="fav-toggle" data-type="team" data-id="${team.id}">${isFav ? '⭐' : '☆'}</span></h2>
@@ -1131,7 +1114,7 @@
              * Controller for the Player Page (/player/:id)
              */
             async function renderPlayerPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [playerData] = await apiFetch(`players?id=${id}&season=${getCurrentSeason()}`);
@@ -1141,14 +1124,15 @@
                     const stats = statistics[0]; // First team stats
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="/">Home</a> &gt; Player</h2>
+                        <h2 class="page-title"><a href="#/">Home</a> &gt; Player</h2>
                         <div class="team-info-header"> <!-- Re-using team header style -->
                             <img src="${player.photo}" alt="${player.name}" style="border-radius: 50%;">
-                            <div class="team-info-details">
-                                <h2>${player.name} (${player.nationality})</h2>
-                                <p>Age: ${player.age} | Height: ${player.height} | Weight: ${player.weight}</p>
-                                ${stats ? `<p>Team: <a href="/team/${stats.team.id}">${stats.team.name}</a></p>` : ''}
-                            </div>
+                                <div class="team-info-details">
+                                    <h2>${player.name} (${player.nationality})</h2>
+                                    <p>Age: ${player.age} | Height: ${player.height} | Weight: ${player.weight}</p>
+                                    ${stats ? `<p>Team: <a href="#/team/${stats.team.id}">${stats.team.name}</a></p>` : ''}
+                                 </div>
+                        </div>
                         </div>
                         
                         <h3 class="page-title" style="font-size: 1.3rem;">Season Stats (${stats ? stats.league.name : 'N/A'})</h3>
@@ -1174,7 +1158,7 @@
             // --- App Router ---
             // This is the main entry point
             function AppRouter() {
-                const path = window.location.pathname;
+                const path = window.location.hash.substring(1) || '/'; // Read from hash
                 const mainContainer = document.getElementById('content-container');
 
                 // Check for API key first
@@ -1213,6 +1197,8 @@
             // --- Start the App ---
             // Wait for the DOM to be ready
             document.addEventListener('DOMContentLoaded', AppRouter);
+            // Also run the router when the hash changes (user clicks a link)
+            window.addEventListener('hashchange', AppRouter);
 
         })();
     </script>
