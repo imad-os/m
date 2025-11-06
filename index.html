@@ -10,11 +10,6 @@
       By Gemini
     -->
     <style>
-.via-background {
-    --tw-gradient-via: hsl(var(--background));
-    --tw-gradient-via-stops: var(--tw-gradient-position),var(--tw-gradient-from)var(--tw-gradient-from-position),var(--tw-gradient-via)var(--tw-gradient-via-position),var(--tw-gradient-to)var(--tw-gradient-to-position);
-    --tw-gradient-stops: var(--tw-gradient-via-stops);
-}
         /* --- Global Styles --- */
         * {
             box-sizing: border-box;
@@ -729,6 +724,53 @@
             --accent-color: #006aff;
         }
         
+        /* --- NEW THEMES --- */
+        
+        /* Morocco (Dark) */
+        .theme-morocco {
+            --bg-body: #002a16; /* Dark Green */
+            --bg-panel: #003f22;
+            --bg-element: #005a31;
+            --text-primary: #f0f0f0;
+            --text-secondary: #b0b0b0;
+            --border-color: #005a31;
+            --accent-color: #C1272D; /* Red */
+        }
+        
+        /* Morocco Away (Light) */
+        .theme-morocco-away {
+            --bg-body: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-element: #e4e6eb;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --border-color: #dddfe2;
+            --accent-color: #006233; /* Green */
+        }
+        
+        /* USK (Dark) */
+        .theme-usk {
+            --bg-body: #1a0b0b; /* Dark Red */
+            --bg-panel: #2b1111;
+            --bg-element: #4a1c1c;
+            --text-primary: #f0e0e0;
+            --text-secondary: #c0a0a0;
+            --border-color: #4a1c1c;
+            --accent-color: #FFFFFF; /* White */
+        }
+        
+        /* Raja (Dark) */
+        .theme-raja {
+            --bg-body: #002a16; /* Dark Green */
+            --bg-panel: #003f22;
+            --bg-element: #005a31;
+            --text-primary: #FFFFFF;
+            --text-secondary: #c0c0c0;
+            --border-color: #005a31;
+            --accent-color: #FFFFFF; /* White */
+        }
+        
+        
         .theme-light .match-card,
         .theme-light .modal-content,
         .theme-light .standings-table th,
@@ -747,7 +789,7 @@
 </head>
 <body>
 
-<div id="app-wrapper" class="via-background"> <!-- New wrapper for max-width -->
+<div id="app-wrapper"> <!-- New wrapper for max-width -->
 
     <!-- This modal will show on first load to get the username -->
     <div id="user-modal">
@@ -777,6 +819,11 @@
                 <option value="dark-red">Dark Red</option>
                 <option value="darky-dark">Darky Dark</option>
                 <option value="light">Light</option>
+                <!-- NEW OPTIONS -->
+                <option value="morocco">Morocco</option>
+                <option value="morocco-away">Morocco Away</option>
+                <option value="usk">USK</option>
+                <option value="raja">Raja</option>
             </select>
         </div>
         <button id="update-settings-btn">Update Favs from Source</button>
@@ -1507,7 +1554,8 @@
              */
             function applyTheme(theme) {
                 // Use default 'dark-bleu' if theme is invalid
-                const validThemes = ['dark-bleu', 'dark-red', 'darky-dark', 'light'];
+                // MODIFIED: Added new themes
+                const validThemes = ['dark-bleu', 'dark-red', 'darky-dark', 'light', 'morocco', 'morocco-away', 'usk', 'raja'];
                 const themeToApply = validThemes.includes(theme) ? theme : 'dark-bleu';
                 
                 document.body.className = ''; // Clear old themes
