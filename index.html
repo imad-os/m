@@ -17,14 +17,25 @@
             padding: 0;
         }
 
+        /* Default (Dark Blue) Theme variables */
+        :root {
+            --bg-body: #0a192f;
+            --bg-panel: #1c2b4a;
+            --bg-element: #30416b;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0b0d0;
+            --border-color: #30416b;
+            --accent-color: #64ffda;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background-color: #0a192f; /* Dark Blue */
-            color: #e0e0e0;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
             font-size: 16px; /* Base font size for TV */
+            transition: background-color 0.3s, color 0.3s;
         }
         
-        /* New app wrapper for max-width */
         #app-wrapper {
             max-width: 1400px; /* Max width for wide TVs */
             margin: 0 auto;
@@ -33,13 +44,12 @@
             flex-direction: column;
         }
         
-        /* Make main content grow to fill space */
         #content-container {
             flex-grow: 1;
         }
 
         a {
-            color: #64ffda; /* A bright accent for links */
+            color: var(--accent-color);
             text-decoration: none;
         }
 
@@ -49,7 +59,6 @@
         }
 
         /* --- API Key Modal --- */
-        /* Renamed to user-modal */
         #user-modal {
             position: fixed;
             top: 0;
@@ -68,7 +77,7 @@
         }
 
         .modal-content {
-            background: #1c2b4a;
+            background: var(--bg-panel);
             padding: 2rem;
             border-radius: 8px;
             text-align: center;
@@ -83,23 +92,23 @@
         .modal-content p {
             margin-bottom: 1.5rem;
             font-size: 0.9rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
         }
 
         .modal-content input {
             width: 100%;
             padding: 0.75rem;
             margin-bottom: 1rem;
-            border: 1px solid #30416b;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            background: #0a192f;
-            color: #e0e0e0;
+            background: var(--bg-body);
+            color: var(--text-primary);
             font-size: 1rem;
         }
 
         /* --- Header --- */
         #app-header {
-            background: #1c2b4a;
+            background: var(--bg-panel);
             padding: 0.75rem 1rem;
             display: flex;
             justify-content: space-between;
@@ -121,9 +130,10 @@
             gap: 0.5rem;
         }
 
-        .date-nav button {
-            background: #30416b;
-            color: white;
+        .date-nav button,
+        #user-submit {
+            background: var(--bg-element);
+            color: var(--text-primary);
             border: none;
             padding: 0.5rem 0.75rem;
             border-radius: 4px;
@@ -145,12 +155,11 @@
             font-size: 1rem;
         }
         
-        /* Fancy Toggle Switch */
         .switch-toggle {
             position: relative;
             display: inline-block;
-            width: 50px; /* Reduced width */
-            height: 28px; /* Reduced height */
+            width: 50px;
+            height: 28px;
         }
         .switch-toggle input {
             opacity: 0;
@@ -164,7 +173,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #30416b;
+            background-color: var(--bg-element);
             -webkit-transition: .4s;
             transition: .4s;
             border-radius: 34px;
@@ -172,8 +181,8 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px; /* Smaller circle */
-            width: 20px; /* Smaller circle */
+            height: 20px;
+            width: 20px;
             left: 4px;
             bottom: 4px;
             background-color: white;
@@ -182,13 +191,13 @@
             border-radius: 50%;
         }
         input:checked + .slider {
-            background-color: #64ffda;
+            background-color: var(--accent-color);
         }
         input:focus + .slider {
-            box-shadow: 0 0 1px #64ffda;
+            box-shadow: 0 0 1px var(--accent-color);
         }
         input:checked + .slider:before {
-            -webkit-transform: translateX(22px); /* Adjusted translation */
+            -webkit-transform: translateX(22px);
             -ms-transform: translateX(22px);
             transform: translateX(22px);
         }
@@ -201,18 +210,16 @@
         .page-title {
             font-size: 1.8rem;
             margin-bottom: 1.5rem;
-            border-bottom: 2px solid #30416b;
+            border-bottom: 2px solid var(--border-color);
             padding-bottom: 0.5rem;
         }
 
-        /* Loader */
         .loader {
             text-align: center;
             font-size: 1.5rem;
             padding: 3rem;
         }
 
-        /* Error */
         .error-message {
             background: #5a1d1d;
             color: white;
@@ -229,7 +236,7 @@
         .league-header {
             font-size: 1.5rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid #30416b;
+            border-bottom: 2px solid var(--border-color);
             margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
@@ -247,55 +254,49 @@
         }
 
         .match-card {
-            background-color: #1c2b4a;
+            background-color: var(--bg-panel);
             border-radius: 8px;
             padding: 1rem;
             text-decoration: none;
-            color: #e0e0e0;
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
             gap: 0.5rem; /* Smaller gap for compact view */
-            
-            /* New Sizing */
-            flex-basis: 120px; /* Minimum width */
-            flex-grow: 1;     /* Allow to grow */
-            min-width: 120px; /* Don't shrink smaller */
-            
-            /* Adjust internal layout for small width */
+            flex-basis: 120px;
+            flex-grow: 1;
+            min-width: 120px;
             align-items: center;
             text-align: center;
         }
 
-        /* On smaller screens, make cards full width */
         @media (max-width: 600px) {
             .match-card {
-                flex-basis: calc(50% - 0.5rem); /* Back to 2-col */
+                flex-basis: calc(50% - 0.5rem);
                 min-width: 150px;
             }
         }
         
         @media (max-width: 400px) {
             .match-card {
-                flex-basis: 100%; /* Single column */
+                flex-basis: 100%;
             }
         }
 
         .match-status {
             text-align: center;
             font-size: 1rem;
-            color: #64ffda;
+            color: var(--accent-color);
             font-weight: bold;
         }
         
         .match-status.not-started {
-            color: #a0b0d0;
-            font-weight: normal; /* Time isn't as important as live status */
-            font-size: 0.9rem; /* Smaller font */
+            color: var(--text-secondary);
+            font-weight: normal;
+            font-size: 0.9rem;
         }
 
         .match-teams {
             display: flex;
-            /* Stack teams vertically */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -305,7 +306,6 @@
 
         .team {
             display: flex;
-            /* Teams are now horizontal: icon, name, star */
             flex-direction: row;
             align-items: center;
             justify-content: center;
@@ -315,15 +315,14 @@
         }
 
         .team img {
-            width: 20px; /* Smaller icon */
+            width: 20px;
             height: 20px;
         }
 
         .team-name {
-            font-size: 0.8rem; /* Smaller font */
+            font-size: 0.8rem;
             font-weight: bold;
             line-height: 1.2;
-            /* Truncate long names */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -331,7 +330,7 @@
         }
 
         .score-container {
-            font-size: 1.4rem; /* Smaller score */
+            font-size: 1.4rem;
             font-weight: bold;
             text-align: center;
             margin: 0.25rem 0;
@@ -339,7 +338,7 @@
         
         .fav-toggle {
             cursor: pointer;
-            font-size: 1.1rem; /* Smaller star */
+            font-size: 1.1rem;
             padding: 0;
         }
 
@@ -349,7 +348,7 @@
             flex-wrap: wrap;
             gap: 0.25rem;
             margin-bottom: 1.5rem;
-            border-bottom: 2px solid #30416b;
+            border-bottom: 2px solid var(--border-color);
         }
 
         .tab-button {
@@ -357,26 +356,25 @@
             cursor: pointer;
             background: none;
             border: none;
-            color: #a0b0d0;
+            color: var(--text-secondary);
             font-size: 1rem;
             font-weight: bold;
             border-bottom: 3px solid transparent;
         }
 
         .tab-button.active {
-            color: #64ffda;
-            border-bottom-color: #64ffda;
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
         }
 
         .tab-content {
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        /* Standings Table */
         .standings-table {
             width: 100%;
             border-collapse: collapse;
@@ -386,11 +384,11 @@
         .standings-table td {
             padding: 0.75rem;
             text-align: left;
-            border-bottom: 1px solid #30416b;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .standings-table th {
-            background: #1c2b4a;
+            background: var(--bg-panel);
             font-size: 0.8rem;
             text-transform: uppercase;
         }
@@ -413,12 +411,11 @@
 
         .group-title {
             font-size: 1.3rem;
-            color: #64ffda;
+            color: var(--accent-color);
             margin-top: 1.5rem;
             margin-bottom: 0.5rem;
         }
         
-        /* Stats List */
         .stats-list {
             display: flex;
             flex-direction: column;
@@ -429,7 +426,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-            background: #1c2b4a;
+            background: var(--bg-panel);
             padding: 0.75rem;
             border-radius: 4px;
         }
@@ -456,7 +453,7 @@
         
         .stat-item-team {
             font-size: 0.9rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
         }
         
         .stat-item-value {
@@ -467,7 +464,7 @@
         /* --- Match Details Page --- */
         .match-details-header {
             text-align: center;
-            background: #1c2b4a;
+            background: var(--bg-panel);
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
@@ -475,7 +472,7 @@
         
         .match-details-header .league {
             font-size: 1rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
             margin-bottom: 1rem;
         }
         
@@ -508,14 +505,14 @@
         
         .match-details-status {
             font-size: 1rem;
-            color: #64ffda;
+            color: var(--accent-color);
             margin-top: 0.5rem;
         }
         
         .match-details-info {
             text-align: center;
             font-size: 0.9rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
             margin-top: 1rem;
         }
         
@@ -556,7 +553,7 @@
         
         .event-detail {
             font-size: 0.9rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
         }
         
         /* --- Team Page --- */
@@ -564,7 +561,7 @@
             display: flex;
             align-items: center;
             gap: 1.5rem;
-            background: #1c2b4a;
+            background: var(--bg-panel);
             padding: 1.5rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
@@ -581,7 +578,7 @@
         
         .team-info-details p {
             font-size: 1rem;
-            color: #a0b0d0;
+            color: var(--text-secondary);
         }
         
         /* --- Footer --- */
@@ -589,7 +586,7 @@
             text-align: center;
             padding: 1.5rem 1rem;
             margin-top: 1rem;
-            border-top: 1px solid #30416b;
+            border-top: 1px solid var(--border-color);
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -599,11 +596,12 @@
         
         #change-user-btn,
         #reset-settings-btn,
-        #update-settings-btn {
-            background: #30416b;
-            color: white;
+        #update-settings-btn,
+        #theme-select {
+            background: var(--bg-element);
+            color: var(--text-primary);
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1rem;
             border-radius: 4px;
             font-size: 1rem;
             cursor: pointer;
@@ -611,157 +609,51 @@
         }
         
         #theme-select {
-            background: #30416b;
-            color: white;
-            border: none;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: bold;
+            padding-right: 1.5rem; /* For select arrow */
         }
         
-        /* --- Theme Overrides --- */
+        /* --- Theme Overrides (NEW & DEEPER) --- */
         
         /* Dark Red Theme */
-        .theme-dark-red body {
-            background-color: #2a0a0a;
-            color: #f0e0e0;
-        }
-        .theme-dark-red #app-header,
-        .theme-dark-red .modal-content,
-        .theme-dark-red .match-card,
-        .theme-dark-red .standings-table th,
-        .theme-dark-red .stat-item,
-        .theme-dark-red .match-details-header,
-        .theme-dark-red .team-info-header {
-            background-color: #4a1c1c;
-        }
-        .theme-dark-red .date-nav button,
-        .theme-dark-red .page-title,
-        .theme-dark-red .league-header,
-        .theme-dark-red .tabs,
-        .theme-dark-red .standings-table td,
-        .theme-dark-red .slider {
-            border-color: #6b3030;
-            background-color: #4a1c1c;
-        }
-        .theme-dark-red #app-footer {
-            border-top-color: #6b3030;
-        }
-        .theme-dark-red #change-user-btn,
-        .theme-dark-red #reset-settings-btn,
-        .theme-dark-red #update-settings-btn,
-        .theme-dark-red #theme-select {
-            background-color: #4a1c1c;
-        }
-        .theme-dark-red a,
-        .theme-dark-red .match-status,
-        .theme-dark-red .tab-button.active,
-        .theme-dark-red .group-title,
-        .theme-dark-red .match-details-status {
-            color: #ff6464;
-        }
-        .theme-dark-red input:checked + .slider {
-            background-color: #ff6464;
+        .theme-dark-red {
+            --bg-body: #1a0b0b;
+            --bg-panel: #2b1111;
+            --bg-element: #4a1c1c;
+            --text-primary: #f0e0e0;
+            --text-secondary: #c0a0a0;
+            --border-color: #4a1c1c;
+            --accent-color: #ff6464;
         }
 
         /* Darky Dark Theme */
-        .theme-darky-dark body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .theme-darky-dark #app-header,
-        .theme-darky-dark .modal-content,
-        .theme-darky-dark .match-card,
-        .theme-darky-dark .standings-table th,
-        .theme-darky-dark .stat-item,
-        .theme-darky-dark .match-details-header,
-        .theme-darky-dark .team-info-header {
-            background-color: #1e1e1e;
-        }
-        .theme-darky-dark .date-nav button,
-        .theme-darky-dark .page-title,
-        .theme-darky-dark .league-header,
-        .theme-darky-dark .tabs,
-        .theme-darky-dark .standings-table td,
-        .theme-darky-dark .slider {
-            border-color: #333;
-            background-color: #1e1e1e;
-        }
-        .theme-darky-dark #app-footer {
-            border-top-color: #333;
-        }
-        .theme-darky-dark #change-user-btn,
-        .theme-darky-dark #reset-settings-btn,
-        .theme-darky-dark #update-settings-btn,
-        .theme-darky-dark #theme-select {
-            background-color: #1e1e1e;
-        }
-        .theme-darky-dark a,
-        .theme-darky-dark .match-status,
-        .theme-darky-dark .tab-button.active,
-        .theme-darky-dark .group-title,
-        .theme-darky-dark .match-details-status {
-            color: #bb86fc;
-        }
-        .theme-darky-dark input:checked + .slider {
-            background-color: #bb86fc;
+        .theme-darky-dark {
+            --bg-body: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-element: #333333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #333333;
+            --accent-color: #bb86fc;
         }
         
         /* Light Theme */
-        .theme-light body {
-            background-color: #f0f2f5;
-            color: #1c1e21;
+        .theme-light {
+            --bg-body: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-element: #e4e6eb;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --border-color: #dddfe2;
+            --accent-color: #006aff;
         }
-        .theme-light #app-header,
-        .theme-light .modal-content,
+        
         .theme-light .match-card,
+        .theme-light .modal-content,
         .theme-light .standings-table th,
         .theme-light .stat-item,
         .theme-light .match-details-header,
         .theme-light .team-info-header {
-            background-color: #ffffff;
-            border: 1px solid #dddfe2;
-        }
-        .theme-light .date-nav button,
-        .theme-light .slider {
-            background-color: #e4e6eb;
-        }
-        .theme-light #app-footer {
-            border-top-color: #dddfe2;
-        }
-        .theme-light #change-user-btn,
-        .theme-light #reset-settings-btn,
-        .theme-light #update-settings-btn,
-        .theme-light #theme-select {
-            background-color: #e4e6eb;
-            color: #1c1e21;
-        }
-        .theme-light .page-title,
-        .theme-light .league-header,
-        .theme-light .tabs,
-        .theme-light .standings-table td {
-            border-color: #dddfe2;
-        }
-        .theme-light a,
-        .theme-light .match-status,
-        .theme-light .tab-button.active,
-        .theme-light .group-title,
-        .theme-light .match-details-status {
-            color: #006aff;
-        }
-        .theme-light .match-status.not-started,
-        .theme-light .modal-content p,
-        .theme-light .team-name,
-        .theme-light .stat-item-team,
-        .theme-light .match-details-info,
-        .theme-light .event-detail,
-        .theme-light .team-info-details p,
-        .theme-light .tab-button {
-            color: #65676b;
-        }
-        .theme-light input:checked + .slider {
-            background-color: #006aff;
+            border: 1px solid var(--border-color);
         }
 
     </style>
@@ -814,16 +706,14 @@
 
             // --- Configuration ---
             const API_HOST = "https://v3.football.api-sports.io";
-            // ALLOWED_LEAGUES is now loaded from config
-            let ALLOWED_LEAGUES = [];
-            let ALLOWED_LEAGUE_IDS = [];
-
+            
             // --- App State ---
             let currentDate = new Date(); 
-            let appConfig = null; // Will hold the loaded users/config.json
+            let appConfig = null; // Will hold users/{username}.json
+            let appSettings = null; // Will hold users/app.json
 
             // --- Storage Service ---
-            // Stores username and the entire app config
+            // Stores username and the user's config
             const Storage = {
                 getUsername: () => localStorage.getItem('football_username'),
                 setUsername: (username) => localStorage.setItem('football_username', username),
@@ -835,29 +725,31 @@
             };
             
             // --- Config & Favs Helper ---
-            // Reads from the in-memory appConfig object
             const Config = {
                 getApiKey: () => appConfig ? appConfig.api_key : null,
                 isFav: (type, id) => {
                     if (!appConfig) return false;
                     const idNum = Number(id);
                     if (type === 'team') {
-                        return appConfig.favourit_teams.includes(idNum);
+                        // Use 'favourit_teams' (no 'e') as in original code
+                        return appConfig.favourit_teams && appConfig.favourit_teams.includes(idNum);
                     }
                     if (type === 'league') {
                         // "Favorites" (id 0) is a fav if any team is a fav
-                        if (idNum === 0) return appConfig.favourit_teams.length > 0;
-                        return appConfig.favourite_leagues.includes(idNum);
+                        if (idNum === 0) return appConfig.favourit_teams && appConfig.favourit_teams.length > 0;
+                        // Use 'favourite_leagues' (with 'e') as in original code
+                        return appConfig.favourite_leagues && appConfig.favourite_leagues.includes(idNum);
                     }
                     return false;
                 },
-                getAllowedLeagues: () => appConfig ? appConfig.allowed_leagues : [],
+                // UPDATED: Reads from appSettings, not appConfig
+                getAllowedLeagues: () => appSettings ? appSettings.allowed_leagues : [],
             };
 
             // --- API Service ---
             // Handles all fetching with backoff and error handling
             async function apiFetch(endpoint) {
-                const apiKey = Config.getApiKey(); // Get key from loaded config
+                const apiKey = Config.getApiKey(); // Get key from loaded user config
                 if (!apiKey) {
                     throw new Error("API Key not set or config not loaded.");
                 }
@@ -883,10 +775,9 @@
                         
                         if (data.errors && Object.keys(data.errors).length > 0) {
                             console.error("API Errors:", data.errors);
-                            // Handle specific token/key errors
                             if (data.errors.token || data.errors.key) {
                                 showError(document.getElementById('content-container'), "Invalid API Key. Please ask the administrator to check the config file.");
-                                return; // Stop retrying on auth errors
+                                return;
                             }
                             throw new Error(JSON.stringify(data.errors));
                         }
@@ -914,26 +805,16 @@
                 container.innerHTML = `<div class="error-message">Error: ${message}</div>`;
             }
 
-            /**
-             * Formats a date to 'YYYY-MM-DD'
-             */
             function formatDate(date) {
                 return date.toISOString().split('T')[0];
             }
             
-            /**
-             * Gets the season year for the API
-             */
             function getCurrentSeason() {
                 const today = new Date();
                 const month = today.getMonth(); // 0-11
-                // If before July, it's the season that started last year
                 return (month < 6) ? today.getFullYear() - 1 : today.getFullYear();
             }
 
-            /**
-             * Renders the main app header (date nav, etc.)
-             */
             function renderHeader(container) {
                 container.innerHTML = `
                     <h1>Lite Football</h1>
@@ -970,9 +851,6 @@
                 });
             }
             
-            /**
-             * Renders a single match card
-             */
             function renderMatchCard(match) {
                 const fixture = match.fixture;
                 const league = match.league;
@@ -1022,24 +900,23 @@
                 `;
             }
             
-            /**
-             * Adds click listeners to all .fav-toggle elements in a container
-             */
             function addFavToggleListeners(container) {
                 container.querySelectorAll('.fav-toggle').forEach(toggle => {
                     toggle.addEventListener('click', (e) => {
-                        e.preventDefault(); // Stop navigation from link
-                        e.stopPropagation(); // Stop event bubbling
+                        e.preventDefault();
+                        e.stopPropagation();
 
                         const type = e.currentTarget.dataset.type;
                         const id = Number(e.currentTarget.dataset.id);
                         
-                        if (!type || !id) return;
+                        if (!type || !id || !appConfig) return;
                         
                         let favArray;
                         if (type === 'team') {
+                            if (!appConfig.favourit_teams) appConfig.favourit_teams = [];
                             favArray = appConfig.favourit_teams;
                         } else if (type === 'league') {
+                            if (!appConfig.favourite_leagues) appConfig.favourite_leagues = [];
                             favArray = appConfig.favourite_leagues;
                         } else {
                             return;
@@ -1047,16 +924,13 @@
 
                         const index = favArray.indexOf(id);
                         if (index > -1) {
-                            // It exists, remove it
                             favArray.splice(index, 1);
                             e.currentTarget.textContent = '☆';
                         } else {
-                            // It doesn't exist, add it
                             favArray.push(id);
                             e.currentTarget.textContent = '⭐';
                         }
                         
-                        // Save the entire updated config to localStorage
                         Storage.setLocalConfig(appConfig);
                     });
                 });
@@ -1064,32 +938,36 @@
 
             // --- Page Controllers ---
 
-            /**
-             * Controller for the Home Page (/)
-             */
             async function renderHomePage(container) {
                 const headerContainer = document.getElementById('app-header');
                 renderHeader(headerContainer);
-                container.innerHTML = '<div class="loader">Loading matches...</div>'; // Initial content
+                container.innerHTML = '<div class="loader">Loading matches...</div>';
                 
                 await loadHomePageMatches();
             }
 
             /**
              * Fetches and renders matches for the home page
+             * UPDATED: Now reads allowed leagues from Config helper (which uses appSettings)
              */
             async function loadHomePageMatches() {
                 const container = document.getElementById('content-container');
-                const isLive = document.getElementById('live-toggle').checked;
+                const isLive = document.getElementById('live-toggle') ? document.getElementById('live-toggle').checked : false;
                 const date = formatDate(currentDate);
                 
-                document.getElementById('current-date').textContent = date;
+                if (document.getElementById('current-date')) {
+                    document.getElementById('current-date').textContent = date;
+                }
                 showLoader(container);
 
                 try {
-                    // Get allowed leagues from the loaded config
-                    ALLOWED_LEAGUES = Config.getAllowedLeagues();
-                    ALLOWED_LEAGUE_IDS = ALLOWED_LEAGUES.map(l => l.id);
+                    // UPDATED: Get allowed leagues from the new Config method
+                    const allowedLeagues = Config.getAllowedLeagues();
+                    const allowedLeagueIds = allowedLeagues.map(l => l.id);
+
+                    if (allowedLeagueIds.length === 0) {
+                        throw new Error("No leagues configured. Please check 'users/app.json'.");
+                    }
                     
                     let endpoint = `fixtures?date=${date}&season=${getCurrentSeason()}`;
                     if (isLive) {
@@ -1099,11 +977,11 @@
                     const matchesResponse = await apiFetch(endpoint);
                     
                     // Filter for allowed leagues
-                    const allMatches = matchesResponse.filter(m => ALLOWED_LEAGUE_IDS.includes(m.league.id));
+                    const allMatches = matchesResponse.filter(m => allowedLeagueIds.includes(m.league.id));
 
                     // Get user's favorites from config
-                    const favTeamIds = new Set(appConfig.favourit_teams);
-                    const favLeagueIds = new Set(appConfig.favourite_leagues);
+                    const favTeamIds = new Set(appConfig.favourit_teams || []);
+                    const favLeagueIds = new Set(appConfig.favourite_leagues || []);
 
                     // --- Grouping Logic ---
                     const favTeamMatches = [];
@@ -1114,16 +992,13 @@
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
 
-                        // 1. Check for Favorite Teams
                         if (favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id)) {
                             favTeamMatches.push(match);
                         } 
-                        // 2. Check for Favorite Leagues
                         else if (favLeagueIds.has(leagueId)) {
                             if (!favLeagueGroups[leagueId]) favLeagueGroups[leagueId] = { name: leagueName, matches: [] };
                             favLeagueGroups[leagueId].matches.push(match);
                         }
-                        // 3. The Rest
                         else {
                             if (!otherLeagueGroups[leagueId]) otherLeagueGroups[leagueId] = { name: leagueName, matches: [] };
                             otherLeagueGroups[leagueId].matches.push(match);
@@ -1133,7 +1008,6 @@
                     // --- Render HTML ---
                     let html = '';
 
-                    // 1. Render Favorite Team Matches
                     if (favTeamMatches.length > 0) {
                         const isFav = Config.isFav('league', 0);
                         html += `
@@ -1149,7 +1023,6 @@
                         `;
                     }
 
-                    // 2. Render Favorite Leagues
                     for (const leagueId in favLeagueGroups) {
                         const group = favLeagueGroups[leagueId];
                         const isFav = Config.isFav('league', leagueId);
@@ -1166,7 +1039,6 @@
                         `;
                     }
                     
-                    // 3. Render Other Leagues
                     for (const leagueId in otherLeagueGroups) {
                         const group = otherLeagueGroups[leagueId];
                         const isFav = Config.isFav('league', leagueId);
@@ -1189,7 +1061,6 @@
 
                     container.innerHTML = html;
                     
-                    // Add fav toggle listeners after render
                     addFavToggleListeners(container);
 
                 } catch (error) {
@@ -1197,11 +1068,8 @@
                 }
             }
 
-            /**
-             * Controller for the Match Page (/match/:id)
-             */
             async function renderMatchPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [matchData] = await apiFetch(`fixtures?id=${id}`);
@@ -1213,7 +1081,6 @@
 
                     const { fixture, league, teams, goals } = matchData;
                     
-                    // Helper to render events
                     const renderEvent = (event) => {
                         let icon = '';
                         let detail = event.detail;
@@ -1244,7 +1111,7 @@
                                         <h2>${teams.home.name}</h2>
                                     </a>
                                 </div>
-                                <div class="match-details-score">${goals.home} - ${goals.away}</div>
+                                <div class="match-details-score">${goals.home ?? '0'} - ${goals.away ?? '0'}</div>
                                 <div class="match-details-team">
                                     <a href="#/team/${teams.away.id}">
                                         <img src="${teams.away.logo}" alt="${teams.away.name}">
@@ -1252,7 +1119,7 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="match-details-status">${fixture.status.long} (${fixture.status.elapsed || 0}')</div>
+                            <div class="match-details-status">${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}</div>
                             <div class="match-details-info">
                                 ${new Date(fixture.date).toLocaleString()} | ${fixture.venue.name}, ${fixture.venue.city}
                             </div>
@@ -1269,21 +1136,16 @@
                 }
             }
 
-            /**
-             * Controller for the League Page (/league/:id)
-             */
             async function renderLeaguePage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 
                 try {
                     const season = getCurrentSeason();
-                    // Fetch all data in parallel
                     const [standingsData, scorersData, assistsData] = await Promise.all([
                         apiFetch(`standings?league=${id}&season=${season}`),
                         apiFetch(`players/topscorers?league=${id}&season=${season}`),
                         apiFetch(`players/topassists?league=${id}&season=${season}`),
-                        // You could add fixtures here too: apiFetch(`fixtures?league=${id}&season=${season}`)
                     ]);
 
                     const leagueInfo = standingsData[0]?.league;
@@ -1291,9 +1153,8 @@
                         throw new Error("League data not found.");
                     }
                     
-                    const standings = leagueInfo.standings; // This is an array (for groups)
+                    const standings = leagueInfo.standings;
                     
-                    // --- Render Tabs ---
                     container.innerHTML = `
                         <h2 class="page-title"><a href="#/">Home</a> &gt; ${leagueInfo.name}</h2>
                         <div class="tabs">
@@ -1302,24 +1163,16 @@
                             <button class="tab-button" data-tab="assists">Top Assists</button>
                         </div>
                         
-                        <div id="standings" class="tab-content active">
-                            <!-- Standings will be injected here -->
-                        </div>
-                        <div id="scorers" class="tab-content">
-                            <!-- Scorers will be injected here -->
-                        </div>
-                        <div id="assists" class="tab-content">
-                            <!-- Assists will be injected here -->
-                        </div>
+                        <div id="standings" class="tab-content active"></div>
+                        <div id="scorers" class="tab-content"></div>
+                        <div id="assists" class="tab-content"></div>
                     `;
                     
-                    // --- Render Standings Tab ---
                     const standingsContainer = container.querySelector('#standings');
                     let standingsHtml = '';
                     if (standings.length === 0) {
                         standingsHtml = '<p>Standings not available.</p>';
                     } else {
-                        // Loop over each group (for most leagues, this is just one)
                         for (const group of standings) {
                             if (standings.length > 1) {
                                 standingsHtml += `<h3 class="group-title">${group[0].group}</h3>`;
@@ -1361,7 +1214,6 @@
                     }
                     standingsContainer.innerHTML = standingsHtml;
                     
-                    // --- Render Stats (Scorers/Assists) Tab ---
                     const renderStatsList = (data) => {
                         if (data.length === 0) return '<p>Data not available.</p>';
                         return `<div class="stats-list">
@@ -1382,7 +1234,6 @@
                     container.querySelector('#scorers').innerHTML = renderStatsList(scorersData);
                     container.querySelector('#assists').innerHTML = renderStatsList(assistsData);
                     
-                    // --- Tab-switching logic ---
                     container.querySelectorAll('.tab-button').forEach(button => {
                         button.addEventListener('click', () => {
                             const tabId = button.dataset.tab;
@@ -1395,16 +1246,14 @@
                         });
                     });
 
-                } catch (error) {
+                } catch (error)
+ {
                     showError(container, error.message);
                 }
             }
 
-            /**
-             * Controller for the Team Page (/team/:id)
-             */
             async function renderTeamPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [teamData] = await apiFetch(`teams?id=${id}`);
@@ -1412,9 +1261,6 @@
 
                     const { team, venue } = teamData;
                     const isFav = Config.isFav('team', team.id);
-
-                    // You could add more API calls here for squad, recent matches, etc.
-                    // For a "lite" app, we'll keep it simple.
 
                     container.innerHTML = `
                         <h2 class="page-title"><a href="#/">Home</a> &gt; Team</h2>
@@ -1431,7 +1277,6 @@
                         <p>More team details like squad and recent matches could be loaded here.</p>
                     `;
                     
-                    // Add fav toggle listeners
                     addFavToggleListeners(container);
 
                 } catch (error) {
@@ -1439,11 +1284,8 @@
                 }
             }
 
-            /**
-             * Controller for the Player Page (/player/:id)
-             */
             async function renderPlayerPage(container, id) {
-                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 try {
                     const [playerData] = await apiFetch(`players?id=${id}&season=${getCurrentSeason()}`);
@@ -1485,16 +1327,13 @@
             }
 
             // --- App Router ---
-            // This is the main entry point
             function AppRouter() {
-                const path = window.location.hash.substring(1) || '/'; // Read from hash
+                const path = window.location.hash.substring(1) || '/';
                 const mainContainer = document.getElementById('content-container');
 
-                // Clear header and content for new "page"
                 document.getElementById('app-header').innerHTML = '';
                 showLoader(mainContainer);
 
-                // Simple path-based router
                 if (path.startsWith('/match/')) {
                     const id = path.split('/')[2];
                     renderMatchPage(mainContainer, id);
@@ -1508,7 +1347,6 @@
                     const id = path.split('/')[2];
                     renderPlayerPage(mainContainer, id);
                 } else {
-                    // Default to home page
                     renderHomePage(mainContainer);
                 }
             }
@@ -1516,20 +1354,45 @@
             /* Applies theme class to body and sets dropdown
              */
             function applyTheme(theme) {
+                // Use default 'dark-bleu' if theme is invalid
+                const validThemes = ['dark-bleu', 'dark-red', 'darky-dark', 'light'];
+                const themeToApply = validThemes.includes(theme) ? theme : 'dark-bleu';
+                
                 document.body.className = ''; // Clear old themes
-                if (theme) {
-                    document.body.classList.add(`theme-${theme}`);
+                if (themeToApply !== 'dark-bleu') { // 'dark-bleu' is the default (no class)
+                    document.body.classList.add(`theme-${themeToApply}`);
                 }
                 
-                // Sync dropdown
                 const themeSelect = document.getElementById('theme-select');
                 if (themeSelect) {
-                    themeSelect.value = theme;
+                    themeSelect.value = themeToApply;
                 }
             }
             
             /**
-             * Loads the user config file *from the server*
+             * NEW: Loads the app.json config file *from the server*
+             * This holds app-wide settings like allowed_leagues
+             */
+            async function loadAppSettings(onSuccessCallback) {
+                try {
+                    // Use cache-busting query param to ensure freshness
+                    const response = await fetch(`users/app.json?_=${new Date().getTime()}`);
+                    if (!response.ok) {
+                        throw new Error("Could not load users/app.json");
+                    }
+                    appSettings = await response.json();
+                    
+                    // Now that app settings are loaded, proceed with user logic
+                    if (onSuccessCallback) onSuccessCallback();
+                    
+                } catch (error) {
+                    console.error("Fatal error loading app settings:", error);
+                    showError(document.getElementById('content-container'), "Could not load core app configuration. Please contact the administrator.");
+                }
+            }
+            
+            /**
+             * Loads the user config file (e.g., users/username.json)
              * Saves it to localStorage and calls onComplete
              */
             async function loadConfigFromServer(username, onComplete) {
@@ -1546,24 +1409,31 @@
                         throw new Error("Could not load default.json config.");
                     }
                     
+                    // This is the USER config (api_key, favs, theme)
                     appConfig = await response.json();
+                    
+                    // Ensure fav arrays exist to prevent errors later
+                    if (!appConfig.favourit_teams) appConfig.favourit_teams = [];
+                    if (!appConfig.favourite_leagues) appConfig.favourite_leagues = [];
+                    
                     Storage.setLocalConfig(appConfig); // Save to localStorage
                     applyTheme(appConfig.theme);
                     
                     if(onComplete) onComplete();
                     
                 } catch (error) {
-                    console.error("Fatal error loading config:", error);
-                    showError(document.getElementById('content-container'), "Could not load app configuration. Please check console.");
+                    console.error("Fatal error loading user config:", error);
+                    showError(document.getElementById('content-container'), "Could not load user configuration. Please check console.");
                 }
             }
             
             /**
              * Fetches server config and merges favorites
+             * This function remains unchanged as it only deals with user favs
              */
             async function updateFavoritesFromServer() {
                 const username = Storage.getUsername();
-                if (!username) return; // Should not happen
+                if (!username) return;
                 
                 let configUrl = `users/${username.toLowerCase()}.json`;
                 try {
@@ -1575,18 +1445,20 @@
                     if (!response.ok) throw new Error("Could not load config file for update.");
                     
                     const jsonConfig = await response.json();
-                    const localConfig = Storage.getLocalConfig(); // Get current local settings
+                    const localConfig = Storage.getLocalConfig() || appConfig;
                     
                     // Merge using Set to avoid duplicates
-                    const mergedTeams = [...new Set([...localConfig.favourit_teams, ...jsonConfig.favourit_teams])];
-                    const mergedLeagues = [...new Set([...localConfig.favourite_leagues, ...jsonConfig.favourite_leagues])];
+                    const mergedTeams = [...new Set([...(localConfig.favourit_teams || []), ...jsonConfig.favourit_teams])];
+                    const mergedLeagues = [...new Set([...(localConfig.favourite_leagues || []), ...jsonConfig.favourite_leagues])];
                     
                     localConfig.favourit_teams = mergedTeams;
                     localConfig.favourite_leagues = mergedLeagues;
                     
-                    Storage.setLocalConfig(localConfig); // Save merged config
+                    Storage.setLocalConfig(localConfig);
+                    appConfig = localConfig; // Update in-memory config
+                    
                     alert("Favorites updated!"); // Simple alert
-                    window.location.reload();
+                    loadHomePageMatches(); // Reload matches to show new favs
                     
                 } catch (error) {
                     console.error("Error updating favorites:", error);
@@ -1595,34 +1467,12 @@
             }
             
             /**
-             * First function to run on load
+             * NEW: This logic runs *after* app settings are loaded
              */
-            function init() {
+            function initUserLogic() {
                 const username = Storage.getUsername();
                 const modal = document.getElementById('user-modal');
                 
-                // --- Bind Footer Events ---
-                document.getElementById('change-user-btn').addEventListener('click', () => {
-                    Storage.clearUsername();
-                    Storage.clearLocalConfig(); // Clear config too
-                    window.location.reload();
-                });
-                
-                document.getElementById('reset-settings-btn').addEventListener('click', () => {
-                    Storage.clearLocalConfig(); // Clear local, will force re-fetch
-                    window.location.reload();
-                });
-                
-                document.getElementById('update-settings-btn').addEventListener('click', updateFavoritesFromServer);
-                
-                document.getElementById('theme-select').addEventListener('change', (e) => {
-                    const newTheme = e.target.value;
-                    appConfig.theme = newTheme;
-                    Storage.setLocalConfig(appConfig); // Save new theme
-                    applyTheme(newTheme); // Apply immediately
-                });
-                
-                // --- Auth / Config Loading ---
                 if (!username) {
                     modal.classList.add('visible');
                     document.getElementById('user-submit').onclick = () => {
@@ -1634,24 +1484,53 @@
                         }
                     };
                 } else {
-                    // User is "logged in", try to load config from localStorage
                     appConfig = Storage.getLocalConfig();
                     
                     if (appConfig) {
-                        // Config exists, start the app
                         applyTheme(appConfig.theme);
                         AppRouter();
                     } else {
-                        // No local config, fetch from server
                         loadConfigFromServer(username, AppRouter);
                     }
                 }
             }
+            
+            /**
+             * First function to run on load
+             * UPDATED: Now starts the new loading chain
+             */
+            function init() {
+                // --- Bind Footer Events ---
+                document.getElementById('change-user-btn').addEventListener('click', () => {
+                    Storage.clearUsername();
+                    Storage.clearLocalConfig();
+                    window.location.reload();
+                });
+                
+                document.getElementById('reset-settings-btn').addEventListener('click', () => {
+                    Storage.clearLocalConfig();
+                    window.location.reload();
+                });
+                
+                document.getElementById('update-settings-btn').addEventListener('click', updateFavoritesFromServer);
+                
+                document.getElementById('theme-select').addEventListener('change', (e) => {
+                    const newTheme = e.target.value;
+                    if (appConfig) { // Only save if config is loaded
+                        appConfig.theme = newTheme;
+                        Storage.setLocalConfig(appConfig);
+                    }
+                    applyTheme(newTheme);
+                });
+                
+                // --- NEW LOADING CHAIN ---
+                // 1. Load app-wide settings (app.json)
+                // 2. On success, initialize user-specific logic (username.json)
+                loadAppSettings(initUserLogic);
+            }
 
             // --- Start the App ---
-            // Wait for the DOM to be ready
             document.addEventListener('DOMContentLoaded', init);
-            // Also run the router when the hash changes (user clicks a link)
             window.addEventListener('hashchange', AppRouter);
 
         })();
