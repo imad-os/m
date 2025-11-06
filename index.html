@@ -10,6 +10,11 @@
       By Gemini
     -->
     <style>
+.via-background {
+    --tw-gradient-via: hsl(var(--background));
+    --tw-gradient-via-stops: var(--tw-gradient-position),var(--tw-gradient-from)var(--tw-gradient-from-position),var(--tw-gradient-via)var(--tw-gradient-via-position),var(--tw-gradient-to)var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-via-stops);
+}
         /* --- Global Styles --- */
         * {
             box-sizing: border-box;
@@ -742,7 +747,7 @@
 </head>
 <body>
 
-<div id="app-wrapper"> <!-- New wrapper for max-width -->
+<div id="app-wrapper" class="via-background"> <!-- New wrapper for max-width -->
 
     <!-- This modal will show on first load to get the username -->
     <div id="user-modal">
