@@ -23,6 +23,20 @@
             color: #e0e0e0;
             font-size: 16px; /* Base font size for TV */
         }
+        
+        /* New app wrapper for max-width */
+        #app-wrapper {
+            max-width: 1400px; /* Max width for wide TVs */
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Make main content grow to fill space */
+        #content-container {
+            flex-grow: 1;
+        }
 
         a {
             color: #64ffda; /* A bright accent for links */
@@ -240,16 +254,29 @@
             color: #e0e0e0;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            /* "half the width" - 0.5rem for gap */
-            flex-basis: calc(50% - 0.5rem);
-            min-width: 280px; /* Min width before wrapping */
+            gap: 0.5rem; /* Smaller gap for compact view */
+            
+            /* New Sizing */
+            flex-basis: 120px; /* Minimum width */
+            flex-grow: 1;     /* Allow to grow */
+            min-width: 120px; /* Don't shrink smaller */
+            
+            /* Adjust internal layout for small width */
+            align-items: center;
+            text-align: center;
         }
 
         /* On smaller screens, make cards full width */
         @media (max-width: 600px) {
             .match-card {
-                flex-basis: 100%;
+                flex-basis: calc(50% - 0.5rem); /* Back to 2-col */
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .match-card {
+                flex-basis: 100%; /* Single column */
             }
         }
 
@@ -263,45 +290,57 @@
         .match-status.not-started {
             color: #a0b0d0;
             font-weight: normal; /* Time isn't as important as live status */
+            font-size: 0.9rem; /* Smaller font */
         }
 
         .match-teams {
             display: flex;
-            justify-content: space-between;
+            /* Stack teams vertically */
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.25rem;
+            width: 100%;
         }
 
         .team {
             display: flex;
-            flex-direction: column;
+            /* Teams are now horizontal: icon, name, star */
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             text-align: center;
-            gap: 0.5rem;
-            width: 40%;
+            gap: 0.25rem;
+            width: 100%;
         }
 
         .team img {
-            width: 40px;
-            height: 40px;
+            width: 20px; /* Smaller icon */
+            height: 20px;
         }
 
         .team-name {
-            font-size: 0.9rem;
+            font-size: 0.8rem; /* Smaller font */
             font-weight: bold;
             line-height: 1.2;
+            /* Truncate long names */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
         }
 
         .score-container {
-            font-size: 1.8rem;
+            font-size: 1.4rem; /* Smaller score */
             font-weight: bold;
             text-align: center;
+            margin: 0.25rem 0;
         }
         
         .fav-toggle {
             cursor: pointer;
-            font-size: 1.5rem;
-            padding: 0.25rem;
+            font-size: 1.1rem; /* Smaller star */
+            padding: 0;
         }
 
         /* --- League Page --- */
@@ -551,9 +590,16 @@
             padding: 1.5rem 1rem;
             margin-top: 1rem;
             border-top: 1px solid #30416b;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
         }
         
-        #change-user-btn {
+        #change-user-btn,
+        #reset-settings-btn,
+        #update-settings-btn {
             background: #30416b;
             color: white;
             border: none;
@@ -561,6 +607,16 @@
             border-radius: 4px;
             font-size: 1rem;
             cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #theme-select {
+            background: #30416b;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-size: 1rem;
             font-weight: bold;
         }
         
@@ -592,7 +648,10 @@
         .theme-dark-red #app-footer {
             border-top-color: #6b3030;
         }
-        .theme-dark-red #change-user-btn {
+        .theme-dark-red #change-user-btn,
+        .theme-dark-red #reset-settings-btn,
+        .theme-dark-red #update-settings-btn,
+        .theme-dark-red #theme-select {
             background-color: #4a1c1c;
         }
         .theme-dark-red a,
@@ -632,7 +691,10 @@
         .theme-darky-dark #app-footer {
             border-top-color: #333;
         }
-        .theme-darky-dark #change-user-btn {
+        .theme-darky-dark #change-user-btn,
+        .theme-darky-dark #reset-settings-btn,
+        .theme-darky-dark #update-settings-btn,
+        .theme-darky-dark #theme-select {
             background-color: #1e1e1e;
         }
         .theme-darky-dark a,
@@ -668,7 +730,10 @@
         .theme-light #app-footer {
             border-top-color: #dddfe2;
         }
-        .theme-light #change-user-btn {
+        .theme-light #change-user-btn,
+        .theme-light #reset-settings-btn,
+        .theme-light #update-settings-btn,
+        .theme-light #theme-select {
             background-color: #e4e6eb;
             color: #1c1e21;
         }
@@ -703,6 +768,8 @@
 </head>
 <body>
 
+<div id="app-wrapper"> <!-- New wrapper for max-width -->
+
     <!-- This modal will show on first load to get the username -->
     <div id="user-modal">
         <div class="modal-content">
@@ -724,8 +791,21 @@
     </main>
 
     <footer id="app-footer">
+        <div>
+            <label for="theme-select" style="margin-right: 0.5rem; font-size: 0.9rem;">Theme:</label>
+            <select id="theme-select">
+                <option value="dark-bleu">Dark Blue</option>
+                <option value="dark-red">Dark Red</option>
+                <option value="darky-dark">Darky Dark</option>
+                <option value="light">Light</option>
+            </select>
+        </div>
+        <button id="update-settings-btn">Update Favs from Source</button>
+        <button id="reset-settings-btn">Reset All Settings</button>
         <button id="change-user-btn">Change User</button>
     </footer>
+
+</div> <!-- End #app-wrapper -->
 
     <script>
         // Start of self-contained JavaScript application
@@ -743,15 +823,19 @@
             let appConfig = null; // Will hold the loaded users/config.json
 
             // --- Storage Service ---
-            // Now only stores the username
+            // Stores username and the entire app config
             const Storage = {
                 getUsername: () => localStorage.getItem('football_username'),
                 setUsername: (username) => localStorage.setItem('football_username', username),
                 clearUsername: () => localStorage.removeItem('football_username'),
+                
+                getLocalConfig: () => JSON.parse(localStorage.getItem('app_config')) || null,
+                setLocalConfig: (config) => localStorage.setItem('app_config', JSON.stringify(config)),
+                clearLocalConfig: () => localStorage.removeItem('app_config'),
             };
             
             // --- Config & Favs Helper ---
-            // Replaces old Storage fav functions
+            // Reads from the in-memory appConfig object
             const Config = {
                 getApiKey: () => appConfig ? appConfig.api_key : null,
                 isFav: (type, id) => {
@@ -799,6 +883,11 @@
                         
                         if (data.errors && Object.keys(data.errors).length > 0) {
                             console.error("API Errors:", data.errors);
+                            // Handle specific token/key errors
+                            if (data.errors.token || data.errors.key) {
+                                showError(document.getElementById('content-container'), "Invalid API Key. Please ask the administrator to check the config file.");
+                                return; // Stop retrying on auth errors
+                            }
                             throw new Error(JSON.stringify(data.errors));
                         }
 
@@ -932,6 +1021,46 @@
                     </a>
                 `;
             }
+            
+            /**
+             * Adds click listeners to all .fav-toggle elements in a container
+             */
+            function addFavToggleListeners(container) {
+                container.querySelectorAll('.fav-toggle').forEach(toggle => {
+                    toggle.addEventListener('click', (e) => {
+                        e.preventDefault(); // Stop navigation from link
+                        e.stopPropagation(); // Stop event bubbling
+
+                        const type = e.currentTarget.dataset.type;
+                        const id = Number(e.currentTarget.dataset.id);
+                        
+                        if (!type || !id) return;
+                        
+                        let favArray;
+                        if (type === 'team') {
+                            favArray = appConfig.favourit_teams;
+                        } else if (type === 'league') {
+                            favArray = appConfig.favourite_leagues;
+                        } else {
+                            return;
+                        }
+
+                        const index = favArray.indexOf(id);
+                        if (index > -1) {
+                            // It exists, remove it
+                            favArray.splice(index, 1);
+                            e.currentTarget.textContent = '☆';
+                        } else {
+                            // It doesn't exist, add it
+                            favArray.push(id);
+                            e.currentTarget.textContent = '⭐';
+                        }
+                        
+                        // Save the entire updated config to localStorage
+                        Storage.setLocalConfig(appConfig);
+                    });
+                });
+            }
 
             // --- Page Controllers ---
 
@@ -943,9 +1072,6 @@
                 renderHeader(headerContainer);
                 container.innerHTML = '<div class="loader">Loading matches...</div>'; // Initial content
                 
-                // FAVS ARE NOW READ-ONLY, REMOVED CLICK LISTENER
-                // We just display the favs from config
-
                 await loadHomePageMatches();
             }
 
@@ -1062,6 +1188,9 @@
                     }
 
                     container.innerHTML = html;
+                    
+                    // Add fav toggle listeners after render
+                    addFavToggleListeners(container);
 
                 } catch (error) {
                     showError(container, error.message);
@@ -1302,7 +1431,8 @@
                         <p>More team details like squad and recent matches could be loaded here.</p>
                     `;
                     
-                    // FAVS ARE NOW READ-ONLY, REMOVED CLICK LISTENER
+                    // Add fav toggle listeners
+                    addFavToggleListeners(container);
 
                 } catch (error) {
                     showError(container, error.message);
@@ -1355,48 +1485,26 @@
             }
 
             // --- App Router ---
-            // This is the main entry point
-            function AppRouter() {
-                const path = window.location.hash.substring(1) || '/'; // Read from hash
-                const mainContainer = document.getElementById('content-container');
-
-                // Clear header and content for new "page"
-                document.getElementById('app-header').innerHTML = '';
-                showLoader(mainContainer);
-
-                // Simple path-based router
-                if (path.startsWith('/match/')) {
-                    const id = path.split('/')[2];
-                    renderMatchPage(mainContainer, id);
-                } else if (path.startsWith('/league/')) {
-                    const id = path.split('/')[2];
-                    renderLeaguePage(mainContainer, id);
-                } else if (path.startsWith('/team/')) {
-                    const id = path.split('/')[2];
-                    renderTeamPage(mainContainer, id);
-                } else if (path.startsWith('/player/')) {
-                    const id = path.split('/')[2];
-                    renderPlayerPage(mainContainer, id);
-                } else {
-                    // Default to home page
-                    renderHomePage(mainContainer);
-                }
-            }
-            
-            /**
-             * Applies theme class to body
+             /* Applies theme class to body and sets dropdown
              */
             function applyTheme(theme) {
                 document.body.className = ''; // Clear old themes
                 if (theme) {
                     document.body.classList.add(`theme-${theme}`);
                 }
+                
+                // Sync dropdown
+                const themeSelect = document.getElementById('theme-select');
+                if (themeSelect) {
+                    themeSelect.value = theme;
+                }
             }
             
             /**
-             * Loads the user config file
+             * Loads the user config file *from the server*
+             * Saves it to localStorage and calls onComplete
              */
-            async function loadConfig(username) {
+            async function loadConfigFromServer(username, onComplete) {
                 let configUrl = `users/${username.toLowerCase()}.json`;
                 try {
                     let response = await fetch(configUrl);
@@ -1411,14 +1519,50 @@
                     }
                     
                     appConfig = await response.json();
+                    Storage.setLocalConfig(appConfig); // Save to localStorage
                     applyTheme(appConfig.theme);
                     
-                    // Now that config is loaded, start the app router
-                    AppRouter();
+                    if(onComplete) onComplete();
                     
                 } catch (error) {
                     console.error("Fatal error loading config:", error);
                     showError(document.getElementById('content-container'), "Could not load app configuration. Please check console.");
+                }
+            }
+            
+            /**
+             * Fetches server config and merges favorites
+             */
+            async function updateFavoritesFromServer() {
+                const username = Storage.getUsername();
+                if (!username) return; // Should not happen
+                
+                let configUrl = `users/${username.toLowerCase()}.json`;
+                try {
+                    let response = await fetch(configUrl);
+                    if (!response.ok) {
+                        configUrl = 'users/default.json';
+                        response = await fetch(configUrl);
+                    }
+                    if (!response.ok) throw new Error("Could not load config file for update.");
+                    
+                    const jsonConfig = await response.json();
+                    const localConfig = Storage.getLocalConfig(); // Get current local settings
+                    
+                    // Merge using Set to avoid duplicates
+                    const mergedTeams = [...new Set([...localConfig.favourit_teams, ...jsonConfig.favourit_teams])];
+                    const mergedLeagues = [...new Set([...localConfig.favourite_leagues, ...jsonConfig.favourite_leagues])];
+                    
+                    localConfig.favourit_teams = mergedTeams;
+                    localConfig.favourite_leagues = mergedLeagues;
+                    
+                    Storage.setLocalConfig(localConfig); // Save merged config
+                    alert("Favorites updated!"); // Simple alert
+                    window.location.reload();
+                    
+                } catch (error) {
+                    console.error("Error updating favorites:", error);
+                    alert("Could not update favorites."); // Simple alert
                 }
             }
             
@@ -1429,25 +1573,51 @@
                 const username = Storage.getUsername();
                 const modal = document.getElementById('user-modal');
                 
+                // --- Bind Footer Events ---
+                document.getElementById('change-user-btn').addEventListener('click', () => {
+                    Storage.clearUsername();
+                    Storage.clearLocalConfig(); // Clear config too
+                    window.location.reload();
+                });
+                
+                document.getElementById('reset-settings-btn').addEventListener('click', () => {
+                    Storage.clearLocalConfig(); // Clear local, will force re-fetch
+                    window.location.reload();
+                });
+                
+                document.getElementById('update-settings-btn').addEventListener('click', updateFavoritesFromServer);
+                
+                document.getElementById('theme-select').addEventListener('change', (e) => {
+                    const newTheme = e.target.value;
+                    appConfig.theme = newTheme;
+                    Storage.setLocalConfig(appConfig); // Save new theme
+                    applyTheme(newTheme); // Apply immediately
+                });
+                
+                // --- Auth / Config Loading ---
                 if (!username) {
                     modal.classList.add('visible');
                     document.getElementById('user-submit').onclick = () => {
                         const newUsername = document.getElementById('username-input').value;
                         if (newUsername) {
                             Storage.setUsername(newUsername);
-                            modal.classList.remove('visible');
-                            loadConfig(newUsername);
+                            Storage.clearLocalConfig(); // Clear any old config
+                            window.location.reload(); // Reload to trigger config fetch
                         }
                     };
                 } else {
-                    loadConfig(username);
+                    // User is "logged in", try to load config from localStorage
+                    appConfig = Storage.getLocalConfig();
+                    
+                    if (appConfig) {
+                        // Config exists, start the app
+                        applyTheme(appConfig.theme);
+                        AppRouter();
+                    } else {
+                        // No local config, fetch from server
+                        loadConfigFromServer(username, AppRouter);
+                    }
                 }
-                
-                // Add event listener for the new change user button
-                document.getElementById('change-user-btn').addEventListener('click', () => {
-                    Storage.clearUsername();
-                    window.location.reload();
-                });
             }
 
             // --- Start the App ---
