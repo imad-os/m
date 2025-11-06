@@ -261,13 +261,47 @@
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
-            gap: 0.5rem; /* Smaller gap for compact view */
-            flex-basis: 350px; /* CHANGED - Set base width */
-            flex-grow: 0; /* CHANGED - Prevent growing */
-            /* min-width: 120px; REMOVED */
+            gap: 0.5rem;
+            flex-basis: 350px;
+            flex-grow: 0;
             align-items: center;
             text-align: center;
+            /* MODIFIED: Added transparent border to prevent layout shift */
+            border: 2px solid transparent; 
         }
+
+        /* NEW: Live match indicator border */
+        .match-card.is-live {
+            border-color: var(--accent-color);
+        }
+
+        /* NEW: League logo container */
+        .match-league {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            width: 100%;
+            justify-content: center; /* Center align it */
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .match-league img {
+            width: 20px; /* Small league logo */
+            height: 20px;
+            flex-shrink: 0; /* Prevent logo from shrinking */
+        }
+        
+        .match-league span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
 
         @media (max-width: 600px) {
             .match-card {
@@ -310,17 +344,20 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            gap: 0.25rem;
+            /* MODIFIED: Increased gap for larger logo */
+            gap: 0.5rem; 
             width: 100%;
         }
 
         .team img {
-            width: 20px;
-            height: 20px;
+            /* MODIFIED: Increased logo size */
+            width: 36px;
+            height: 36px;
         }
 
         .team-name {
-            font-size: 0.8rem;
+            /* MODIFIED: Increased font size slightly */
+            font-size: 0.9rem; 
             font-weight: bold;
             line-height: 1.2;
             white-space: nowrap;
@@ -665,6 +702,11 @@
             border: 1px solid var(--border-color);
         }
 
+        /* MODIFIED: Ensure live border overrides light theme border */
+        .theme-light .match-card.is-live {
+             border: 2px solid var(--accent-color);
+        }
+
     </style>
 </head>
 <body>
@@ -867,6 +909,9 @@
                 const goals = match.goals;
                 const status = fixture.status.short;
 
+                // NEW: Check if match is live
+                const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
+
                 let scoreText;
                 let statusText = fixture.status.long;
 
@@ -875,16 +920,26 @@
                     statusText = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 } else {
                     scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
-                    if (status !== 'FT' && status !== 'HT') {
-                        statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
+                    // MODIFIED: Show elapsed time for all live statuses, including HT
+                    if (isLive || status === 'HT') {
+                         statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
+                    } else {
+                        // This handles FT, PST, etc.
+                        statusText = fixture.status.long;
                     }
                 }
                 
                 const isFavHome = Config.isFav('team', teams.home.id);
                 const isFavAway = Config.isFav('team', teams.away.id);
 
+                // MODIFIED: Added ${isLive ? 'is-live' : ''} to class
+                // MODIFIED: Added .match-league div
                 return `
-                    <a href="#/match/${fixture.id}" class="match-card">
+                    <a href="#/match/${fixture.id}" class="match-card ${isLive ? 'is-live' : ''}">
+                        <div class="match-league" title="${league.name}">
+                            ${league.logo ? `<img src="${league.logo}" alt="">` : ''}
+                            <span>${league.name}</span>
+                        </div>
                         <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
                             ${statusText}
                         </div>
