@@ -7,7 +7,7 @@
     <!-- 
       A single, lightweight HTML file for old browsers.
       All CSS and JS are inline.
-      By Gemini
+      By Gemini (v2 - Features Restored)
     -->
     <style>
         /* --- Global Styles --- */
@@ -40,10 +40,10 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 10px;
-            padding-top: 60px; /* MODIFIED: Make space for new user display */
+            padding-top: 60px; /* Space for user display */
         }
         
-        /* --- NEW: User Display (Top Right) --- */
+        /* --- User Display (Top Right) --- */
         #user-display {
             position: fixed; /* Fixed to viewport */
             top: 10px;
@@ -56,7 +56,6 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            max-width: 250px; /* Prevent it from being too wide */
         }
 
         #user-info {
@@ -64,6 +63,7 @@
             align-items: center;
             color: var(--text-primary);
             font-weight: bold;
+            max-width: 200px; /* Prevent wide names from breaking layout */
         }
 
         #user-icon {
@@ -79,7 +79,7 @@
             text-overflow: ellipsis;
         }
 
-        /* Style the sign-in button like other buttons */
+        /* Style the sign-in button */
         #sign-in-btn {
             padding: 6px 12px;
             font-size: 14px;
@@ -90,38 +90,25 @@
             cursor: pointer;
             font-weight: bold;
         }
+        
+        /* NEW: Settings Button */
+        #settings-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 22px; /* Emoji icon size */
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 4px;
+            line-height: 1;
+        }
+        #settings-btn:hover {
+            color: var(--text-primary);
+        }
 
         #sign-in-btn.hidden,
         #user-info.hidden {
             display: none;
-        }
-        
-        /* --- Navigation --- */
-        #main-nav {
-            display: flex;
-            justify-content: center;
-            background-color: var(--bg-panel);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .nav-button {
-            background-color: var(--bg-element);
-            color: var(--text-secondary);
-            border: none;
-            padding: 12px 18px;
-            margin: 0 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.2s, color 0.2s;
-        }
-        
-        .nav-button:hover, .nav-button.active {
-            background-color: var(--accent-color);
-            color: var(--bg-body);
         }
         
         /* --- Main Content --- */
@@ -130,15 +117,7 @@
             padding: 15px;
             border-radius: 8px;
         }
-        
-        .view {
-            display: none; /* Hidden by default */
-        }
-        
-        .view.active {
-            display: block;
-        }
-        
+                
         h1 {
             color: var(--accent-color);
             margin-bottom: 15px;
@@ -169,6 +148,12 @@
             border: 1px solid var(--border-color);
         }
         
+        /* NEW: Highlight favorite teams */
+        .match-item.fav-team {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 9px;
+        }
+        
         .match-info {
             flex-grow: 1;
         }
@@ -197,12 +182,20 @@
             color: #FFD700; /* Gold color for favorite */
         }
         
-        /* --- Settings --- */
+        /* --- Settings Elements --- */
         .settings-group {
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--bg-element);
+        }
+        .settings-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
         
-        .settings-group label {
+        .settings-group label,
+        .settings-group .settings-label { /* For checkbox groups */
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
@@ -230,6 +223,7 @@
             font-size: 16px;
             font-weight: bold;
             transition: background-color 0.2s;
+            margin-top: 5px; /* For stacking */
         }
         
         .settings-button:hover {
@@ -241,6 +235,32 @@
             color: var(--text-primary);
         }
         
+        /* Checkbox styling */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            accent-color: var(--accent-color);
+        }
+        .checkbox-group label {
+            font-weight: normal;
+            color: var(--text-primary);
+            margin-bottom: 0; /* Override group label */
+        }
+        
+        #league-filter-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: var(--bg-element);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
         /* --- Modal --- */
         .modal {
             display: none; /* Hidden by default */
@@ -262,33 +282,56 @@
 
         .modal-content {
             background-color: var(--bg-panel);
-            padding: 25px;
+            padding: 20px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             width: 90%;
-            max-width: 400px;
-            text-align: center;
+            max-width: 450px; /* Wider for settings */
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         
-        .modal-content h2 {
-            margin-top: 0;
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
             color: var(--accent-color);
         }
-
-        .modal-content label {
-            display: block;
-            margin-bottom: 10px;
-            text-align: left;
+        
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
             font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close-btn:hover {
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+             max-height: 60vh;
+             overflow-y: auto;
+             padding-right: 10px; /* space for scrollbar */
+        }
+        
+        .modal-content label {
+            text-align: left;
         }
         
         .modal-content input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
         }
         
         .modal-button {
@@ -296,14 +339,14 @@
             color: var(--bg-body);
             border: none;
             padding: 12px 18px;
-            margin: 0 5px;
+            margin: 0 0 0 10px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
         }
         
-        #close-user-modal {
+        .modal-button.cancel-btn {
             background-color: var(--bg-element);
             color: var(--text-secondary);
         }
@@ -336,41 +379,75 @@
     <!-- NEW: User Display Area -->
     <div id="user-display">
         <span id="user-info" class="hidden">
-            <span id="user-icon">👤</span> <!-- Simple emoji icon for lightweight-ness -->
+            <span id="user-icon">👤</span>
             <span id="username-display"></span>
         </span>
         <button id="sign-in-btn" class="hidden">Sign in</button>
+        <button id="settings-btn" title="Settings">⚙️</button> <!-- NEW Settings Button -->
     </div>
 
     <div id="app-shell">
-        <nav id="main-nav">
-            <button class="nav-button" data-hash="#favorites">Favorites</button>
-            <button class="nav-button" data-hash="#all">All Matches</button>
-            <button class="nav-button" data-hash="#settings">Settings</button>
-        </nav>
-
         <main id="main-content">
-            <h1 id="page-title">Loading...</h1>
+            <h1 id="page-title">Matches</h1>
             <div id="loading-indicator">
                 Loading...
             </div>
             
-            <!-- Favorites View -->
-            <div id="favorites-view" class="view">
-                <ul id="favorites-list" class="match-list">
+            <!-- Main Matches View -->
+            <div id="matches-view">
+                <ul id="matches-list" class="match-list">
                     <!-- JS will populate this -->
                 </ul>
             </div>
             
-            <!-- All Matches View -->
-            <div id="all-matches-view" class="view">
-                <ul id="all-matches-list" class="match-list">
-                    <!-- JS will populate this -->
-                </ul>
+        </main>
+    </div>
+    
+    <!-- User Modal (Unchanged) -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+             <div class="modal-header">
+                <h2>Change User</h2>
+                <button id="close-user-modal" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="username-input">Enter Username (e.g., user1, user2)</label>
+                <input type="text" id="username-input" class="settings-input" placeholder="user1">
+            </div>
+            <div class="modal-footer">
+                <button id="save-user-btn" class="modal-button">Load User</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-settings-modal" class="modal-close-btn">&times;</button>
             </div>
             
-            <!-- Settings View -->
-            <div id="settings-view" class="view">
+            <div class="modal-body">
+                 <!-- Match Display Settings -->
+                <div class="settings-group">
+                    <span class="settings-label">Match Display</span>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="setting-show-favs">
+                        <label for="setting-show-favs">Show only favorited matches</label>
+                    </div>
+                    
+                    <label for="setting-fav-teams">Favorite Teams (comma-separated)</label>
+                    <input type="text" id="setting-fav-teams" class="settings-input" placeholder="e.g., Team A, Team B">
+                    
+                    <label style="margin-top: 15px;">Filter Leagues</label>
+                    <div id="league-filter-list">
+                        <!-- JS will populate this -->
+                        <p style="color: var(--text-secondary); font-size: 14px;">Leagues will appear here when matches load.</p>
+                    </div>
+                </div>
+                
+                <!-- Theme Settings -->
                 <div class="settings-group">
                     <label for="theme-select">Theme</label>
                     <select id="theme-select" class="settings-select">
@@ -380,29 +457,23 @@
                     </select>
                 </div>
                 
+                <!-- User Settings -->
                 <div class="settings-group">
                     <label>User Settings</label>
                     <button id="change-user-btn" class="settings-button">Change User</button>
                 </div>
 
+                <!-- Data Management -->
                 <div class="settings-group">
                     <label>Data Management</label>
                     <button id="update-settings-btn" class="settings-button">Fetch Latest Config</button>
                     <button id="reset-settings-btn" class="settings-button">Reset All</button>
                 </div>
             </div>
-        </main>
-    </div>
-    
-    <!-- User Modal -->
-    <div id="user-modal" class="modal">
-        <div class="modal-content">
-            <h2>Change User</h2>
-            <label for="username-input">Enter Username (e.g., user1, user2)</label>
-            <input type="text" id="username-input" class="settings-input" placeholder="user1">
-            <div>
-                <button id="close-user-modal" class="modal-button">Cancel</button>
-                <button id="save-user-btn" class="modal-button">Load User</button>
+            
+            <div class="modal-footer">
+                <button id="cancel-settings-btn" class="modal-button cancel-btn">Cancel</button>
+                <button id="save-settings-btn" class="modal-button">Save</button>
             </div>
         </div>
     </div>
@@ -414,28 +485,46 @@
             // --- State ---
             let appConfig = null;
             let allMatches = []; // Cache for all matches
+            let uniqueLeagues = []; // Cache for league filters
+            
             const defaultConfig = {
                 "theme": "dark",
                 "favorites": [],
                 "username": "default",
-                "isDefault": true
+                "isDefault": true,
+                "showOnlyFavorites": false, // NEW
+                "favoriteTeams": [],       // NEW
+                "leagues": {}              // NEW e.g., {"Premier League": true, "La Liga": false}
             };
             
             // --- DOM Elements ---
-            // MODIFIED: Defined structure here, populate in init
             const DOM = {
                 pageTitle: null,
-                mainNav: null,
                 mainContent: null,
                 loadingIndicator: null,
-                favoritesList: null,
-                allMatchesList: null,
-                settingsView: null,
-                userDisplay: { // NEW
+                matchesList: null,
+                userDisplay: {
                     container: null,
                     userInfo: null,
                     username: null,
                     signInBtn: null
+                },
+                settingsBtn: null,
+                userModal: { // NEW structure
+                    container: null,
+                    closeBtn: null,
+                    saveBtn: null,
+                    input: null
+                },
+                settingsModal: { // NEW
+                    container: null,
+                    closeBtn: null,
+                    saveBtn: null,
+                    cancelBtn: null,
+                    showFavs: null,
+                    favTeams: null,
+                    leagueList: null,
+                    themeSelect: null
                 }
             };
 
@@ -517,69 +606,21 @@
                     });
                 },
                 
-                // Fetch app-wide settings
-                // This could point to a small JSON file with a version number or API endpoint
+                // Fetch app-wide settings (Not currently used, but here for future)
                 getAppSettings: () => {
-                    // SIMULATED: In a real app, fetch this from a server.
-                    // Using a local 'app.json' file.
                     return Api.fetchJSON('app.json');
                 },
                 
                 // Fetch user-specific config
                 getUserConfig: (username) => {
-                    // SIMULATED: Fetch 'username.json'
-                    // On a real server, this would be an API call: /api/user/config?u=username
                     return Api.fetchJSON(`${username}.json`);
                 },
                 
                 // Fetch all match data
                 getAllMatches: () => {
-                    // SIMULATED: Fetch 'matches.json'
                     return Api.fetchJSON('matches.json');
                 }
             };
-            
-            // --- Routing ---
-            function AppRouter() {
-                const hash = window.location.hash || '#favorites';
-                
-                // Update nav button active states
-                document.querySelectorAll('#main-nav .nav-button').forEach(btn => {
-                    if (btn.dataset.hash === hash) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-                
-                // Hide all views
-                document.querySelectorAll('#main-content .view').forEach(view => {
-                    view.classList.remove('active');
-                });
-                
-                // Show the active view
-                let title = 'Favorites';
-                switch(hash) {
-                    case '#favorites':
-                        renderFavorites();
-                        break;
-                    case '#all':
-                        title = 'All Matches';
-                        renderAllMatches();
-                        break;
-                    case '#settings':
-                        title = 'Settings';
-                        renderSettings();
-                        break;
-                    default:
-                        renderFavorites(); // Fallback
-                        break;
-                }
-                
-                if (DOM.pageTitle) {
-                    DOM.pageTitle.textContent = title;
-                }
-            }
             
             // --- Rendering ---
             function renderLoading(show) {
@@ -594,9 +635,10 @@
                 }
             }
             
-            function createMatchElement(match) {
+            function createMatchElement(match, isFavTeam) {
                 const li = document.createElement('li');
-                li.className = 'match-item';
+                // NEW: Add fav-team class if match
+                li.className = 'match-item' + (isFavTeam ? ' fav-team' : '');
                 li.dataset.matchId = match.id;
                 
                 const isFav = appConfig.favorites.includes(match.id);
@@ -617,17 +659,14 @@
                 return li;
             }
 
-            function renderFavorites() {
-                const view = document.getElementById('favorites-view');
-                if (!view) return;
-                view.classList.add('active');
-                
-                if (!DOM.favoritesList) {
-                    DOM.favoritesList = document.getElementById('favorites-list');
-                }
+            /**
+             * NEW: Main match rendering function with filtering and sorting
+             */
+            function renderMatches() {
+                if (!DOM.matchesList) return;
                 
                 renderLoading(true);
-                DOM.favoritesList.innerHTML = ''; // Clear list
+                DOM.matchesList.innerHTML = ''; // Clear list
 
                 // Fetch matches if not already cached
                 const fetchPromise = allMatches.length > 0 
@@ -636,77 +675,119 @@
                     
                 fetchPromise.then(matches => {
                     allMatches = matches; // Cache them
-                    const favoriteMatches = matches.filter(m => appConfig.favorites.includes(m.id));
+                    extractLeagues(matches); // Populate league filter list
                     
+                    // --- Start Algorithm ---
+                    let processedMatches = [...allMatches];
+                    
+                    // 1. Filter by "Show Only Favorites"
+                    if (appConfig.showOnlyFavorites) {
+                        processedMatches = processedMatches.filter(m => appConfig.favorites.includes(m.id));
+                    }
+                    
+                    // 2. Filter by League
+                    // Ensure all leagues are in the config
+                    for (const league of uniqueLeagues) {
+                        if (appConfig.leagues[league] === undefined) {
+                            appConfig.leagues[league] = true;
+                        }
+                    }
+                    processedMatches = processedMatches.filter(m => appConfig.leagues[m.league] === true);
+                    
+                    // 3. Sort by Favorite Teams, then Date
+                    const favTeamsLower = appConfig.favoriteTeams.map(t => t.toLowerCase().trim());
+                    
+                    const getMatchScore = (match) => {
+                        const homeLower = match.home.toLowerCase();
+                        const awayLower = match.away.toLowerCase();
+                        
+                        if (favTeamsLower.some(t => homeLower.includes(t) || awayLower.includes(t))) {
+                            return 1; // It's a favorite team
+                        }
+                        return 0;
+                    };
+                    
+                    processedMatches.sort((a, b) => {
+                        const scoreA = getMatchScore(a);
+                        const scoreB = getMatchScore(b);
+                        
+                        if (scoreA !== scoreB) {
+                            return scoreB - scoreA; // Higher score comes first
+                        }
+                        
+                        // If scores are equal, sort by date
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    // --- End Algorithm ---
+
                     renderLoading(false);
-                    if (favoriteMatches.length === 0) {
-                        DOM.favoritesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No favorite matches found.</p>';
+                    if (processedMatches.length === 0) {
+                        DOM.matchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No matches found with current filters.</p>';
                         return;
                     }
                     
-                    favoriteMatches.forEach(match => {
-                        DOM.favoritesList.appendChild(createMatchElement(match));
+                    processedMatches.forEach(match => {
+                        const isFavTeam = getMatchScore(match) > 0;
+                        DOM.matchesList.appendChild(createMatchElement(match, isFavTeam));
                     });
                 }).catch(err => {
                     renderLoading(false);
-                    renderError('Could not load favorite matches.', DOM.favoritesList);
+                    renderError('Could not load matches: ' + err.message, DOM.matchesList);
                 });
-            }
-
-            function renderAllMatches() {
-                const view = document.getElementById('all-matches-view');
-                if (!view) return;
-                view.classList.add('active');
-
-                if (!DOM.allMatchesList) {
-                    DOM.allMatchesList = document.getElementById('all-matches-list');
-                }
-
-                renderLoading(true);
-                DOM.allMatchesList.innerHTML = ''; // Clear list
-                
-                // Fetch matches if not already cached
-                const fetchPromise = allMatches.length > 0 
-                    ? Promise.resolve(allMatches) 
-                    : Api.getAllMatches();
-
-                fetchPromise.then(matches => {
-                    allMatches = matches; // Cache them
-                    renderLoading(false);
-                    
-                    if (matches.length === 0) {
-                        DOM.allMatchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No matches found.</p>';
-                        return;
-                    }
-                    
-                    matches.forEach(match => {
-                        DOM.allMatchesList.appendChild(createMatchElement(match));
-                    });
-                }).catch(err => {
-                    renderLoading(false);
-                    renderError('Could not load matches.', DOM.allMatchesList);
-                });
-            }
-
-            function renderSettings() {
-                const view = document.getElementById('settings-view');
-                if (!view) return;
-                view.classList.add('active');
-                
-                // Ensure settings UI reflects current config
-                const themeSelect = document.getElementById('theme-select');
-                if (themeSelect && appConfig) {
-                    themeSelect.value = appConfig.theme;
-                }
             }
             
             /**
-             * NEW: Updates the user display in the top-right corner
-             * @param {object} config - The current application config
+             * NEW: Populates the league filter list in settings
+             */
+            function extractLeagues(matches) {
+                if (uniqueLeagues.length > 0) return; // Only run once
+                
+                const leagues = new Set();
+                matches.forEach(m => leagues.add(m.league));
+                uniqueLeagues = Array.from(leagues).sort();
+                
+                // Ensure all found leagues are in the config, default to true
+                uniqueLeagues.forEach(league => {
+                    if (appConfig.leagues[league] === undefined) {
+                        appConfig.leagues[league] = true;
+                    }
+                });
+            }
+            
+            /**
+             * NEW: Renders the settings modal with current config values
+             */
+            function renderSettingsModal() {
+                if (!appConfig) return;
+                
+                // Populate simple values
+                DOM.settingsModal.themeSelect.value = appConfig.theme;
+                DOM.settingsModal.showFavs.checked = appConfig.showOnlyFavorites;
+                DOM.settingsModal.favTeams.value = appConfig.favoriteTeams.join(', ');
+                
+                // Populate league list
+                DOM.settingsModal.leagueList.innerHTML = '';
+                if (uniqueLeagues.length === 0) {
+                     DOM.settingsModal.leagueList.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">No leagues loaded yet.</p>';
+                }
+                
+                uniqueLeagues.forEach(league => {
+                    const isChecked = appConfig.leagues[league] !== false; // Default to true if undefined
+                    const item = document.createElement('div');
+                    item.className = 'checkbox-group';
+                    item.innerHTML = `
+                        <input type="checkbox" id="league-${league}" data-league="${league}" ${isChecked ? 'checked' : ''}>
+                        <label for="league-${league}">${league}</label>
+                    `;
+                    DOM.settingsModal.leagueList.appendChild(item);
+                });
+            }
+
+            /**
+             * Updates the user display in the top-right corner
              */
             function updateUserDisplay(config) {
                 if (!config || !DOM.userDisplay.container) {
-                    // console.log('updateUserDisplay: config or DOM not ready');
                     return;
                 }
 
@@ -750,8 +831,8 @@
                 Storage.setLocalConfig(appConfig);
                 
                 // If on favorites page, re-render to remove item
-                if (window.location.hash === '#favorites') {
-                    renderFavorites();
+                if (appConfig.showOnlyFavorites) {
+                    renderMatches();
                 }
             }
             
@@ -761,172 +842,191 @@
             
             function updateFavoritesFromServer() {
                 if (!appConfig || appConfig.isDefault) {
-                    // console.log('Cannot update, no user loaded');
-                    // Maybe show the user modal?
-                    document.getElementById('user-modal').classList.add('visible');
+                    DOM.userModal.container.classList.add('visible');
                     return;
                 }
                 
-                // console.log('Fetching latest config from server...');
                 Api.getUserConfig(appConfig.username)
                     .then(serverConfig => {
                         // Merge strategies could be complex, but here we just overwrite favorites
                         appConfig.favorites = serverConfig.favorites || [];
                         appConfig.theme = serverConfig.theme || appConfig.theme;
+                        // NEW: Also merge settings
+                        appConfig.showOnlyFavorites = serverConfig.showOnlyFavorites || appConfig.showOnlyFavorites;
+                        appConfig.favoriteTeams = serverConfig.favoriteTeams || appConfig.favoriteTeams;
+                        appConfig.leagues = serverConfig.leagues || appConfig.leagues;
                         
                         Storage.setLocalConfig(appConfig);
                         applyTheme(appConfig.theme);
                         
-                        // console.log('Config updated from server');
-                        
                         // Re-render current view to reflect changes
-                        AppRouter();
+                        renderMatches();
                     })
                     .catch(err => {
                         // console.error('Failed to fetch server config:', err);
-                        // In a real app, show a proper error message
                     });
+            }
+            
+            /**
+             * NEW: Saves all settings from the modal
+             */
+            function saveSettings() {
+                if (!appConfig) return;
+                
+                // 1. Save Theme
+                appConfig.theme = DOM.settingsModal.themeSelect.value;
+                applyTheme(appConfig.theme);
+                
+                // 2. Save Display Settings
+                appConfig.showOnlyFavorites = DOM.settingsModal.showFavs.checked;
+                appConfig.favoriteTeams = DOM.settingsModal.favTeams.value
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t.length > 0);
+                    
+                // 3. Save League Filters
+                const leagueCheckboxes = DOM.settingsModal.leagueList.querySelectorAll('input[type="checkbox"]');
+                leagueCheckboxes.forEach(box => {
+                    appConfig.leagues[box.dataset.league] = box.checked;
+                });
+                
+                // 4. Save to Storage
+                Storage.setLocalConfig(appConfig);
+                
+                // 5. Close modal and re-render
+                DOM.settingsModal.container.classList.remove('visible');
+                renderMatches();
             }
 
             // --- Initialization ---
             
-            /**
-             * Loads the main app.json file.
-             * This is not really used yet, but could hold API keys or version info.
-             */
             function loadAppSettings(callback) {
                 Api.getAppSettings()
                     .then(settings => {
-                        // console.log('Loaded app settings:', settings);
-                        // We could merge appSettings into appConfig if needed
                         callback(); // Proceed to user logic
                     })
                     .catch(err => {
-                        // console.error('Could not load app.json. Proceeding anyway...', err);
                         callback(); // Proceed even if app.json fails
                     });
             }
             
-            /**
-             * Loads the user-specific config (username.json)
-             * If it fails, loads the default config.
-             */
             function loadUserConfig(username) {
                 if (username === 'default') {
                     return Promise.reject(new Error('Using default user'));
                 }
-                // Try to load from server first
                 return Api.getUserConfig(username);
             }
 
-            /**
-             * Orchestrates the loading sequence.
-             * 1. Try to get local config.
-             * 2. If no local, or local is default, try to load server config based on stored username.
-             * 3. If server fails, use default.
-             */
             function initUserLogic(callback) {
                 const localConfig = Storage.getLocalConfig();
                 const username = Storage.getUsername();
 
                 // Priority 1: Use fresh local config if available and matches stored user
                 if (localConfig && localConfig.username === username && !localConfig.isDefault) {
-                    // console.log('Using valid local config');
-                    appConfig = localConfig;
+                    appConfig = { ...defaultConfig, ...localConfig }; // Merge with defaults just in case
                     applyTheme(appConfig.theme);
-                    updateUserDisplay(appConfig); // NEW CALL
-                    AppRouter(); // Load initial page
-                    callback(); // Run callback (e.g., remove global loading)
+                    updateUserDisplay(appConfig);
+                    renderMatches(); // Load initial page
+                    callback();
                     return;
                 }
                 
                 // Priority 2: No valid local config, try fetching from server
-                // console.log('No valid local config. Fetching from server...');
                 loadUserConfig(username)
                     .then(userConfig => {
-                        // console.log('Loaded config from server for:', username);
-                        // Server config is source of truth
                         appConfig = { ...defaultConfig, ...userConfig }; // Merge with defaults
                         appConfig.username = username;
                         appConfig.isDefault = false;
                         
                         applyTheme(appConfig.theme);
                         Storage.setLocalConfig(appConfig); // Save merged config
-                        
-                        updateUserDisplay(appConfig); // NEW CALL
-                        
-                        AppRouter(); // Load initial page
-                        callback(); // Run callback
+                        updateUserDisplay(appConfig); 
+                        renderMatches(); // Load initial page
+                        callback();
                     })
                     .catch(err => {
-                        // console.log('Server fetch failed or user is default. Using default config.', err.message);
                         // Priority 3: All else fails, use default
-                        appConfig = { ...defaultConfig, isDefault: true };
+                        appConfig = { ...defaultConfig, isDefault: true, username: 'default' };
                         applyTheme(appConfig.theme);
-                        
-                        updateUserDisplay(appConfig); // NEW CALL
-                        
-                        AppRouter(); // Load initial page
-                        callback(); // Run callback
+                        updateUserDisplay(appConfig);
+                        renderMatches(); // Load initial page
+                        callback();
                     });
             }
 
             function init() {
-                // console.log('App init');
-                
-                // MODIFIED: Populate DOM object
+                // Populate DOM object
                 DOM.pageTitle = document.getElementById('page-title');
-                DOM.mainNav = document.getElementById('main-nav');
                 DOM.mainContent = document.getElementById('main-content');
                 DOM.loadingIndicator = document.getElementById('loading-indicator');
-                DOM.favoritesList = document.getElementById('favorites-list');
-                DOM.allMatchesList = document.getElementById('all-matches-list');
-                DOM.settingsView = document.getElementById('settings-view');
-                // NEW
+                DOM.matchesList = document.getElementById('matches-list');
+                
                 DOM.userDisplay.container = document.getElementById('user-display');
                 DOM.userDisplay.userInfo = document.getElementById('user-info');
                 DOM.userDisplay.username = document.getElementById('username-display');
                 DOM.userDisplay.signInBtn = document.getElementById('sign-in-btn');
+                
+                DOM.settingsBtn = document.getElementById('settings-btn');
+                
+                DOM.userModal.container = document.getElementById('user-modal');
+                DOM.userModal.closeBtn = document.getElementById('close-user-modal');
+                DOM.userModal.saveBtn = document.getElementById('save-user-btn');
+                DOM.userModal.input = document.getElementById('username-input');
+                
+                DOM.settingsModal.container = document.getElementById('settings-modal');
+                DOM.settingsModal.closeBtn = document.getElementById('close-settings-modal');
+                DOM.settingsModal.saveBtn = document.getElementById('save-settings-btn');
+                DOM.settingsModal.cancelBtn = document.getElementById('cancel-settings-btn');
+                DOM.settingsModal.showFavs = document.getElementById('setting-show-favs');
+                DOM.settingsModal.favTeams = document.getElementById('setting-fav-teams');
+                DOM.settingsModal.leagueList = document.getElementById('league-filter-list');
+                DOM.settingsModal.themeSelect = document.getElementById('theme-select');
 
                 function setupEventListeners() {
-                    // Nav buttons
-                    if(DOM.mainNav) {
-                        DOM.mainNav.addEventListener('click', (e) => {
-                            if (e.target.classList.contains('nav-button')) {
-                                window.location.hash = e.target.dataset.hash;
-                            }
-                        });
-                    }
                     
-                    // --- Settings Listeners ---
-                    document.getElementById('change-user-btn').addEventListener('click', () => {
-                        document.getElementById('user-modal').classList.add('visible');
+                    // --- User Display Listeners ---
+                    DOM.userDisplay.signInBtn.addEventListener('click', () => {
+                         DOM.userModal.container.classList.add('visible');
                     });
                     
-                    // NEW LISTENER
-                    if (DOM.userDisplay.signInBtn) {
-                        DOM.userDisplay.signInBtn.addEventListener('click', () => {
-                             document.getElementById('user-modal').classList.add('visible');
-                        });
-                    }
-                    
-                    document.getElementById('close-user-modal').addEventListener('click', () => {
-                        document.getElementById('user-modal').classList.remove('visible');
+                    DOM.settingsBtn.addEventListener('click', () => {
+                        renderSettingsModal(); // Populate with current data
+                        DOM.settingsModal.container.classList.add('visible');
                     });
                     
-                    document.getElementById('save-user-btn').addEventListener('click', () => {
-                        const username = document.getElementById('username-input').value;
+                    // --- User Modal Listeners ---
+                    DOM.userModal.closeBtn.addEventListener('click', () => {
+                        DOM.userModal.container.classList.remove('visible');
+                    });
+                    
+                    DOM.userModal.saveBtn.addEventListener('click', () => {
+                        const username = DOM.userModal.input.value;
                         if (username) {
                             Storage.setUsername(username);
-                            // Clear old config, force a reload of the new user's config
-                            Storage.clearLocalConfig(); 
+                            Storage.clearLocalConfig(); // Clear old config
                             window.location.reload();
                         }
-                        document.getElementById('user-modal').classList.remove('visible');
+                        DOM.userModal.container.classList.remove('visible');
+                    });
+                    
+                    // --- Settings Modal Listeners ---
+                    DOM.settingsModal.closeBtn.addEventListener('click', () => {
+                        DOM.settingsModal.container.classList.remove('visible');
+                    });
+                    
+                    DOM.settingsModal.cancelBtn.addEventListener('click', () => {
+                        DOM.settingsModal.container.classList.remove('visible');
+                    });
+                    
+                    DOM.settingsModal.saveBtn.addEventListener('click', saveSettings);
+                    
+                    // --- Buttons inside Settings Modal ---
+                    document.getElementById('change-user-btn').addEventListener('click', () => {
+                        DOM.settingsModal.container.classList.remove('visible'); // Close settings
+                        DOM.userModal.container.classList.add('visible'); // Open user modal
                     });
                     
                     document.getElementById('reset-settings-btn').addEventListener('click', () => {
-                        // MODIFIED: Also clear username to return to default
                         Storage.clearUsername();
                         Storage.clearLocalConfig();
                         window.location.reload();
@@ -934,33 +1034,25 @@
                     
                     document.getElementById('update-settings-btn').addEventListener('click', updateFavoritesFromServer);
                     
-                    document.getElementById('theme-select').addEventListener('change', (e) => {
-                        const newTheme = e.target.value;
-                        if (appConfig) { // Only save if config is loaded
-                            appConfig.theme = newTheme;
-                            Storage.setLocalConfig(appConfig);
-                        }
-                        applyTheme(newTheme);
+                    // Theme select needs to apply live for preview, but is saved with main modal
+                    DOM.settingsModal.themeSelect.addEventListener('change', (e) => {
+                        applyTheme(e.target.value);
                     });
                 }
                 
                 setupEventListeners();
                 
-                // --- NEW LOADING CHAIN ---
-                // 1. Load app-wide settings (app.json)
-                // 2. On success, initialize user-specific logic (username.json)
+                // --- Start App ---
                 loadAppSettings(() => {
                     initUserLogic(() => {
-                        // This callback runs after user logic is complete
                         // console.log('User logic complete. App is ready.');
-                        // We can hide a global "app loading" screen here if we had one
                     });
                 });
             }
 
             // --- Start the App ---
             document.addEventListener('DOMContentLoaded', init);
-            window.addEventListener('hashchange', AppRouter);
+            // No longer need hashchange listener
 
         })();
     </script>
