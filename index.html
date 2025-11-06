@@ -1008,41 +1008,53 @@
                     const favTeamIds = new Set(appConfig.favourit_teams || []);
                     const favLeagueIds = new Set(appConfig.favourite_leagues || []);
 
-                    // --- NEW Grouping Logic ---
+                    // --- NEW Grouping Logic (v3) ---
                     const favTeamMatches = [];
+                    const favLeagueMatches = []; // NEW: For fav leagues
                     const otherMatches = []; // Temporary holding array
 
-                    // 1. First pass: Separate favorite team matches from ALL API results
+                    // 1. First pass: Separate matches into three groups
                     for (const match of matchesResponse) {
-                        // Check for Favorite Teams FIRST, regardless of league
-                        if (favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id)) {
+                        const leagueId = match.league.id;
+                        const isFavTeamMatch = favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id);
+                        const isFavLeagueMatch = favLeagueIds.has(leagueId);
+
+                        // Check for Favorite Teams FIRST
+                        if (isFavTeamMatch) {
                             favTeamMatches.push(match);
-                        } else {
+                        } 
+                        // THEN Check for Favorite Leagues
+                        else if (isFavLeagueMatch) {
+                            favLeagueMatches.push(match);
+                        } 
+                        // ELSE, it's a normal match
+                        else {
                             otherMatches.push(match);
                         }
                     }
                     
-                    // 2. Second pass: Filter the remaining matches by allowed leagues
+                    // 2. Second pass: Filter the remaining 'other' matches by allowed leagues
                     const allowedOtherMatches = otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
                     
-                    // 3. Third pass: Group the allowed matches into fav leagues and other leagues
+                    // 3. Third pass: Group the matches for rendering
                     const favLeagueGroups = {};
                     const otherLeagueGroups = {};
 
-                    for (const match of allowedOtherMatches) { // Iterate over the *filtered* other matches
+                    // Group Favorite League matches (which bypassed the allowed list)
+                    for (const match of favLeagueMatches) {
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
+                        if (!favLeagueGroups[leagueId]) favLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                        favLeagueGroups[leagueId].matches.push(match);
+                    }
 
-                        // Check for Favorite Leagues
-                        if (favLeagueIds.has(leagueId)) {
-                            if (!favLeagueGroups[leagueId]) favLeagueGroups[leagueId] = { name: leagueName, matches: [] };
-                            favLeagueGroups[leagueId].matches.push(match);
-                        }
-                        // The Rest
-                        else {
-                            if (!otherLeagueGroups[leagueId]) otherLeagueGroups[leagueId] = { name: leagueName, matches: [] };
-                            otherLeagueGroups[leagueId].matches.push(match);
-                        }
+                    // Group the remaining *allowed* matches
+                    for (const match of allowedOtherMatches) { 
+                        const leagueId = match.league.id;
+                        const leagueName = match.league.name;
+                        // This logic is now only for non-fav-team, non-fav-league, allowed matches
+                        if (!otherLeagueGroups[leagueId]) otherLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                        otherLeagueGroups[leagueId].matches.push(match);
                     }
 
 
