@@ -1,7 +1,9 @@
 {
   "api_key": "9e9fb80bd8d4c5c226e8a7f69375995a",
   "theme": "dark-bleu",
-  "favourite_leagues": [140, 61],
-  "favourit_teams": []
+  "favourite_leagues": [],
+  "favourit_teams": [
+        { "id": 31, "name": "Morocco" }
+  ]
 
 }

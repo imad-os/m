@@ -1,8 +1,25 @@
 {
   "api_key": "9e9fb80bd8d4c5c226e8a7f69375995a",
-  "theme": "dark-red",
-  "favourite_leagues": [140, 200],
-  "favourit_teams": [85, 94, 21302],
+  "theme": "morocco",
+  "favourite_leagues": [
+    { "id": 200, "name": "Botola pro" },
+    { "id": 0, "name": "Favorites" },
+    { "id": 140, "name": "La Liga" },
+    { "id": 61, "name": "Ligue 1" }
+
+  ],
+  "favourit_teams": [
+    { "id": 85, "name": "Paris Saint Germain" },
+    { "id": 31, "name": "Morocco" },
+    { "id": 10179, "name": "Morocco u23" },
+    { "id": 962, "name": "Renaissance Berkane" },
+    { "id": 969, "name": "FAR Rabat" },
+    { "id": 968, "name": "Wydad AC" },
+    { "id": 3457, "name": "Sidi Kacem" },
+    { "id": 40, "name": "Liverpool" },
+    { "id": 42, "name": "Arsenal" },
+    { "id": 21302, "name": "morocco y17" }
+  ],
   "allowed_leagues": [
     { "id": 200, "name": "Botola Pro" },
     { "id": 0, "name": "Favorites" },
