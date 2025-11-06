@@ -262,9 +262,9 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem; /* Smaller gap for compact view */
-            flex-basis: 120px;
-            flex-grow: 1;
-            min-width: 120px;
+            flex-basis: 350px; /* CHANGED - Set base width */
+            flex-grow: 0; /* CHANGED - Prevent growing */
+            /* min-width: 120px; REMOVED */
             align-items: center;
             text-align: center;
         }
@@ -327,6 +327,15 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex-grow: 1;
+        }
+
+        /* ADDED - Styles for clickable team names */
+        .team-name.team-link {
+            cursor: pointer;
+        }
+        .team-name.team-link:hover {
+            text-decoration: underline;
+            color: var(--accent-color);
         }
 
         .score-container {
@@ -701,7 +710,7 @@
 
     <script>
         // Start of self-contained JavaScript application
-        (function() {
+            (function() {
             "use strict";
 
             // --- Configuration ---
@@ -882,7 +891,8 @@
                         <div class="match-teams">
                             <div class="team">
                                 <img src="${teams.home.logo}" alt="${teams.home.name}">
-                                <span class="team-name">${teams.home.name}</span>
+                                <!-- CHANGED - Added team-link class and data-team-id -->
+                                <span class="team-name team-link" data-team-id="${teams.home.id}">${teams.home.name}</span>
                                 <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
                                     ${isFavHome ? '⭐' : '☆'}
                                 </span>
@@ -890,7 +900,8 @@
                             <div class="score-container">${scoreText}</div>
                             <div class="team">
                                 <img src="${teams.away.logo}" alt="${teams.away.name}">
-                                <span class="team-name">${teams.away.name}</span>
+                                <!-- CHANGED - Added team-link class and data-team-id -->
+                                <span class="team-name team-link" data-team-id="${teams.away.id}">${teams.away.name}</span>
                                 <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
                                     ${isFavAway ? '⭐' : '☆'}
                                 </span>
@@ -900,7 +911,10 @@
                 `;
             }
             
-            function addFavToggleListeners(container) {
+            /**
+             * RENAMED - Adds click listeners to all .fav-toggle and .team-link elements in a container
+             */
+            function addCardListeners(container) {
                 container.querySelectorAll('.fav-toggle').forEach(toggle => {
                     toggle.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -932,6 +946,19 @@
                         }
                         
                         Storage.setLocalConfig(appConfig);
+                    });
+                });
+                
+                // ADDED - Add listeners for team links
+                container.querySelectorAll('.team-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault(); // Stop navigation from card link
+                        e.stopPropagation(); // Stop event bubbling
+                        
+                        const teamId = e.currentTarget.dataset.teamId;
+                        if (teamId) {
+                            window.location.hash = `#/team/${teamId}`;
+                        }
                     });
                 });
             }
@@ -1061,7 +1088,8 @@
 
                     container.innerHTML = html;
                     
-                    addFavToggleListeners(container);
+                    // RENAMED - Add card listeners after render
+                    addCardListeners(container);
 
                 } catch (error) {
                     showError(container, error.message);
@@ -1277,7 +1305,8 @@
                         <p>More team details like squad and recent matches could be loaded here.</p>
                     `;
                     
-                    addFavToggleListeners(container);
+                    // RENAMED - Add card listeners
+                    addCardListeners(container);
 
                 } catch (error) {
                     showError(container, error.message);

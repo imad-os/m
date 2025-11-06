@@ -2,7 +2,7 @@
   "api_key": "9e9fb80bd8d4c5c226e8a7f69375995a",
   "theme": "dark-red",
   "favourite_leagues": [140, 200],
-  "favourit_teams": [85, 94],
+  "favourit_teams": [85, 94, 21302],
   "allowed_leagues": [
     { "id": 200, "name": "Botola Pro" },
     { "id": 0, "name": "Favorites" },

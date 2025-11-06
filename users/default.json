@@ -2,14 +2,6 @@
   "api_key": "9e9fb80bd8d4c5c226e8a7f69375995a",
   "theme": "dark-bleu",
   "favourite_leagues": [140, 61],
-  "favourit_teams": [],
-  "allowed_leagues": [
-    { "id": 200, "name": "Botola Pro" },
-    { "id": 0, "name": "Favorites" },
-    { "id": 140, "name": "La Liga" },
-    { "id": 61, "name": "Ligue 1" },
-    { "id": 39, "name": "Premier League" },
-    { "id": 135, "name": "Serie A" },
-    { "id": 78, "name": "Bundesliga" }
-  ]
+  "favourit_teams": []
+
 }
