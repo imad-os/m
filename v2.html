@@ -613,7 +613,8 @@
                 
                 // Fetch user-specific config
                 getUserConfig: (username) => {
-                    return Api.fetchJSON(`${username}.json`);
+                    // MODIFIED: Point to users/ directory
+                    return Api.fetchJSON(`users/${username}.json`);
                 },
                 
                 // Fetch all match data
