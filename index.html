@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lite Football</title>
+    <!-- 
+      A single, lightweight HTML file for old browsers.
+      All CSS and JS are inline.
+      By Gemini
+    -->
+    <style>
+        /* --- Global Styles --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0a192f; /* Dark Blue */
+            color: #e0e0e0;
+            font-size: 16px; /* Base font size for TV */
+        }
+
+        a {
+            color: #64ffda; /* A bright accent for links */
+            text-decoration: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* --- API Key Modal --- */
+        #api-key-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #api-key-modal.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1c2b4a;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal-content p {
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: #a0b0d0;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #30416b;
+            border-radius: 4px;
+            background: #0a192f;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        /* --- Header --- */
+        #app-header {
+            background: #1c2b4a;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* For small screens */
+            gap: 0.5rem;
+        }
+
+        #app-header h1 {
+            font-size: 1.5rem;
+            flex-basis: 100%; /* Full width on small screens */
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-nav button {
+            background: #30416b;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #current-date {
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .live-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 1rem;
+        }
+        
+        /* --- Main Content --- */
+        #content-container {
+            padding: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #30416b;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Loader */
+        .loader {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 3rem;
+        }
+
+        /* Error */
+        .error-message {
+            background: #5a1d1d;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* --- Home Page (Matches) --- */
+        .league-group {
+            margin-bottom: 2rem;
+        }
+
+        .league-header {
+            font-size: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #30416b;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .league-header a {
+            font-size: 1rem;
+        }
+
+        .matches-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem; /* Space between cards */
+        }
+
+        .match-card {
+            background-color: #1c2b4a;
+            border-radius: 8px;
+            padding: 1rem;
+            text-decoration: none;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            /* "half the width" - 0.5rem for gap */
+            flex-basis: calc(50% - 0.5rem);
+            min-width: 280px; /* Min width before wrapping */
+        }
+
+        /* On smaller screens, make cards full width */
+        @media (max-width: 600px) {
+            .match-card {
+                flex-basis: 100%;
+            }
+        }
+
+        .match-status {
+            text-align: center;
+            font-size: 1rem;
+            color: #64ffda;
+            font-weight: bold;
+        }
+        
+        .match-status.not-started {
+            color: #a0b0d0;
+        }
+
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.5rem;
+            width: 40%;
+        }
+
+        .team img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .team-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .score-container {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .fav-toggle {
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.25rem;
+        }
+
+        /* --- League Page --- */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #30416b;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #a0b0d0;
+            font-size: 1rem;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-button.active {
+            color: #64ffda;
+            border-bottom-color: #64ffda;
+        }
+
+        .tab-content {
+            display: none; /* Hidden by default */
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Standings Table */
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table th,
+        .standings-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #30416b;
+        }
+
+        .standings-table th {
+            background: #1c2b4a;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        
+        .standings-table td.rank {
+            font-weight: bold;
+            width: 30px;
+        }
+        
+        .standings-table td.team-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .standings-table img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .group-title {
+            font-size: 1.3rem;
+            color: #64ffda;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Stats List */
+        .stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #1c2b4a;
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+        
+        .stat-item .rank {
+            font-size: 1.2rem;
+            font-weight: bold;
+            width: 30px;
+        }
+        
+        .stat-item img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        
+        .stat-item-info {
+            flex-grow: 1;
+        }
+        
+        .stat-item-player {
+            font-weight: bold;
+        }
+        
+        .stat-item-team {
+            font-size: 0.9rem;
+            color: #a0b0d0;
+        }
+        
+        .stat-item-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* --- Match Details Page --- */
+        .match-details-header {
+            text-align: center;
+            background: #1c2b4a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .match-details-header .league {
+            font-size: 1rem;
+            color: #a0b0d0;
+            margin-bottom: 1rem;
+        }
+        
+        .match-details-teams {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .match-details-team {
+            width: 35%;
+            text-align: center;
+        }
+        
+        .match-details-team img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .match-details-team h2 {
+            font-size: 1.2rem;
+        }
+        
+        .match-details-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .match-details-status {
+            font-size: 1rem;
+            color: #64ffda;
+            margin-top: 0.5rem;
+        }
+        
+        .match-details-info {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #a0b0d0;
+            margin-top: 1rem;
+        }
+        
+        .match-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .event-item.home-event {
+            /* No change */
+        }
+        
+        .event-item.away-event {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+        
+        .event-time {
+            font-weight: bold;
+            width: 40px;
+        }
+        
+        .event-icon {
+            font-size: 1rem;
+        }
+        
+        .event-player {
+            font-weight: bold;
+        }
+        
+        .event-detail {
+            font-size: 0.9rem;
+            color: #a0b0d0;
+        }
+        
+        /* --- Team Page --- */
+        .team-info-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: #1c2b4a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .team-info-header img {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .team-info-details h2 {
+            font-size: 1.8rem;
+        }
+        
+        .team-info-details p {
+            font-size: 1rem;
+            color: #a0b0d0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- This modal will show on first load to get the API key -->
+    <div id="api-key-modal">
+        <div class="modal-content">
+            <h2>Welcome</h2>
+            <p>Please enter your api-sports.io API key to use this app. Your key will be saved locally in your browser.</p>
+            <input type="password" id="api-key-input" placeholder="Your API Key">
+            <button id="api-key-submit" class="date-nav-button">Save and Enter</button>
+        </div>
+    </div>
+
+    <!-- The header is static, but its content will be built by JS -->
+    <header id="app-header">
+        <!-- JS will populate this -->
+    </header>
+
+    <!-- All page content will be injected here -->
+    <main id="content-container">
+        <div class="loader">Loading...</div>
+    </main>
+
+    <script>
+        // Start of self-contained JavaScript application
+        (function() {
+            "use strict";
+
+            // --- Configuration ---
+            const API_HOST = "https://v3.football.api-sports.io";
+            const ALLOWED_LEAGUES = [
+                { "id": 200, "name": "Botola Pro" }, // Morroco
+                { "id": 0, "name": "Favorites" }, // Our virtual league
+                { "id": 140, "name": "La Liga" }, // Spain
+                { "id": 61, "name": "Ligue 1" }, // France
+                { "id": 39, "name": "Premier League" }, // England
+                { "id": 135, "name": "Serie A" }, // Italy
+                { "id": 78, "name": "Bundesliga" } // Germany
+            ];
+            const ALLOWED_LEAGUE_IDS = ALLOWED_LEAGUES.map(l => l.id);
+
+            // --- State ---
+            // Default to today. The router will manage this.
+            let currentDate = new Date(); 
+
+            // --- Storage Service ---
+            // Simple helper functions for localStorage
+            const Storage = {
+                getApiKey: () => localStorage.getItem('football_api_key'),
+                setApiKey: (key) => localStorage.setItem('football_api_key', key),
+                
+                getFavs: (type) => {
+                    const favs = localStorage.getItem(`fav_${type}`);
+                    return favs ? JSON.parse(favs) : [];
+                },
+                setFavs: (type, ids) => {
+                    localStorage.setItem(`fav_${type}`, JSON.stringify(Array.from(ids)));
+                },
+                isFav: (type, id) => {
+                    const favs = Storage.getFavs(type);
+                    return favs.includes(Number(id));
+                },
+                addFav: (type, id) => {
+                    const favs = new Set(Storage.getFavs(type));
+                    favs.add(Number(id));
+                    Storage.setFavs(type, favs);
+                },
+                removeFav: (type, id) => {
+                    const favs = new Set(Storage.getFavs(type));
+                    favs.delete(Number(id));
+                    Storage.setFavs(type, favs);
+                }
+            };
+
+            // --- API Service ---
+            // Handles all fetching with backoff and error handling
+            async function apiFetch(endpoint) {
+                const apiKey = Storage.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API Key not set.");
+                }
+
+                const url = `${API_HOST}/${endpoint}`;
+                let attempts = 0;
+                
+                while (attempts < 3) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'x-rapidapi-host': "v3.football.api-sports.io",
+                                'x-rapidapi-key': apiKey
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.errors && Object.keys(data.errors).length > 0) {
+                            console.error("API Errors:", data.errors);
+                            throw new Error(JSON.stringify(data.errors));
+                        }
+
+                        return data.response; // Success
+                    } catch (error) {
+                        console.error(`API fetch error (attempt ${attempts + 1}):`, error);
+                        attempts++;
+                        if (attempts < 3) {
+                            await new Promise(res => setTimeout(res, 1000 * attempts)); // Exponential backoff
+                        } else {
+                            throw error; // Final attempt failed
+                        }
+                    }
+                }
+            }
+
+            // --- UI Rendering Functions ---
+
+            function showLoader(container) {
+                container.innerHTML = '<div class="loader">Loading...</div>';
+            }
+
+            function showError(container, message) {
+                container.innerHTML = `<div class="error-message">Error: ${message}</div>`;
+            }
+
+            /**
+             * Formats a date to 'YYYY-MM-DD'
+             */
+            function formatDate(date) {
+                return date.toISOString().split('T')[0];
+            }
+            
+            /**
+             * Gets the season year for the API
+             */
+            function getCurrentSeason() {
+                const today = new Date();
+                const month = today.getMonth(); // 0-11
+                // If before July, it's the season that started last year
+                return (month < 6) ? today.getFullYear() - 1 : today.getFullYear();
+            }
+
+            /**
+             * Renders the main app header (date nav, etc.)
+             */
+            function renderHeader(container) {
+                container.innerHTML = `
+                    <h1>Lite Football</h1>
+                    <div class="date-nav">
+                        <button id="prev-day">&lt;</button>
+                        <span id="current-date">${formatDate(currentDate)}</span>
+                        <button id="next-day">&gt;</button>
+                    </div>
+                    <div class="live-toggle">
+                        <input type="checkbox" id="live-toggle">
+                        <label for="live-toggle">Live</label>
+                    </div>
+                `;
+
+                // Bind events
+                document.getElementById('prev-day').addEventListener('click', () => {
+                    currentDate.setDate(currentDate.getDate() - 1);
+                    document.getElementById('live-toggle').checked = false;
+                    loadHomePageMatches();
+                });
+                document.getElementById('next-day').addEventListener('click', () => {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    document.getElementById('live-toggle').checked = false;
+                    loadHomePageMatches();
+                });
+                document.getElementById('live-toggle').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        currentDate = new Date(); // Live is always today
+                    }
+                    loadHomePageMatches();
+                });
+            }
+            
+            /**
+             * Renders a single match card
+             */
+            function renderMatchCard(match) {
+                const fixture = match.fixture;
+                const league = match.league;
+                const teams = match.teams;
+                const goals = match.goals;
+                const status = fixture.status.short;
+
+                let score = `${goals.home} - ${goals.away}`;
+                if (status === 'NS') { // Not Started
+                    score = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                
+                const isFavHome = Storage.isFav('team', teams.home.id);
+                const isFavAway = Storage.isFav('team', teams.away.id);
+
+                return `
+                    <a href="/match/${fixture.id}" class="match-card">
+                        <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
+                            ${fixture.status.long} ${status === 'FT' || status === 'HT' || status.includes('LIVE') ? `(${fixture.status.elapsed || ''})` : ''}
+                        </div>
+                        <div class="match-teams">
+                            <div class="team">
+                                <img src="${teams.home.logo}" alt="${teams.home.name}">
+                                <span class="team-name">${teams.home.name}</span>
+                                <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
+                                    ${isFavHome ? '⭐' : '☆'}
+                                </span>
+                            </div>
+                            <div class="score-container">${score}</div>
+                            <div class="team">
+                                <img src="${teams.away.logo}" alt="${teams.away.name}">
+                                <span class="team-name">${teams.away.name}</span>
+                                <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
+                                    ${isFavAway ? '⭐' : '☆'}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            }
+
+            // --- Page Controllers ---
+
+            /**
+             * Controller for the Home Page (/)
+             */
+            async function renderHomePage(container) {
+                const headerContainer = document.getElementById('app-header');
+                renderHeader(headerContainer);
+                container.innerHTML = '<div class="loader">Loading matches...</div>'; // Initial content
+                
+                // Bind click delegation for favs
+                container.addEventListener('click', function(e) {
+                    const favButton = e.target.closest('.fav-toggle');
+                    if (favButton) {
+                        e.preventDefault(); // Stop navigation
+                        e.stopPropagation(); // Stop bubbling
+                        
+                        const type = favButton.dataset.type;
+                        const id = favButton.dataset.id;
+                        
+                        if (Storage.isFav(type, id)) {
+                            Storage.removeFav(type, id);
+                            favButton.innerHTML = '☆';
+                        } else {
+                            Storage.addFav(type, id);
+                            favButton.innerHTML = '⭐';
+                        }
+                        // Re-render all fav stars on the page
+                        document.querySelectorAll(`.fav-toggle[data-type="${type}"][data-id="${id}"]`).forEach(el => {
+                            el.innerHTML = Storage.isFav(type, id) ? '⭐' : '☆';
+                        });
+                    }
+                });
+
+                await loadHomePageMatches();
+            }
+
+            /**
+             * Fetches and renders matches for the home page
+             */
+            async function loadHomePageMatches() {
+                const container = document.getElementById('content-container');
+                const isLive = document.getElementById('live-toggle').checked;
+                const date = formatDate(currentDate);
+                
+                document.getElementById('current-date').textContent = date;
+                showLoader(container);
+
+                try {
+                    // Fetch all allowed leagues in parallel
+                    const leagueIds = ALLOWED_LEAGUES.map(l => l.id).filter(id => id > 0); // Exclude virtual "Favorites" league
+                    let endpoint = `fixtures?date=${date}&season=${getCurrentSeason()}`;
+                    if (isLive) {
+                        endpoint = `fixtures?live=all`;
+                    }
+                    
+                    const matchesResponse = await apiFetch(endpoint);
+                    
+                    // Filter for allowed leagues
+                    const allMatches = matchesResponse.filter(m => ALLOWED_LEAGUE_IDS.includes(m.league.id));
+
+                    // Get user's favorites
+                    const favTeamIds = new Set(Storage.getFavs('team'));
+                    const favLeagueIds = new Set(Storage.getFavs('league'));
+
+                    // --- Grouping Logic ---
+                    const favTeamMatches = [];
+                    const favLeagueGroups = {};
+                    const otherLeagueGroups = {};
+
+                    for (const match of allMatches) {
+                        const leagueId = match.league.id;
+                        const leagueName = match.league.name;
+
+                        // 1. Check for Favorite Teams
+                        if (favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id)) {
+                            favTeamMatches.push(match);
+                        } 
+                        // 2. Check for Favorite Leagues
+                        else if (favLeagueIds.has(leagueId)) {
+                            if (!favLeagueGroups[leagueId]) favLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                            favLeagueGroups[leagueId].matches.push(match);
+                        }
+                        // 3. The Rest
+                        else {
+                            if (!otherLeagueGroups[leagueId]) otherLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                            otherLeagueGroups[leagueId].matches.push(match);
+                        }
+                    }
+
+                    // --- Render HTML ---
+                    let html = '';
+
+                    // 1. Render Favorite Team Matches
+                    if (favTeamMatches.length > 0) {
+                        const isFav = Storage.isFav('league', 0);
+                        html += `
+                            <div class="league-group">
+                                <div class="league-header">
+                                    <span>⭐ Favorites</span>
+                                    <span class="fav-toggle" data-type="league" data-id="0">${isFav ? '⭐' : '☆'}</span>
+                                </div>
+                                <div class="matches-container">
+                                    ${favTeamMatches.map(renderMatchCard).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // 2. Render Favorite Leagues
+                    for (const leagueId in favLeagueGroups) {
+                        const group = favLeagueGroups[leagueId];
+                        const isFav = Storage.isFav('league', leagueId);
+                        html += `
+                            <div class="league-group">
+                                <div class="league-header">
+                                    <a href="/league/${leagueId}">${group.name}</a>
+                                    <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
+                                </div>
+                                <div class="matches-container">
+                                    ${group.matches.map(renderMatchCard).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // 3. Render Other Leagues
+                    for (const leagueId in otherLeagueGroups) {
+                        const group = otherLeagueGroups[leagueId];
+                        const isFav = Storage.isFav('league', leagueId);
+                        html += `
+                            <div class="league-group">
+                                <div class="league-header">
+                                    <a href="/league/${leagueId}">${group.name}</a>
+                                    <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
+                                </div>
+                                <div class="matches-container">
+                                    ${group.matches.map(renderMatchCard).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (html === '') {
+                        html = '<p>No matches found for this date.</p>';
+                    }
+
+                    container.innerHTML = html;
+
+                } catch (error) {
+                    showError(container, error.message);
+                }
+            }
+
+            /**
+             * Controller for the Match Page (/match/:id)
+             */
+            async function renderMatchPage(container, id) {
+                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                showLoader(container);
+                try {
+                    const [matchData] = await apiFetch(`fixtures?id=${id}`);
+                    if (!matchData) {
+                        throw new Error("Match not found.");
+                    }
+                    
+                    const events = await apiFetch(`fixtures/events?fixture=${id}`);
+
+                    const { fixture, league, teams, goals } = matchData;
+                    
+                    // Helper to render events
+                    const renderEvent = (event) => {
+                        let icon = '';
+                        let detail = event.detail;
+                        if (event.type === 'Goal') icon = '⚽';
+                        if (event.type === 'subst') icon = '🔄';
+                        if (event.type === 'Card') icon = event.detail === 'Yellow Card' ? '🟨' : '🟥';
+                        
+                        return `
+                            <div class="event-item ${event.team.id === teams.home.id ? 'home-event' : 'away-event'}">
+                                <div class="event-time">${event.time.elapsed}'</div>
+                                <div class="event-icon">${icon}</div>
+                                <div class="event-info">
+                                    <div class="event-player">${event.player.name}</div>
+                                    <div class="event-detail">${event.assist.name ? `Assist: ${event.assist.name}` : detail}</div>
+                                </div>
+                            </div>
+                        `;
+                    };
+
+                    container.innerHTML = `
+                        <h2 class="page-title"><a href="/">Home</a> &gt; Match Details</h2>
+                        <div class="match-details-header">
+                            <div class="league"><a href="/league/${league.id}">${league.name}</a> - ${league.round}</div>
+                            <div class="match-details-teams">
+                                <div class="match-details-team">
+                                    <a href="/team/${teams.home.id}">
+                                        <img src="${teams.home.logo}" alt="${teams.home.name}">
+                                        <h2>${teams.home.name}</h2>
+                                    </a>
+                                </div>
+                                <div class="match-details-score">${goals.home} - ${goals.away}</div>
+                                <div class="match-details-team">
+                                    <a href="/team/${teams.away.id}">
+                                        <img src="${teams.away.logo}" alt="${teams.away.name}">
+                                        <h2>${teams.away.name}</h2>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="match-details-status">${fixture.status.long} (${fixture.status.elapsed || 0}')</div>
+                            <div class="match-details-info">
+                                ${new Date(fixture.date).toLocaleString()} | ${fixture.venue.name}, ${fixture.venue.city}
+                            </div>
+                        </div>
+                        
+                        <h3 class="page-title" style="font-size: 1.3rem;">Events</h3>
+                        <div class="match-events">
+                            ${events.map(renderEvent).join('')}
+                        </div>
+                    `;
+
+                } catch (error) {
+                    showError(container, error.message);
+                }
+            }
+
+            /**
+             * Controller for the League Page (/league/:id)
+             */
+            async function renderLeaguePage(container, id) {
+                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                showLoader(container);
+                
+                try {
+                    const season = getCurrentSeason();
+                    // Fetch all data in parallel
+                    const [standingsData, scorersData, assistsData] = await Promise.all([
+                        apiFetch(`standings?league=${id}&season=${season}`),
+                        apiFetch(`players/topscorers?league=${id}&season=${season}`),
+                        apiFetch(`players/topassists?league=${id}&season=${season}`),
+                        // You could add fixtures here too: apiFetch(`fixtures?league=${id}&season=${season}`)
+                    ]);
+
+                    const leagueInfo = standingsData[0]?.league;
+                    if (!leagueInfo) {
+                        throw new Error("League data not found.");
+                    }
+                    
+                    const standings = leagueInfo.standings; // This is an array (for groups)
+                    
+                    // --- Render Tabs ---
+                    container.innerHTML = `
+                        <h2 class="page-title"><a href="/">Home</a> &gt; ${leagueInfo.name}</h2>
+                        <div class="tabs">
+                            <button class="tab-button active" data-tab="standings">Standings</button>
+                            <button class="tab-button" data-tab="scorers">Top Scorers</button>
+                            <button class="tab-button" data-tab="assists">Top Assists</button>
+                        </div>
+                        
+                        <div id="standings" class="tab-content active">
+                            <!-- Standings will be injected here -->
+                        </div>
+                        <div id="scorers" class="tab-content">
+                            <!-- Scorers will be injected here -->
+                        </div>
+                        <div id="assists" class="tab-content">
+                            <!-- Assists will be injected here -->
+                        </div>
+                    `;
+                    
+                    // --- Render Standings Tab ---
+                    const standingsContainer = container.querySelector('#standings');
+                    let standingsHtml = '';
+                    if (standings.length === 0) {
+                        standingsHtml = '<p>Standings not available.</p>';
+                    } else {
+                        // Loop over each group (for most leagues, this is just one)
+                        for (const group of standings) {
+                            if (standings.length > 1) {
+                                standingsHtml += `<h3 class="group-title">${group[0].group}</h3>`;
+                            }
+                            standingsHtml += `
+                                <table class="standings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Team</th>
+                                            <th>P</th>
+                                            <th>W</th>
+                                            <th>D</th>
+                                            <th>L</th>
+                                            <th>GD</th>
+                                            <th>Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${group.map(team => `
+                                            <tr>
+                                                <td class="rank">${team.rank}</td>
+                                                <td class="team-cell">
+                                                    <img src="${team.team.logo}" alt="${team.team.name}">
+                                                    <a href="/team/${team.team.id}">${team.team.name}</a>
+                                                </td>
+                                                <td>${team.all.played}</td>
+                                                <td>${team.all.win}</td>
+                                                <td>${team.all.draw}</td>
+                                                <td>${team.all.lose}</td>
+                                                <td>${team.goalsDiff}</td>
+                                                <td><strong>${team.points}</strong></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `;
+                        }
+                    }
+                    standingsContainer.innerHTML = standingsHtml;
+                    
+                    // --- Render Stats (Scorers/Assists) Tab ---
+                    const renderStatsList = (data) => {
+                        if (data.length === 0) return '<p>Data not available.</p>';
+                        return `<div class="stats-list">
+                            ${data.map((item, index) => `
+                                <div class="stat-item">
+                                    <div class="rank">${index + 1}</div>
+                                    <img src="${item.player.photo}" alt="${item.player.name}">
+                                    <div class="stat-item-info">
+                                        <div class="stat-item-player"><a href="/player/${item.player.id}">${item.player.name}</a></div>
+                                        <div class="stat-item-team">${item.statistics[0].team.name}</div>
+                                    </div>
+                                    <div class="stat-item-value">${item.statistics[0].goals.total || item.statistics[0].goals.assists}</div>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                    };
+                    
+                    container.querySelector('#scorers').innerHTML = renderStatsList(scorersData);
+                    container.querySelector('#assists').innerHTML = renderStatsList(assistsData);
+                    
+                    // --- Tab-switching logic ---
+                    container.querySelectorAll('.tab-button').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const tabId = button.dataset.tab;
+                            
+                            container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                            container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                            
+                            button.classList.add('active');
+                            container.querySelector(`#${tabId}`).classList.add('active');
+                        });
+                    });
+
+                } catch (error) {
+                    showError(container, error.message);
+                }
+            }
+
+            /**
+             * Controller for the Team Page (/team/:id)
+             */
+            async function renderTeamPage(container, id) {
+                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                showLoader(container);
+                try {
+                    const [teamData] = await apiFetch(`teams?id=${id}`);
+                    if (!teamData) throw new Error("Team not found.");
+
+                    const { team, venue } = teamData;
+                    const isFav = Storage.isFav('team', team.id);
+
+                    // You could add more API calls here for squad, recent matches, etc.
+                    // For a "lite" app, we'll keep it simple.
+
+                    container.innerHTML = `
+                        <h2 class="page-title"><a href="/">Home</a> &gt; Team</h2>
+                        <div class_="team-info-header">
+                            <img src="${team.logo}" alt="${team.name}">
+                            <div class="team-info-details">
+                                <h2>${team.name} <span class="fav-toggle" data-type="team" data-id="${team.id}">${isFav ? '⭐' : '☆'}</span></h2>
+                                <p>${team.country} | Founded: ${team.founded}</p>
+                                <p>${venue.name}, ${venue.city} (Capacity: ${venue.capacity})</p>
+                            </div>
+                        </div>
+                        
+                        <h3 class="page-title" style="font-size: 1.3rem;">Info</h3>
+                        <p>More team details like squad and recent matches could be loaded here.</p>
+                    `;
+                    
+                    // Bind fav toggle
+                    container.querySelector('.fav-toggle').addEventListener('click', (e) => {
+                        const favButton = e.target;
+                        if (Storage.isFav('team', id)) {
+                            Storage.removeFav('team', id);
+                            favButton.innerHTML = '☆';
+                        } else {
+                            Storage.addFav('team', id);
+                            favButton.innerHTML = '⭐';
+                        }
+                    });
+
+                } catch (error) {
+                    showError(container, error.message);
+                }
+            }
+
+            /**
+             * Controller for the Player Page (/player/:id)
+             */
+            async function renderPlayerPage(container, id) {
+                document.getElementById('app-header').innerHTML = `<h1><a href="/" style="color:white; text-decoration:none;">Lite Football</a></h1>`;
+                showLoader(container);
+                try {
+                    const [playerData] = await apiFetch(`players?id=${id}&season=${getCurrentSeason()}`);
+                    if (!playerData) throw new Error("Player not found.");
+
+                    const { player, statistics } = playerData;
+                    const stats = statistics[0]; // First team stats
+
+                    container.innerHTML = `
+                        <h2 class="page-title"><a href="/">Home</a> &gt; Player</h2>
+                        <div class="team-info-header"> <!-- Re-using team header style -->
+                            <img src="${player.photo}" alt="${player.name}" style="border-radius: 50%;">
+                            <div class="team-info-details">
+                                <h2>${player.name} (${player.nationality})</h2>
+                                <p>Age: ${player.age} | Height: ${player.height} | Weight: ${player.weight}</p>
+                                ${stats ? `<p>Team: <a href="/team/${stats.team.id}">${stats.team.name}</a></p>` : ''}
+                            </div>
+                        </div>
+                        
+                        <h3 class="page-title" style="font-size: 1.3rem;">Season Stats (${stats ? stats.league.name : 'N/A'})</h3>
+                        ${stats ? `
+                            <table class="standings-table">
+                                <tbody>
+                                    <tr><td>Position</td><td>${stats.games.position}</td></tr>
+                                    <tr><td>Appearances</td><td>${stats.games.appearences}</td></tr>
+                                    <tr><td>Minutes</td><td>${stats.games.minutes}</td></tr>
+                                    <tr><td>Goals</td><td>${stats.goals.total}</td></tr>
+                                    <tr><td>Assists</td><td>${stats.goals.assists}</td></tr>
+                                    <tr><td>Rating</td><td>${parseFloat(stats.games.rating).toFixed(2)}</td></tr>
+                                </tbody>
+                            </table>
+                        ` : '<p>No stats available for this season.</p>'}
+                    `;
+
+                } catch (error) {
+                    showError(container, error.message);
+                }
+            }
+
+            // --- App Router ---
+            // This is the main entry point
+            function AppRouter() {
+                const path = window.location.pathname;
+                const mainContainer = document.getElementById('content-container');
+
+                // Check for API key first
+                if (!Storage.getApiKey()) {
+                    document.getElementById('api-key-modal').classList.add('visible');
+                    document.getElementById('api-key-submit').onclick = () => {
+                        const key = document.getElementById('api-key-input').value;
+                        if (key) {
+                            Storage.setApiKey(key);
+                            document.getElementById('api-key-modal').classList.remove('visible');
+                            AppRouter(); // Re-run the router
+                        }
+                    };
+                    return; // Stop further execution
+                }
+
+                // Simple path-based router
+                if (path.startsWith('/match/')) {
+                    const id = path.split('/')[2];
+                    renderMatchPage(mainContainer, id);
+                } else if (path.startsWith('/league/')) {
+                    const id = path.split('/')[2];
+                    renderLeaguePage(mainContainer, id);
+                } else if (path.startsWith('/team/')) {
+                    const id = path.split('/')[2];
+                    renderTeamPage(mainContainer, id);
+                } else if (path.startsWith('/player/')) {
+                    const id = path.split('/')[2];
+                    renderPlayerPage(mainContainer, id);
+                } else {
+                    // Default to home page
+                    renderHomePage(mainContainer);
+                }
+            }
+
+            // --- Start the App ---
+            // Wait for the DOM to be ready
+            document.addEventListener('DOMContentLoaded', AppRouter);
+
+        })();
+    </script>
+</body>
+</html>
