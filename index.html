@@ -545,6 +545,25 @@
             color: #a0b0d0;
         }
         
+        /* --- Footer --- */
+        #app-footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid #30416b;
+        }
+        
+        #change-user-btn {
+            background: #30416b;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
         /* --- Theme Overrides --- */
         
         /* Dark Red Theme */
@@ -568,6 +587,12 @@
         .theme-dark-red .standings-table td,
         .theme-dark-red .slider {
             border-color: #6b3030;
+            background-color: #4a1c1c;
+        }
+        .theme-dark-red #app-footer {
+            border-top-color: #6b3030;
+        }
+        .theme-dark-red #change-user-btn {
             background-color: #4a1c1c;
         }
         .theme-dark-red a,
@@ -604,6 +629,12 @@
             border-color: #333;
             background-color: #1e1e1e;
         }
+        .theme-darky-dark #app-footer {
+            border-top-color: #333;
+        }
+        .theme-darky-dark #change-user-btn {
+            background-color: #1e1e1e;
+        }
         .theme-darky-dark a,
         .theme-darky-dark .match-status,
         .theme-darky-dark .tab-button.active,
@@ -633,6 +664,13 @@
         .theme-light .date-nav button,
         .theme-light .slider {
             background-color: #e4e6eb;
+        }
+        .theme-light #app-footer {
+            border-top-color: #dddfe2;
+        }
+        .theme-light #change-user-btn {
+            background-color: #e4e6eb;
+            color: #1c1e21;
         }
         .theme-light .page-title,
         .theme-light .league-header,
@@ -685,6 +723,10 @@
         <div class="loader">Loading...</div>
     </main>
 
+    <footer id="app-footer">
+        <button id="change-user-btn">Change User</button>
+    </footer>
+
     <script>
         // Start of self-contained JavaScript application
         (function() {
@@ -705,6 +747,7 @@
             const Storage = {
                 getUsername: () => localStorage.getItem('football_username'),
                 setUsername: (username) => localStorage.setItem('football_username', username),
+                clearUsername: () => localStorage.removeItem('football_username'),
             };
             
             // --- Config & Favs Helper ---
@@ -1399,6 +1442,12 @@
                 } else {
                     loadConfig(username);
                 }
+                
+                // Add event listener for the new change user button
+                document.getElementById('change-user-btn').addEventListener('click', () => {
+                    Storage.clearUsername();
+                    window.location.reload();
+                });
             }
 
             // --- Start the App ---
