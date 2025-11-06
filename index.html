@@ -586,6 +586,18 @@
             margin-top: 0.5rem;
         }
         
+        /* NEW: Live tracking controls on match page */
+        .live-track-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        
         .match-details-info {
             text-align: center;
             font-size: 0.9rem;
@@ -845,6 +857,7 @@
             let currentDate = new Date(); 
             let appConfig = null; // Will hold users/{username}.json
             let appSettings = null; // Will hold users/app.json
+            let liveMatchTimer = null; // NEW: Timer for live match refresh
 
             // --- Storage Service ---
             // Stores username and the user's config
@@ -933,6 +946,33 @@
             }
 
             // --- UI Rendering Functions ---
+
+            /**
+             * NEW: Plays a simple notification sound
+             * Uses Web Audio API for no-file-needed sound.
+             */
+            function playSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime); // Start tone
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.05);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime); // Volume
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                } catch (error) {
+                    console.warn("Could not play sound:", error);
+                }
+            }
 
             function showLoader(container) {
                 container.innerHTML = '<div class="loader">Loading...</div>';
@@ -1291,6 +1331,11 @@
             async function renderMatchPage(container, id) {
                 document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
+                
+                // Define state variables *within* this function's scope
+                let lastScore = '';
+                let lastEventsCount = 0;
+                
                 try {
                     const [matchData] = await apiFetch(`fixtures?id=${id}`);
                     if (!matchData) {
@@ -1300,6 +1345,10 @@
                     const events = await apiFetch(`fixtures/events?fixture=${id}`);
 
                     const { fixture, league, teams, goals } = matchData;
+                    
+                    // Set initial state
+                    lastScore = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
+                    lastEventsCount = events.length;
                     
                     const renderEvent = (event) => {
                         let icon = '';
@@ -1320,8 +1369,22 @@
                         `;
                     };
 
+                    const status = fixture.status.short;
+                    const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
+
                     container.innerHTML = `
                         <h2 class="page-title"><a href="#/">Home</a> &gt; Match Details</h2>
+                        
+                        ${isLive ? `
+                        <div class="live-track-controls">
+                            <label class="switch-toggle">
+                               <input type="checkbox" id="live-track-checkbox">
+                               <span class="slider"></span>
+                            </label>
+                            <label for="live-track-checkbox" style="margin-left: 0.5rem;">Track Live (Sound on change)</label>
+                        </div>
+                        ` : ''}
+
                         <div class="match-details-header">
                             <div class="league"><a href="#/league/${league.id}">${league.name}</a> - ${league.round}</div>
                             <div class="match-details-teams">
@@ -1346,10 +1409,62 @@
                         </div>
                         
                         <h3 class="page-title" style="font-size: 1.3rem;">Events</h3>
-                        <div class="match-events">
+                        <div id="match-events-content" class="match-events">
                             ${events.map(renderEvent).join('')}
                         </div>
                     `;
+                    
+                    // --- Bind Listener ---
+                    if (isLive) {
+                        const checkbox = document.getElementById('live-track-checkbox');
+                        checkbox.addEventListener('change', (e) => {
+                            if (e.target.checked) {
+                                if (liveMatchTimer) clearInterval(liveMatchTimer);
+                                // Start timer
+                                liveMatchTimer = setInterval(async () => {
+                                    try {
+                                        // Refresh data
+                                        const [refreshedMatchData] = await apiFetch(`fixtures?id=${id}`);
+                                        const refreshedEvents = await apiFetch(`fixtures/events?fixture=${id}`);
+                                        
+                                        const { fixture: rFix, goals: rGoals } = refreshedMatchData;
+                                        
+                                        const newScore = `${rGoals.home ?? '0'} - ${rGoals.away ?? '0'}`;
+                                        const newEventsCount = refreshedEvents.length;
+
+                                        let changed = false;
+                                        if (newScore !== lastScore) {
+                                            changed = true;
+                                            lastScore = newScore;
+                                        }
+                                        if (newEventsCount !== lastEventsCount) {
+                                            changed = true;
+                                            lastEventsCount = newEventsCount;
+                                        }
+                                        
+                                        if (changed) {
+                                            playSound();
+                                        }
+
+                                        // --- Update UI ---
+                                        // Update score and status
+                                        document.querySelector('.match-details-score').textContent = newScore;
+                                        document.querySelector('.match-details-status').textContent = `${rFix.status.long} ${rFix.status.elapsed ? `(${rFix.status.elapsed}')` : ''}`;
+                                        
+                                        // Re-render events list
+                                        document.getElementById('match-events-content').innerHTML = refreshedEvents.map(renderEvent).join('');
+
+                                    } catch (err) {
+                                        console.error("Error during live refresh:", err);
+                                        // Don't stop the timer, just log the error
+                                    }
+                                }, 30000); // 30 seconds
+                            } else {
+                                if (liveMatchTimer) clearInterval(liveMatchTimer);
+                                liveMatchTimer = null;
+                            }
+                        });
+                    }
 
                 } catch (error) {
                     showError(container, error.message);
@@ -1549,6 +1664,12 @@
 
             // --- App Router ---
             function AppRouter() {
+                // NEW: Clear any live match timer when navigating
+                if (liveMatchTimer) {
+                    clearInterval(liveMatchTimer);
+                    liveMatchTimer = null;
+                }
+                
                 const path = window.location.hash.substring(1) || '/';
                 const mainContainer = document.getElementById('content-container');
 
@@ -1704,30 +1825,22 @@
             
             /**
              * NEW: This logic runs *after* app settings are loaded
+             * MODIFIED: Loads 'default' config if no user is set.
              */
             function initUserLogic() {
-                const username = Storage.getUsername();
                 const modal = document.getElementById('user-modal');
+                modal.classList.remove('visible'); // Ensure it's hidden on load
                 
-                if (!username) {
-                    modal.classList.add('visible');
-                    document.getElementById('user-submit').onclick = () => {
-                        const newUsername = document.getElementById('username-input').value;
-                        if (newUsername) {
-                            Storage.setUsername(newUsername);
-                            Storage.clearLocalConfig(); // Clear any old config
-                            window.location.reload(); // Reload to trigger config fetch
-                        }
-                    };
+                const username = Storage.getUsername();
+                const configToLoad = username || 'default'; // Load 'default' if no user
+                
+                appConfig = Storage.getLocalConfig();
+                
+                if (appConfig) {
+                    applyTheme(appConfig.theme);
+                    AppRouter();
                 } else {
-                    appConfig = Storage.getLocalConfig();
-                    
-                    if (appConfig) {
-                        applyTheme(appConfig.theme);
-                        AppRouter();
-                    } else {
-                        loadConfigFromServer(username, AppRouter);
-                    }
+                    loadConfigFromServer(configToLoad, AppRouter);
                 }
             }
             
@@ -1737,13 +1850,27 @@
              */
             function init() {
                 // --- Bind Footer Events ---
+                // MODIFIED: 'Change User' now shows the modal
                 document.getElementById('change-user-btn').addEventListener('click', () => {
-                    Storage.clearUsername();
-                    Storage.clearLocalConfig();
-                    window.location.reload();
+                    document.getElementById('user-modal').classList.add('visible');
                 });
                 
+                // NEW: Bind the modal submit button
+                document.getElementById('user-submit').onclick = () => {
+                    const newUsername = document.getElementById('username-input').value;
+                    if (newUsername) {
+                        Storage.setUsername(newUsername);
+                        Storage.clearLocalConfig(); // Force reload of config
+                        window.location.reload();
+                    } else {
+                        // If no name, just hide the modal
+                        document.getElementById('user-modal').classList.remove('visible');
+                    }
+                };
+                
                 document.getElementById('reset-settings-btn').addEventListener('click', () => {
+                    // MODIFIED: Also clear username to return to default
+                    Storage.clearUsername();
                     Storage.clearLocalConfig();
                     window.location.reload();
                 });
