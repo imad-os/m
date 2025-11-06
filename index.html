@@ -1485,7 +1485,35 @@
             }
 
             // --- App Router ---
-             /* Applies theme class to body and sets dropdown
+            // This is the main entry point
+            function AppRouter() {
+                const path = window.location.hash.substring(1) || '/'; // Read from hash
+                const mainContainer = document.getElementById('content-container');
+
+                // Clear header and content for new "page"
+                document.getElementById('app-header').innerHTML = '';
+                showLoader(mainContainer);
+
+                // Simple path-based router
+                if (path.startsWith('/match/')) {
+                    const id = path.split('/')[2];
+                    renderMatchPage(mainContainer, id);
+                } else if (path.startsWith('/league/')) {
+                    const id = path.split('/')[2];
+                    renderLeaguePage(mainContainer, id);
+                } else if (path.startsWith('/team/')) {
+                    const id = path.split('/')[2];
+                    renderTeamPage(mainContainer, id);
+                } else if (path.startsWith('/player/')) {
+                    const id = path.split('/')[2];
+                    renderPlayerPage(mainContainer, id);
+                } else {
+                    // Default to home page
+                    renderHomePage(mainContainer);
+                }
+            }
+            
+            /* Applies theme class to body and sets dropdown
              */
             function applyTheme(theme) {
                 document.body.className = ''; // Clear old themes
