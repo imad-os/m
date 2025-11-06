@@ -241,10 +241,40 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            /* NEW: Add gap for fav toggle */
+            gap: 0.5rem;
         }
         
-        .league-header a {
-            font-size: 1rem;
+        /* MODIFIED: Was .league-header a */
+        .league-header-link {
+            font-size: 1.5rem; /* Make link text same size as header */
+            color: var(--text-primary); /* Match header color */
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; /* Space between logo and name */
+            /* NEW: For long league names */
+            flex-grow: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .league-header-link:hover {
+            color: var(--accent-color);
+        }
+        
+        .league-header-link span {
+            /* NEW: For long league names */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* NEW: League logo in the header */
+        .league-header-logo {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
         }
 
         .matches-container {
@@ -284,7 +314,8 @@
             color: var(--text-secondary);
             width: 100%;
             justify-content: center; /* Center align it */
-            margin-bottom: 0.25rem;
+            /* MODIFIED: Removed margin-bottom */
+            /* margin-bottom: 0.25rem; */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -750,7 +781,7 @@
 
 </div> <!-- End #app-wrapper -->
 
-    <script>
+            <script>
         // Start of self-contained JavaScript application
             (function() {
             "use strict";
@@ -902,7 +933,7 @@
                 });
             }
             
-            function renderMatchCard(match) {
+            function renderMatchCard(match, isFavSectionMatch = false) { // NEW: Added default param
                 const fixture = match.fixture;
                 const league = match.league;
                 const teams = match.teams;
@@ -932,14 +963,19 @@
                 const isFavHome = Config.isFav('team', teams.home.id);
                 const isFavAway = Config.isFav('team', teams.away.id);
 
+                // NEW: Conditionally render league HTML
+                const leagueHtml = isFavSectionMatch ? `
+                    <div class="match-league" title="${league.name}">
+                        ${league.logo ? `<img src="${league.logo}" alt="">` : ''}
+                        <span>${league.name}</span>
+                    </div>
+                ` : '';
+
                 // MODIFIED: Added ${isLive ? 'is-live' : ''} to class
                 // MODIFIED: Added .match-league div
                 return `
                     <a href="#/match/${fixture.id}" class="match-card ${isLive ? 'is-live' : ''}">
-                        <div class="match-league" title="${league.name}">
-                            ${league.logo ? `<img src="${league.logo}" alt="">` : ''}
-                            <span>${league.name}</span>
-                        </div>
+                        ${leagueHtml}
                         <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
                             ${statusText}
                         </div>
@@ -1099,7 +1135,10 @@
                     for (const match of favLeagueMatches) {
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
-                        if (!favLeagueGroups[leagueId]) favLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                        // NEW: Store logo
+                        if (!favLeagueGroups[leagueId]) {
+                             favLeagueGroups[leagueId] = { name: leagueName, logo: match.league.logo, matches: [] };
+                        }
                         favLeagueGroups[leagueId].matches.push(match);
                     }
 
@@ -1107,8 +1146,10 @@
                     for (const match of allowedOtherMatches) { 
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
-                        // This logic is now only for non-fav-team, non-fav-league, allowed matches
-                        if (!otherLeagueGroups[leagueId]) otherLeagueGroups[leagueId] = { name: leagueName, matches: [] };
+                        // NEW: Store logo
+                        if (!otherLeagueGroups[leagueId]) {
+                            otherLeagueGroups[leagueId] = { name: leagueName, logo: match.league.logo, matches: [] };
+                        }
                         otherLeagueGroups[leagueId].matches.push(match);
                     }
 
@@ -1125,42 +1166,38 @@
                                     <span class="fav-toggle" data-type="league" data-id="0">${isFav ? '⭐' : '☆'}</span>
                                 </div>
                                 <div class="matches-container">
-                                    ${favTeamMatches.map(renderMatchCard).join('')}
+                                    ${favTeamMatches.map(match => renderMatchCard(match, true)).join('')}
                                 </div>
                             </div>
                         `;
                     }
 
-                    for (const leagueId in favLeagueGroups) {
-                        const group = favLeagueGroups[leagueId];
+                    // NEW: Combined render function for league groups
+                    const renderLeagueGroup = (leagueId, group) => {
                         const isFav = Config.isFav('league', leagueId);
-                        html += `
+                        const leagueLogoHtml = group.logo ? `<img src="${group.logo}" alt="" class="league-header-logo">` : '';
+                        return `
                             <div class="league-group">
                                 <div class="league-header">
-                                    <a href="#/league/${leagueId}">${group.name}</a>
+                                    <a href="#/league/${leagueId}" class="league-header-link">
+                                        ${leagueLogoHtml}
+                                        <span>${group.name}</span>
+                                    </a>
                                     <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
                                 </div>
                                 <div class="matches-container">
-                                    ${group.matches.map(renderMatchCard).join('')}
+                                    ${group.matches.map(match => renderMatchCard(match, false)).join('')}
                                 </div>
                             </div>
                         `;
+                    };
+
+                    for (const leagueId in favLeagueGroups) {
+                        html += renderLeagueGroup(leagueId, favLeagueGroups[leagueId]);
                     }
                     
                     for (const leagueId in otherLeagueGroups) {
-                        const group = otherLeagueGroups[leagueId];
-                        const isFav = Config.isFav('league', leagueId);
-                        html += `
-                            <div class="league-group">
-                                <div class="league-header">
-                                    <a href="#/league/${leagueId}">${group.name}</a>
-                                    <span class="fav-toggle" data-type="league" data-id="${leagueId}">${isFav ? '⭐' : '☆'}</span>
-                                </div>
-                                <div class="matches-container">
-                                    ${group.matches.map(renderMatchCard).join('')}
-                                </div>
-                            </div>
-                        `;
+                        html += renderLeagueGroup(leagueId, otherLeagueGroups[leagueId]);
                     }
                     
                     if (html === '') {
