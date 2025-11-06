@@ -1,0 +1,11 @@
+{
+  "api_key": "IMAD_API_KEY_HERE",
+  "theme": "dark-red",
+  "favourite_leagues": [140, 200],
+  "favourit_teams": [85, 94],
+  "allowed_leagues": [
+    { "id": 200, "name": "Botola Pro" },
+    { "id": 0, "name": "Favorites" },
+    { "id": 140, "name": "La Liga" }
+  ]
+}

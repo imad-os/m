@@ -35,7 +35,8 @@
         }
 
         /* --- API Key Modal --- */
-        #api-key-modal {
+        /* Renamed to user-modal */
+        #user-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -48,7 +49,7 @@
             z-index: 1000;
         }
 
-        #api-key-modal.visible {
+        #user-modal.visible {
             display: flex;
         }
 
@@ -126,8 +127,56 @@
         .live-toggle {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.5rem;
             font-size: 1rem;
+        }
+        
+        /* Fancy Toggle Switch */
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px; /* Reduced width */
+            height: 28px; /* Reduced height */
+        }
+        .switch-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #30416b;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; /* Smaller circle */
+            width: 20px; /* Smaller circle */
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #64ffda;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #64ffda;
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(22px); /* Adjusted translation */
+            -ms-transform: translateX(22px);
+            transform: translateX(22px);
         }
         
         /* --- Main Content --- */
@@ -213,6 +262,7 @@
         
         .match-status.not-started {
             color: #a0b0d0;
+            font-weight: normal; /* Time isn't as important as live status */
         }
 
         .match-teams {
@@ -494,18 +544,134 @@
             font-size: 1rem;
             color: #a0b0d0;
         }
+        
+        /* --- Theme Overrides --- */
+        
+        /* Dark Red Theme */
+        .theme-dark-red body {
+            background-color: #2a0a0a;
+            color: #f0e0e0;
+        }
+        .theme-dark-red #app-header,
+        .theme-dark-red .modal-content,
+        .theme-dark-red .match-card,
+        .theme-dark-red .standings-table th,
+        .theme-dark-red .stat-item,
+        .theme-dark-red .match-details-header,
+        .theme-dark-red .team-info-header {
+            background-color: #4a1c1c;
+        }
+        .theme-dark-red .date-nav button,
+        .theme-dark-red .page-title,
+        .theme-dark-red .league-header,
+        .theme-dark-red .tabs,
+        .theme-dark-red .standings-table td,
+        .theme-dark-red .slider {
+            border-color: #6b3030;
+            background-color: #4a1c1c;
+        }
+        .theme-dark-red a,
+        .theme-dark-red .match-status,
+        .theme-dark-red .tab-button.active,
+        .theme-dark-red .group-title,
+        .theme-dark-red .match-details-status {
+            color: #ff6464;
+        }
+        .theme-dark-red input:checked + .slider {
+            background-color: #ff6464;
+        }
+
+        /* Darky Dark Theme */
+        .theme-darky-dark body {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .theme-darky-dark #app-header,
+        .theme-darky-dark .modal-content,
+        .theme-darky-dark .match-card,
+        .theme-darky-dark .standings-table th,
+        .theme-darky-dark .stat-item,
+        .theme-darky-dark .match-details-header,
+        .theme-darky-dark .team-info-header {
+            background-color: #1e1e1e;
+        }
+        .theme-darky-dark .date-nav button,
+        .theme-darky-dark .page-title,
+        .theme-darky-dark .league-header,
+        .theme-darky-dark .tabs,
+        .theme-darky-dark .standings-table td,
+        .theme-darky-dark .slider {
+            border-color: #333;
+            background-color: #1e1e1e;
+        }
+        .theme-darky-dark a,
+        .theme-darky-dark .match-status,
+        .theme-darky-dark .tab-button.active,
+        .theme-darky-dark .group-title,
+        .theme-darky-dark .match-details-status {
+            color: #bb86fc;
+        }
+        .theme-darky-dark input:checked + .slider {
+            background-color: #bb86fc;
+        }
+        
+        /* Light Theme */
+        .theme-light body {
+            background-color: #f0f2f5;
+            color: #1c1e21;
+        }
+        .theme-light #app-header,
+        .theme-light .modal-content,
+        .theme-light .match-card,
+        .theme-light .standings-table th,
+        .theme-light .stat-item,
+        .theme-light .match-details-header,
+        .theme-light .team-info-header {
+            background-color: #ffffff;
+            border: 1px solid #dddfe2;
+        }
+        .theme-light .date-nav button,
+        .theme-light .slider {
+            background-color: #e4e6eb;
+        }
+        .theme-light .page-title,
+        .theme-light .league-header,
+        .theme-light .tabs,
+        .theme-light .standings-table td {
+            border-color: #dddfe2;
+        }
+        .theme-light a,
+        .theme-light .match-status,
+        .theme-light .tab-button.active,
+        .theme-light .group-title,
+        .theme-light .match-details-status {
+            color: #006aff;
+        }
+        .theme-light .match-status.not-started,
+        .theme-light .modal-content p,
+        .theme-light .team-name,
+        .theme-light .stat-item-team,
+        .theme-light .match-details-info,
+        .theme-light .event-detail,
+        .theme-light .team-info-details p,
+        .theme-light .tab-button {
+            color: #65676b;
+        }
+        .theme-light input:checked + .slider {
+            background-color: #006aff;
+        }
 
     </style>
 </head>
 <body>
 
-    <!-- This modal will show on first load to get the API key -->
-    <div id="api-key-modal">
+    <!-- This modal will show on first load to get the username -->
+    <div id="user-modal">
         <div class="modal-content">
             <h2>Welcome</h2>
-            <p>Please enter your api-sports.io API key to use this app. Your key will be saved locally in your browser.</p>
-            <input type="password" id="api-key-input" placeholder="Your API Key">
-            <button id="api-key-submit" class="date-nav-button">Save and Enter</button>
+            <p>Please enter your username to load your settings.</p>
+            <input type="text" id="username-input" placeholder="Your Username">
+            <button id="user-submit" class="date-nav-button">Load Settings</button>
         </div>
     </div>
 
@@ -526,56 +692,47 @@
 
             // --- Configuration ---
             const API_HOST = "https://v3.football.api-sports.io";
-            const ALLOWED_LEAGUES = [
-                { "id": 200, "name": "Botola Pro" }, // Morroco
-                { "id": 0, "name": "Favorites" }, // Our virtual league
-                { "id": 140, "name": "La Liga" }, // Spain
-                { "id": 61, "name": "Ligue 1" }, // France
-                { "id": 39, "name": "Premier League" }, // England
-                { "id": 135, "name": "Serie A" }, // Italy
-                { "id": 78, "name": "Bundesliga" } // Germany
-            ];
-            const ALLOWED_LEAGUE_IDS = ALLOWED_LEAGUES.map(l => l.id);
+            // ALLOWED_LEAGUES is now loaded from config
+            let ALLOWED_LEAGUES = [];
+            let ALLOWED_LEAGUE_IDS = [];
 
-            // --- State ---
-            // Default to today. The router will manage this.
+            // --- App State ---
             let currentDate = new Date(); 
+            let appConfig = null; // Will hold the loaded users/config.json
 
             // --- Storage Service ---
-            // Simple helper functions for localStorage
+            // Now only stores the username
             const Storage = {
-                getApiKey: () => localStorage.getItem('football_api_key'),
-                setApiKey: (key) => localStorage.setItem('football_api_key', key),
-                
-                getFavs: (type) => {
-                    const favs = localStorage.getItem(`fav_${type}`);
-                    return favs ? JSON.parse(favs) : [];
-                },
-                setFavs: (type, ids) => {
-                    localStorage.setItem(`fav_${type}`, JSON.stringify(Array.from(ids)));
-                },
+                getUsername: () => localStorage.getItem('football_username'),
+                setUsername: (username) => localStorage.setItem('football_username', username),
+            };
+            
+            // --- Config & Favs Helper ---
+            // Replaces old Storage fav functions
+            const Config = {
+                getApiKey: () => appConfig ? appConfig.api_key : null,
                 isFav: (type, id) => {
-                    const favs = Storage.getFavs(type);
-                    return favs.includes(Number(id));
+                    if (!appConfig) return false;
+                    const idNum = Number(id);
+                    if (type === 'team') {
+                        return appConfig.favourit_teams.includes(idNum);
+                    }
+                    if (type === 'league') {
+                        // "Favorites" (id 0) is a fav if any team is a fav
+                        if (idNum === 0) return appConfig.favourit_teams.length > 0;
+                        return appConfig.favourite_leagues.includes(idNum);
+                    }
+                    return false;
                 },
-                addFav: (type, id) => {
-                    const favs = new Set(Storage.getFavs(type));
-                    favs.add(Number(id));
-                    Storage.setFavs(type, favs);
-                },
-                removeFav: (type, id) => {
-                    const favs = new Set(Storage.getFavs(type));
-                    favs.delete(Number(id));
-                    Storage.setFavs(type, favs);
-                }
+                getAllowedLeagues: () => appConfig ? appConfig.allowed_leagues : [],
             };
 
             // --- API Service ---
             // Handles all fetching with backoff and error handling
             async function apiFetch(endpoint) {
-                const apiKey = Storage.getApiKey();
+                const apiKey = Config.getApiKey(); // Get key from loaded config
                 if (!apiKey) {
-                    throw new Error("API Key not set.");
+                    throw new Error("API Key not set or config not loaded.");
                 }
 
                 const url = `${API_HOST}/${endpoint}`;
@@ -654,8 +811,11 @@
                         <button id="next-day">&gt;</button>
                     </div>
                     <div class="live-toggle">
-                        <input type="checkbox" id="live-toggle">
-                        <label for="live-toggle">Live</label>
+                        <label class="switch-toggle">
+                           <input type="checkbox" id="live-toggle">
+                           <span class="slider"></span>
+                        </label>
+                        <label for="live-toggle" style="margin-left: 0.5rem;">Live</label>
                     </div>
                 `;
 
@@ -688,18 +848,26 @@
                 const goals = match.goals;
                 const status = fixture.status.short;
 
-                let score = `${goals.home} - ${goals.away}`;
-                if (status === 'NS') { // Not Started
-                    score = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let scoreText;
+                let statusText = fixture.status.long;
+
+                if (status === 'NS') {
+                    scoreText = '-';
+                    statusText = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
+                    if (status !== 'FT' && status !== 'HT') {
+                        statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
+                    }
                 }
                 
-                const isFavHome = Storage.isFav('team', teams.home.id);
-                const isFavAway = Storage.isFav('team', teams.away.id);
+                const isFavHome = Config.isFav('team', teams.home.id);
+                const isFavAway = Config.isFav('team', teams.away.id);
 
                 return `
                     <a href="#/match/${fixture.id}" class="match-card">
                         <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
-                            ${fixture.status.long} ${status === 'FT' || status === 'HT' || status.includes('LIVE') ? `(${fixture.status.elapsed || ''})` : ''}
+                            ${statusText}
                         </div>
                         <div class="match-teams">
                             <div class="team">
@@ -709,7 +877,7 @@
                                     ${isFavHome ? '⭐' : '☆'}
                                 </span>
                             </div>
-                            <div class="score-container">${score}</div>
+                            <div class="score-container">${scoreText}</div>
                             <div class="team">
                                 <img src="${teams.away.logo}" alt="${teams.away.name}">
                                 <span class="team-name">${teams.away.name}</span>
@@ -732,29 +900,8 @@
                 renderHeader(headerContainer);
                 container.innerHTML = '<div class="loader">Loading matches...</div>'; // Initial content
                 
-                // Bind click delegation for favs
-                container.addEventListener('click', function(e) {
-                    const favButton = e.target.closest('.fav-toggle');
-                    if (favButton) {
-                        e.preventDefault(); // Stop navigation
-                        e.stopPropagation(); // Stop bubbling
-                        
-                        const type = favButton.dataset.type;
-                        const id = favButton.dataset.id;
-                        
-                        if (Storage.isFav(type, id)) {
-                            Storage.removeFav(type, id);
-                            favButton.innerHTML = '☆';
-                        } else {
-                            Storage.addFav(type, id);
-                            favButton.innerHTML = '⭐';
-                        }
-                        // Re-render all fav stars on the page
-                        document.querySelectorAll(`.fav-toggle[data-type="${type}"][data-id="${id}"]`).forEach(el => {
-                            el.innerHTML = Storage.isFav(type, id) ? '⭐' : '☆';
-                        });
-                    }
-                });
+                // FAVS ARE NOW READ-ONLY, REMOVED CLICK LISTENER
+                // We just display the favs from config
 
                 await loadHomePageMatches();
             }
@@ -771,8 +918,10 @@
                 showLoader(container);
 
                 try {
-                    // Fetch all allowed leagues in parallel
-                    const leagueIds = ALLOWED_LEAGUES.map(l => l.id).filter(id => id > 0); // Exclude virtual "Favorites" league
+                    // Get allowed leagues from the loaded config
+                    ALLOWED_LEAGUES = Config.getAllowedLeagues();
+                    ALLOWED_LEAGUE_IDS = ALLOWED_LEAGUES.map(l => l.id);
+                    
                     let endpoint = `fixtures?date=${date}&season=${getCurrentSeason()}`;
                     if (isLive) {
                         endpoint = `fixtures?live=all`;
@@ -783,9 +932,9 @@
                     // Filter for allowed leagues
                     const allMatches = matchesResponse.filter(m => ALLOWED_LEAGUE_IDS.includes(m.league.id));
 
-                    // Get user's favorites
-                    const favTeamIds = new Set(Storage.getFavs('team'));
-                    const favLeagueIds = new Set(Storage.getFavs('league'));
+                    // Get user's favorites from config
+                    const favTeamIds = new Set(appConfig.favourit_teams);
+                    const favLeagueIds = new Set(appConfig.favourite_leagues);
 
                     // --- Grouping Logic ---
                     const favTeamMatches = [];
@@ -817,7 +966,24 @@
 
                     // 1. Render Favorite Team Matches
                     if (favTeamMatches.length > 0) {
-                        const isFav = Storage.isFav('league', 0);
+                        const isFav = Config.isFav('league', 0);
+                        html += `
+                            <div class="league-group">
+                                <div class="league-header">
+                                    <span>⭐ Favorites</span>
+                                    <span class="fav-toggle" data-type="league" data-id="0">${isFav ? '⭐' : '☆'}</span>
+                                </div>
+                                <div class="matches-container">
+                                    ${favTeamMatches.map(renderMatchCard).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // 2. Render Favorite Leagues
+                    for (const leagueId in favLeagueGroups) {
+                        const group = favLeagueGroups[leagueId];
+                        const isFav = Config.isFav('league', leagueId);
                         html += `
                             <div class="league-group">
                                 <div class="league-header">
@@ -834,7 +1000,7 @@
                     // 3. Render Other Leagues
                     for (const leagueId in otherLeagueGroups) {
                         const group = otherLeagueGroups[leagueId];
-                        const isFav = Storage.isFav('league', leagueId);
+                        const isFav = Config.isFav('league', leagueId);
                         html += `
                             <div class="league-group">
                                 <div class="league-header">
@@ -1073,7 +1239,7 @@
                     if (!teamData) throw new Error("Team not found.");
 
                     const { team, venue } = teamData;
-                    const isFav = Storage.isFav('team', team.id);
+                    const isFav = Config.isFav('team', team.id);
 
                     // You could add more API calls here for squad, recent matches, etc.
                     // For a "lite" app, we'll keep it simple.
@@ -1093,17 +1259,7 @@
                         <p>More team details like squad and recent matches could be loaded here.</p>
                     `;
                     
-                    // Bind fav toggle
-                    container.querySelector('.fav-toggle').addEventListener('click', (e) => {
-                        const favButton = e.target;
-                        if (Storage.isFav('team', id)) {
-                            Storage.removeFav('team', id);
-                            favButton.innerHTML = '☆';
-                        } else {
-                            Storage.addFav('team', id);
-                            favButton.innerHTML = '⭐';
-                        }
-                    });
+                    // FAVS ARE NOW READ-ONLY, REMOVED CLICK LISTENER
 
                 } catch (error) {
                     showError(container, error.message);
@@ -1161,19 +1317,9 @@
                 const path = window.location.hash.substring(1) || '/'; // Read from hash
                 const mainContainer = document.getElementById('content-container');
 
-                // Check for API key first
-                if (!Storage.getApiKey()) {
-                    document.getElementById('api-key-modal').classList.add('visible');
-                    document.getElementById('api-key-submit').onclick = () => {
-                        const key = document.getElementById('api-key-input').value;
-                        if (key) {
-                            Storage.setApiKey(key);
-                            document.getElementById('api-key-modal').classList.remove('visible');
-                            AppRouter(); // Re-run the router
-                        }
-                    };
-                    return; // Stop further execution
-                }
+                // Clear header and content for new "page"
+                document.getElementById('app-header').innerHTML = '';
+                showLoader(mainContainer);
 
                 // Simple path-based router
                 if (path.startsWith('/match/')) {
@@ -1193,10 +1339,71 @@
                     renderHomePage(mainContainer);
                 }
             }
+            
+            /**
+             * Applies theme class to body
+             */
+            function applyTheme(theme) {
+                document.body.className = ''; // Clear old themes
+                if (theme) {
+                    document.body.classList.add(`theme-${theme}`);
+                }
+            }
+            
+            /**
+             * Loads the user config file
+             */
+            async function loadConfig(username) {
+                let configUrl = `users/${username.toLowerCase()}.json`;
+                try {
+                    let response = await fetch(configUrl);
+                    if (!response.ok) {
+                        console.warn(`User config ${configUrl} not found, falling back to default.`);
+                        configUrl = 'users/default.json';
+                        response = await fetch(configUrl);
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error("Could not load default.json config.");
+                    }
+                    
+                    appConfig = await response.json();
+                    applyTheme(appConfig.theme);
+                    
+                    // Now that config is loaded, start the app router
+                    AppRouter();
+                    
+                } catch (error) {
+                    console.error("Fatal error loading config:", error);
+                    showError(document.getElementById('content-container'), "Could not load app configuration. Please check console.");
+                }
+            }
+            
+            /**
+             * First function to run on load
+             */
+            function init() {
+                const username = Storage.getUsername();
+                const modal = document.getElementById('user-modal');
+                
+                if (!username) {
+                    modal.classList.add('visible');
+                    document.getElementById('user-submit').onclick = () => {
+                        const newUsername = document.getElementById('username-input').value;
+                        if (newUsername) {
+                            Storage.setUsername(newUsername);
+                            modal.classList.remove('visible');
+                            loadConfig(newUsername);
+                        }
+                    };
+                } else {
+                    loadConfig(username);
+                }
+            }
 
             // --- Start the App ---
             // Wait for the DOM to be ready
-            document.addEventListener('DOMContentLoaded', AppRouter);
+            document.addEventListener('DOMContentLoaded', init);
             // Also run the router when the hash changes (user clicks a link)
             window.addEventListener('hashchange', AppRouter);
 
