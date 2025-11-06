@@ -866,13 +866,16 @@
                     const idNum = Number(id);
                     if (type === 'team') {
                         // Use 'favourit_teams' (no 'e') as in original code
-                        return appConfig.favourit_teams && appConfig.favourit_teams.includes(idNum);
+                        // MODIFIED: Check for object with ID using .some()
+                        return appConfig.favourit_teams && appConfig.favourit_teams.some(team => team.id === idNum);
                     }
                     if (type === 'league') {
                         // "Favorites" (id 0) is a fav if any team is a fav
+                        // MODIFIED: Check for object with ID
                         if (idNum === 0) return appConfig.favourit_teams && appConfig.favourit_teams.length > 0;
                         // Use 'favourite_leagues' (with 'e') as in original code
-                        return appConfig.favourite_leagues && appConfig.favourite_leagues.includes(idNum);
+                        // MODIFIED: Check for object with ID using .some()
+                        return appConfig.favourite_leagues && appConfig.favourite_leagues.some(league => league.id === idNum);
                     }
                     return false;
                 },
@@ -1079,12 +1082,30 @@
                             return;
                         }
 
-                        const index = favArray.indexOf(id);
+                        // MODIFIED: Find index of object
+                        const index = favArray.findIndex(item => item.id === id);
+                        
                         if (index > -1) {
+                            // Item exists, remove it
                             favArray.splice(index, 1);
                             e.currentTarget.textContent = '☆';
                         } else {
-                            favArray.push(id);
+                            // Item does not exist, add it as an object
+                            let name = 'Unknown';
+                            
+                            if (type === 'team') {
+                                const teamNameEl = e.currentTarget.closest('.team').querySelector('.team-name');
+                                name = teamNameEl ? teamNameEl.textContent : 'Unknown Team';
+                            } else if (type === 'league') {
+                                if (id === 0) {
+                                    name = 'Favorites';
+                                } else {
+                                    const leagueNameEl = e.currentTarget.closest('.league-header').querySelector('.league-header-link span');
+                                    name = leagueNameEl ? leagueNameEl.textContent : 'Unknown League';
+                                }
+                            }
+                            
+                            favArray.push({ id: id, name: name });
                             e.currentTarget.textContent = '⭐';
                         }
                         
@@ -1148,8 +1169,9 @@
                     const matchesResponse = await apiFetch(endpoint);
                     
                     // Get user's favorites from config
-                    const favTeamIds = new Set(appConfig.favourit_teams || []);
-                    const favLeagueIds = new Set(appConfig.favourite_leagues || []);
+                    // MODIFIED: Map array of objects to a Set of IDs
+                    const favTeamIds = new Set((appConfig.favourit_teams || []).map(team => team.id));
+                    const favLeagueIds = new Set((appConfig.favourite_leagues || []).map(league => league.id));
 
                     // --- NEW Grouping Logic (v3) ---
                     const favTeamMatches = [];
@@ -1647,9 +1669,23 @@
                     const jsonConfig = await response.json();
                     const localConfig = Storage.getLocalConfig() || appConfig;
                     
-                    // Merge using Set to avoid duplicates
-                    const mergedTeams = [...new Set([...(localConfig.favourit_teams || []), ...jsonConfig.favourit_teams])];
-                    const mergedLeagues = [...new Set([...(localConfig.favourite_leagues || []), ...jsonConfig.favourite_leagues])];
+                    // MODIFIED: Helper to merge arrays of objects by ID, favoring local items
+                    const mergeById = (arr1, arr2) => {
+                        const map = new Map();
+                        // Add items from the first array (local, which might be newer)
+                        (arr1 || []).forEach(item => map.set(item.id, item));
+                        // Add items from the second array (server) only if not already present
+                        (arr2 || []).forEach(item => {
+                            if (!map.has(item.id)) {
+                                map.set(item.id, item);
+                            }
+                        });
+                        return Array.from(map.values());
+                    };
+                    
+                    // MODIFIED: Use new merge function
+                    const mergedTeams = mergeById(localConfig.favourit_teams, jsonConfig.favourit_teams);
+                    const mergedLeagues = mergeById(localConfig.favourite_leagues, jsonConfig.favourite_leagues);
                     
                     localConfig.favourit_teams = mergedTeams;
                     localConfig.favourite_leagues = mergedLeagues;
