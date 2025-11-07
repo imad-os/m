@@ -1683,7 +1683,7 @@
                     // NEW: Fetch all data
                     const [events, lineup, statistics, headtohead] = await Promise.all([
                         apiFetch(`fixtures/events?fixture=${id}`),
-                        apiFetch(`fixtures/lineup?fixture=${id}`),
+                        apiFetch(`fixtures/lineups?fixture=${id}`),
                         // Only fetch stats if finished, otherwise API might return error
                         isFinished ? apiFetch(`fixtures/statistics?fixture=${id}`) : Promise.resolve([]),
                         apiFetch(`fixtures/headtohead?h2h=${h2hId}`)
@@ -1796,7 +1796,7 @@
                                 const [refreshedMatchData, refreshedEvents, refreshedLineup] = await Promise.all([
                                     apiFetch(`fixtures?id=${id}`),
                                     apiFetch(`fixtures/events?fixture=${id}`),
-                                    apiFetch(`fixtures/lineup?fixture=${id}`)
+                                    apiFetch(`fixtures/lineups?fixture=${id}`)
                                 ]);
                                 
                                 const { fixture: rFix, goals: rGoals } = refreshedMatchData[0];
