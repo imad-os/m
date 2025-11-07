@@ -3,6 +3,11 @@
   "theme": "dark-bleu",
   "favourite_leagues": [],
   "favourit_teams": [
-  ]
-
+  ],
+  "tv_remote_keys": {
+      "next_day": "VolumeUp",
+      "prev_day": "VolumeDown",
+      "live_on": "AudioVolumeMute",
+      "live_off": "AudioVolumeMute"
+    }
 }

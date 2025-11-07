@@ -1004,7 +1004,65 @@
                     return false;
                 },
                 getAllowedLeagues: () => appSettings ? appSettings.allowed_leagues : [],
+                
+                // NEW: Get TV remote key mappings
+                getTvKeys: () => {
+                    const defaults = {
+                        next_day: "VolumeUp",
+                        prev_day: "VolumeDown",
+                        live_on: "AudioVolumeMute",
+                        live_off: "AudioVolumeUp" // Default 'unmute' is VolUp, user should configure
+                    };
+                    if (appConfig && appConfig.tv_remote_keys) {
+                        // User's config overrides defaults
+                        return { ...defaults, ...appConfig.tv_remote_keys };
+                    }
+                    // Return defaults if no user config
+                    return defaults;
+                }
             };
+
+            // NEW: Global keydown handler for TV remote
+            function handleTvKeydown(event) {
+                // Do nothing if config isn't loaded
+                if (!appConfig) return;
+
+                // Only act if we are on the home page (header buttons exist)
+                const nextDayBtn = document.getElementById('next-day');
+                const prevDayBtn = document.getElementById('prev-day');
+                const liveToggle = document.getElementById('live-toggle');
+
+                // If these buttons don't exist, we're not on the home page, so do nothing.
+                if (!nextDayBtn || !prevDayBtn || !liveToggle) {
+                    return;
+                }
+
+                const keys = Config.getTvKeys();
+
+                switch (event.key) {
+
+                    case keys.next_day:
+                        event.preventDefault(); // Stop native volume change
+                        nextDayBtn.click();
+                        break;
+                    case keys.prev_day:
+                        event.preventDefault(); // Stop native volume change
+                        prevDayBtn.click();
+                        break;
+                    case keys.live_on:
+                        event.preventDefault(); // Stop native mute
+                        if (!liveToggle.checked || keys.live_off==keys.live_on) {
+                            liveToggle.click();
+                        }
+                        break;
+                    case keys.live_off:
+                        event.preventDefault(); // Stop native volume change
+                        if (liveToggle.checked) {
+                            liveToggle.click();
+                        }
+                        break;
+                }
+            }
 
             // --- API Service ---
             // Handles all fetching with backoff and error handling
@@ -2189,6 +2247,9 @@
              * First function to run on load
              */
             function init() {
+                // NEW: Add TV remote listener
+                document.addEventListener('keydown', handleTvKeydown);
+                
                 document.getElementById('change-user-btn').addEventListener('click', () => {
                     document.getElementById('user-modal').classList.add('visible');
                 });

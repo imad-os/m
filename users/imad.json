@@ -1,6 +1,12 @@
 {
   "api_key": "9e9fb80bd8d4c5c226e8a7f69375995a",
   "theme": "morocco",
+  "tv_remote_keys": {
+      "next_day": "KEY_PANNEL_VOLUP",
+      "prev_day": "KEY_PANNEL_VOLDOW",
+      "live_on": "KEY_MUTE",
+      "live_off": "KEY_MUTE"
+    },
   "favourite_leagues": [
     { "id": 0, "name": "Favorites" },
     { "id": 1, "name": "World Cup" },
