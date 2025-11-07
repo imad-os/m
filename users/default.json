@@ -5,8 +5,8 @@
   "favourit_teams": [
   ],
   "tv_remote_keys": {
-      "next_day": "VolumeUp",
-      "prev_day": "VolumeDown",
+      "next_day": "AudioVolumeUp",
+      "prev_day": "AudioVolumeDown",
       "live_on": "AudioVolumeMute",
       "live_off": "AudioVolumeMute"
     }
