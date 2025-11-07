@@ -1130,26 +1130,21 @@
              * NEW: Plays a simple notification sound
              * Uses Web Audio API for no-file-needed sound.
              */
-            function playSound() {
+            async function playSound(type = "default") {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const url = appSettings.soundMap[type.toLowerCase()] || appSettings.soundMap["default"];
+
                 try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime); // Start tone
-                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.05);
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime); // Volume
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.2);
+                    const response = await fetch(url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioContext.destination);
+                    source.start();
                 } catch (error) {
-                    console.warn("Could not play sound:", error);
+                    console.warn(`Failed to play sound for "${type}":`, error);
                 }
             }
 

@@ -1,4 +1,10 @@
 {
+  "soundMap ":{
+    "_goal": "sounds/goal.wav",
+    "_red card": "sounds/redcard.wav",
+    "_yellow card": "sounds/yellowcard.wav",
+    "default": "sounds/whistle.wav"
+  },
   "allowed_leagues": [
     { "id": 0, "name": "Favorites" },
     { "id": 1, "name": "World Cup" },
