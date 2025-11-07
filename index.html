@@ -131,7 +131,8 @@
         }
 
         .date-nav button,
-        #user-submit {
+        #user-submit,
+        .styled-button { /* NEW: Reusable button class */
             background: var(--bg-element);
             color: var(--text-primary);
             border: none;
@@ -212,6 +213,10 @@
             margin-bottom: 1.5rem;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 0.5rem;
+            /* NEW: For fav button */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .loader {
@@ -241,19 +246,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* NEW: Add gap for fav toggle */
             gap: 0.5rem;
         }
         
-        /* MODIFIED: Was .league-header a */
         .league-header-link {
-            font-size: 1.5rem; /* Make link text same size as header */
-            color: var(--text-primary); /* Match header color */
+            font-size: 1.5rem;
+            color: var(--text-primary);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.75rem; /* Space between logo and name */
-            /* NEW: For long league names */
+            gap: 0.75rem; 
             flex-grow: 1;
             overflow: hidden;
             white-space: nowrap;
@@ -264,13 +266,11 @@
         }
         
         .league-header-link span {
-            /* NEW: For long league names */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         
-        /* NEW: League logo in the header */
         .league-header-logo {
             width: 32px;
             height: 32px;
@@ -296,16 +296,13 @@
             flex-grow: 0;
             align-items: center;
             text-align: center;
-            /* MODIFIED: Added transparent border to prevent layout shift */
             border: 2px solid transparent; 
         }
 
-        /* NEW: Live match indicator border */
         .match-card.is-live {
             border-color: var(--accent-color);
         }
 
-        /* NEW: League logo container */
         .match-league {
             display: flex;
             align-items: center;
@@ -314,8 +311,6 @@
             color: var(--text-secondary);
             width: 100%;
             justify-content: center; /* Center align it */
-            /* MODIFIED: Removed margin-bottom */
-            /* margin-bottom: 0.25rem; */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -375,19 +370,16 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            /* MODIFIED: Increased gap for larger logo */
             gap: 0.5rem; 
             width: 100%;
         }
 
         .team img {
-            /* MODIFIED: Increased logo size */
             width: 36px;
             height: 36px;
         }
 
         .team-name {
-            /* MODIFIED: Increased font size slightly */
             font-size: 0.9rem; 
             font-weight: bold;
             line-height: 1.2;
@@ -397,7 +389,6 @@
             flex-grow: 1;
         }
 
-        /* ADDED - Styles for clickable team names */
         .team-name.team-link {
             cursor: pointer;
         }
@@ -417,9 +408,11 @@
             cursor: pointer;
             font-size: 1.1rem;
             padding: 0;
+            /* NEW: Ensure it doesn't shrink */
+            flex-shrink: 0;
         }
 
-        /* --- League Page --- */
+        /* --- League Page & Match Page Tabs --- */
         .tabs {
             display: flex;
             flex-wrap: wrap;
@@ -586,7 +579,6 @@
             margin-top: 0.5rem;
         }
         
-        /* NEW: Live tracking controls on match page */
         .live-track-controls {
             display: flex;
             align-items: center;
@@ -645,6 +637,99 @@
             color: var(--text-secondary);
         }
         
+        /* NEW: Statistics Tab */
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            background: var(--bg-panel);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .stat-value {
+            padding: 0.75rem;
+            font-weight: bold;
+            width: 80px;
+            text-align: center;
+        }
+        .stat-name {
+            flex-grow: 1;
+            text-align: center;
+            font-weight: bold;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* NEW: Lineup Tab */
+        .lineup-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap; /* For small screens */
+        }
+        .lineup-team {
+            flex: 1;
+            min-width: 250px;
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .lineup-team h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .lineup-team img {
+            width: 30px;
+            height: 30px;
+        }
+        .lineup-info {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        .lineup-list {
+            list-style: none;
+            padding: 0;
+        }
+        .lineup-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .lineup-list li:last-child {
+            border-bottom: none;
+        }
+        .lineup-list .player-number {
+            display: inline-block;
+            width: 30px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+        .lineup-list-title {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        /* NEW: H2H Tab */
+        .h2h-container .matches-container {
+            /* Re-use existing styles */
+        }
+        .h2h-container h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        
         /* --- Team Page --- */
         .team-info-header {
             display: flex;
@@ -663,6 +748,9 @@
         
         .team-info-details h2 {
             font-size: 1.8rem;
+            display: flex; /* For fav button */
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .team-info-details p {
@@ -687,6 +775,7 @@
         #reset-settings-btn,
         #update-settings-btn,
         #theme-select {
+            /* Use the reusable class */
             background: var(--bg-element);
             color: var(--text-primary);
             border: none;
@@ -788,11 +877,13 @@
         .theme-light .standings-table th,
         .theme-light .stat-item,
         .theme-light .match-details-header,
-        .theme-light .team-info-header {
+        .theme-light .team-info-header,
+        .theme-light .lineup-team, /* NEW */
+        .theme-light .stat-row /* NEW */
+        {
             border: 1px solid var(--border-color);
         }
 
-        /* MODIFIED: Ensure live border overrides light theme border */
         .theme-light .match-card.is-live {
              border: 2px solid var(--accent-color);
         }
@@ -857,7 +948,9 @@
             let currentDate = new Date(); 
             let appConfig = null; // Will hold users/{username}.json
             let appSettings = null; // Will hold users/app.json
-            let liveMatchTimer = null; // NEW: Timer for live match refresh
+            let liveMatchTimer = null;
+            let homePageTimer = null; // NEW: Timer for home page refresh
+            let homePageLoadAllState = false; // NEW: State for home page "load all"
 
             // --- Storage Service ---
             // Stores username and the user's config
@@ -878,21 +971,14 @@
                     if (!appConfig) return false;
                     const idNum = Number(id);
                     if (type === 'team') {
-                        // Use 'favourit_teams' (no 'e') as in original code
-                        // MODIFIED: Check for object with ID using .some()
                         return appConfig.favourit_teams && appConfig.favourit_teams.some(team => team.id === idNum);
                     }
                     if (type === 'league') {
-                        // "Favorites" (id 0) is a fav if any team is a fav
-                        // MODIFIED: Check for object with ID
                         if (idNum === 0) return appConfig.favourit_teams && appConfig.favourit_teams.length > 0;
-                        // Use 'favourite_leagues' (with 'e') as in original code
-                        // MODIFIED: Check for object with ID using .some()
                         return appConfig.favourite_leagues && appConfig.favourite_leagues.some(league => league.id === idNum);
                     }
                     return false;
                 },
-                // UPDATED: Reads from appSettings, not appConfig
                 getAllowedLeagues: () => appSettings ? appSettings.allowed_leagues : [],
             };
 
@@ -928,6 +1014,11 @@
                             if (data.errors.token || data.errors.key) {
                                 showError(document.getElementById('content-container'), "Invalid API Key. Please ask the administrator to check the config file.");
                                 return;
+                            }
+                            // NEW: Handle "not found" or "bad request" gracefully by returning empty
+                            if (data.errors.requests) {
+                                console.warn(`API warning for ${endpoint}: ${data.errors.requests}`);
+                                return []; // Return empty array for things like stats/lineup not found
                             }
                             throw new Error(JSON.stringify(data.errors));
                         }
@@ -996,9 +1087,9 @@
                 container.innerHTML = `
                     <h1>Lite Football</h1>
                     <div class="date-nav">
-                        <button id="prev-day">&lt;</button>
+                        <button id="prev-day" class="styled-button">&lt;</button>
                         <span id="current-date">${formatDate(currentDate)}</span>
-                        <button id="next-day">&gt;</button>
+                        <button id="next-day" class="styled-button">&gt;</button>
                     </div>
                     <div class="live-toggle">
                         <label class="switch-toggle">
@@ -1028,14 +1119,13 @@
                 });
             }
             
-            function renderMatchCard(match, isFavSectionMatch = false) { // NEW: Added default param
+            function renderMatchCard(match, isFavSectionMatch = false) {
                 const fixture = match.fixture;
                 const league = match.league;
                 const teams = match.teams;
                 const goals = match.goals;
                 const status = fixture.status.short;
 
-                // NEW: Check if match is live
                 const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
 
                 let scoreText;
@@ -1046,11 +1136,9 @@
                     statusText = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 } else {
                     scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
-                    // MODIFIED: Show elapsed time for all live statuses, including HT
                     if (isLive || status === 'HT') {
                          statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
                     } else {
-                        // This handles FT, PST, etc.
                         statusText = fixture.status.long;
                     }
                 }
@@ -1058,7 +1146,6 @@
                 const isFavHome = Config.isFav('team', teams.home.id);
                 const isFavAway = Config.isFav('team', teams.away.id);
 
-                // NEW: Conditionally render league HTML
                 const leagueHtml = isFavSectionMatch ? `
                     <div class="match-league" title="${league.name}">
                         ${league.logo ? `<img src="${league.logo}" alt="">` : ''}
@@ -1066,8 +1153,6 @@
                     </div>
                 ` : '';
 
-                // MODIFIED: Added ${isLive ? 'is-live' : ''} to class
-                // MODIFIED: Added .match-league div
                 return `
                     <a href="#/match/${fixture.id}" class="match-card ${isLive ? 'is-live' : ''}">
                         ${leagueHtml}
@@ -1077,7 +1162,6 @@
                         <div class="match-teams">
                             <div class="team">
                                 <img src="${teams.home.logo}" alt="${teams.home.name}">
-                                <!-- CHANGED - Added team-link class and data-team-id -->
                                 <span class="team-name team-link" data-team-id="${teams.home.id}">${teams.home.name}</span>
                                 <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
                                     ${isFavHome ? '⭐' : '☆'}
@@ -1086,7 +1170,6 @@
                             <div class="score-container">${scoreText}</div>
                             <div class="team">
                                 <img src="${teams.away.logo}" alt="${teams.away.name}">
-                                <!-- CHANGED - Added team-link class and data-team-id -->
                                 <span class="team-name team-link" data-team-id="${teams.away.id}">${teams.away.name}</span>
                                 <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
                                     ${isFavAway ? '⭐' : '☆'}
@@ -1098,7 +1181,7 @@
             }
             
             /**
-             * RENAMED - Adds click listeners to all .fav-toggle and .team-link elements in a container
+             * Adds click listeners to all .fav-toggle and .team-link elements in a container
              */
             function addCardListeners(container) {
                 container.querySelectorAll('.fav-toggle').forEach(toggle => {
@@ -1122,25 +1205,27 @@
                             return;
                         }
 
-                        // MODIFIED: Find index of object
                         const index = favArray.findIndex(item => item.id === id);
                         
                         if (index > -1) {
-                            // Item exists, remove it
                             favArray.splice(index, 1);
                             e.currentTarget.textContent = '☆';
                         } else {
-                            // Item does not exist, add it as an object
                             let name = 'Unknown';
                             
                             if (type === 'team') {
-                                const teamNameEl = e.currentTarget.closest('.team').querySelector('.team-name');
-                                name = teamNameEl ? teamNameEl.textContent : 'Unknown Team';
+                                // Try finding name from team-info or team-cell
+                                let teamNameEl = e.currentTarget.closest('.team-info-details')?.querySelector('h2');
+                                if (!teamNameEl) teamNameEl = e.currentTarget.closest('.team-cell')?.querySelector('a');
+                                if (!teamNameEl) teamNameEl = e.currentTarget.closest('.team')?.querySelector('.team-name');
+                                name = teamNameEl ? teamNameEl.textContent.replace('⭐','').replace('☆','').trim() : 'Unknown Team';
                             } else if (type === 'league') {
                                 if (id === 0) {
                                     name = 'Favorites';
                                 } else {
-                                    const leagueNameEl = e.currentTarget.closest('.league-header').querySelector('.league-header-link span');
+                                    // Try finding name from page-title or league-header
+                                    let leagueNameEl = e.currentTarget.closest('.page-title')?.querySelector('span');
+                                    if (!leagueNameEl) leagueNameEl = e.currentTarget.closest('.league-header')?.querySelector('.league-header-link span');
                                     name = leagueNameEl ? leagueNameEl.textContent : 'Unknown League';
                                 }
                             }
@@ -1153,11 +1238,10 @@
                     });
                 });
                 
-                // ADDED - Add listeners for team links
                 container.querySelectorAll('.team-link').forEach(link => {
                     link.addEventListener('click', (e) => {
-                        e.preventDefault(); // Stop navigation from card link
-                        e.stopPropagation(); // Stop event bubbling
+                        e.preventDefault(); 
+                        e.stopPropagation(); 
                         
                         const teamId = e.currentTarget.dataset.teamId;
                         if (teamId) {
@@ -1166,6 +1250,141 @@
                     });
                 });
             }
+            
+            // --- NEW: Match Page Tab Renderers ---
+            
+            function renderEvent(event) {
+                let icon = '';
+                let detail = event.detail;
+                if (event.type === 'Goal') icon = '⚽';
+                if (event.type === 'subst') icon = '🔄';
+                if (event.type === 'Card') icon = event.detail === 'Yellow Card' ? '🟨' : '🟥';
+                
+                return `
+                    <div class="event-item ${event.team.id === window.currentMatchHomeTeamId ? 'home-event' : 'away-event'}">
+                        <div class="event-time">${event.time.elapsed}'</div>
+                        <div class="event-icon">${icon}</div>
+                        <div class="event-info">
+                            <div class="event-player">${event.player.name}</div>
+                            <div class="event-detail">${event.assist.name ? `Assist: ${event.assist.name}` : detail}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function renderLineup(lineupData) {
+                if (!lineupData || lineupData.length < 2) return '<p>Lineups not available.</p>';
+                
+                const home = lineupData[0];
+                const away = lineupData[1];
+                
+                const renderPlayerList = (players) => {
+                    return players.map(p => `
+                        <li>
+                            <span class="player-number">${p.number}</span>
+                            ${p.player.name}
+                        </li>
+                    `).join('');
+                };
+                
+                return `
+                    <div class="lineup-container">
+                        <div class="lineup-team">
+                            <h3><img src="${home.team.logo}" alt=""> ${home.team.name}</h3>
+                            <div class="lineup-info">
+                                Manager: ${home.coach.name || 'N/A'}<br>
+                                Formation: ${home.formation || 'N/A'}
+                            </div>
+                            
+                            <div class="lineup-list-title">Starting XI</div>
+                            <ul class="lineup-list">${renderPlayerList(home.startXI)}</ul>
+                            
+                            <div class="lineup-list-title">Substitutes</div>
+                            <ul class="lineup-list">${renderPlayerList(home.substitutes)}</ul>
+                        </div>
+                        <div class="lineup-team">
+                            <h3><img src="${away.team.logo}" alt=""> ${away.team.name}</h3>
+                            <div class="lineup-info">
+                                Manager: ${away.coach.name || 'N/A'}<br>
+                                Formation: ${away.formation || 'N/A'}
+                            </div>
+                            
+                            <div class="lineup-list-title">Starting XI</div>
+                            <ul class="lineup-list">${renderPlayerList(away.startXI)}</ul>
+                            
+                            <div class="lineup-list-title">Substitutes</div>
+                            <ul class="lineup-list">${renderPlayerList(away.substitutes)}</ul>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function renderStatistics(statsData) {
+                if (!statsData || statsData.length < 2) return '<p>Statistics not available.</p>';
+                
+                const home = statsData[0];
+                const away = statsData[1];
+                
+                const statsMap = new Map();
+                
+                home.statistics.forEach(stat => {
+                    statsMap.set(stat.type, { home: stat.value ?? 0 });
+                });
+                
+                away.statistics.forEach(stat => {
+                    const existing = statsMap.get(stat.type) || { home: 0 };
+                    existing.away = stat.value ?? 0;
+                    statsMap.set(stat.type, existing);
+                });
+                
+                let html = `<div class="stats-container">`;
+                statsMap.forEach((values, type) => {
+                    html += `
+                        <div class="stat-row">
+                            <div class="stat-value">${values.home}</div>
+                            <div class="stat-name">${type}</div>
+                            <div class="stat-value">${values.away}</div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                
+                return html;
+            }
+            
+            function renderH2H(h2hData) {
+                if (!h2hData || h2hData.length === 0) return '<p>No head-to-head data available.</p>';
+                
+                // Summarize H2H
+                const homeTeamId = h2hData[0].teams.home.id;
+                let homeWins = 0;
+                let awayWins = 0;
+                let draws = 0;
+                
+                h2hData.forEach(match => {
+                    if (match.fixture.status.short !== 'FT') return; // Only count finished matches
+                    
+                    if (match.goals.home === match.goals.away) {
+                        draws++;
+                    } else if (match.teams.home.id === homeTeamId) {
+                        if (match.goals.home > match.goals.away) homeWins++;
+                        else awayWins++;
+                    } else {
+                        if (match.goals.home > match.goals.away) awayWins++;
+                        else homeWins++;
+                    }
+                });
+
+                return `
+                    <div class="h2h-container">
+                        <h3>${homeWins} Wins | ${draws} Draws | ${awayWins} Wins</h3>
+                        <div class="matches-container">
+                            ${h2hData.map(match => renderMatchCard(match, true)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
 
             // --- Page Controllers ---
 
@@ -1174,14 +1393,21 @@
                 renderHeader(headerContainer);
                 container.innerHTML = '<div class="loader">Loading matches...</div>';
                 
-                await loadHomePageMatches();
+                // NEW: Reset load all state on fresh page load
+                homePageLoadAllState = false; 
+                await loadHomePageMatches(false, false);
             }
 
             /**
              * Fetches and renders matches for the home page
-             * UPDATED: Now reads allowed leagues from Config helper (which uses appSettings)
+             * NEW: Added loadAll and isRefresh parameters
              */
-            async function loadHomePageMatches() {
+            async function loadHomePageMatches(loadAll = false, isRefresh = false) {
+                // NEW: Update global state
+                if (loadAll) {
+                    homePageLoadAllState = true;
+                }
+                
                 const container = document.getElementById('content-container');
                 const isLive = document.getElementById('live-toggle') ? document.getElementById('live-toggle').checked : false;
                 const date = formatDate(currentDate);
@@ -1189,15 +1415,17 @@
                 if (document.getElementById('current-date')) {
                     document.getElementById('current-date').textContent = date;
                 }
-                showLoader(container);
+                
+                // NEW: Only show loader if not a background refresh
+                if (!isRefresh) {
+                    showLoader(container);
+                }
 
                 try {
-                    // UPDATED: Get allowed leagues from the new Config method
                     const allowedLeagues = Config.getAllowedLeagues();
                     const allowedLeagueIds = allowedLeagues.map(l => l.id);
 
                     if (allowedLeagueIds.length === 0) {
-                        // CHANGED: Don't throw an error, just warn. App can still show fav team matches.
                         console.warn("No allowed leagues configured. Please check 'users/app.json'. Only favorite team matches will be shown.");
                     }
                     
@@ -1208,59 +1436,49 @@
                     
                     const matchesResponse = await apiFetch(endpoint);
                     
-                    // Get user's favorites from config
-                    // MODIFIED: Map array of objects to a Set of IDs
                     const favTeamIds = new Set((appConfig.favourit_teams || []).map(team => team.id));
                     const favLeagueIds = new Set((appConfig.favourite_leagues || []).map(league => league.id));
 
-                    // --- NEW Grouping Logic (v3) ---
                     const favTeamMatches = [];
-                    const favLeagueMatches = []; // NEW: For fav leagues
-                    const otherMatches = []; // Temporary holding array
+                    const favLeagueMatches = [];
+                    const otherMatches = []; 
 
-                    // 1. First pass: Separate matches into three groups
                     for (const match of matchesResponse) {
                         const leagueId = match.league.id;
                         const isFavTeamMatch = favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id);
                         const isFavLeagueMatch = favLeagueIds.has(leagueId);
 
-                        // Check for Favorite Teams FIRST
                         if (isFavTeamMatch) {
                             favTeamMatches.push(match);
                         } 
-                        // THEN Check for Favorite Leagues
                         else if (isFavLeagueMatch) {
                             favLeagueMatches.push(match);
                         } 
-                        // ELSE, it's a normal match
                         else {
                             otherMatches.push(match);
                         }
                     }
                     
-                    // 2. Second pass: Filter the remaining 'other' matches by allowed leagues
-                    const allowedOtherMatches = otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
+                    // NEW: Filter 'other' matches based on homePageLoadAllState
+                    const allowedOtherMatches = (homePageLoadAllState) 
+                        ? otherMatches 
+                        : otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
                     
-                    // 3. Third pass: Group the matches for rendering
                     const favLeagueGroups = {};
                     const otherLeagueGroups = {};
 
-                    // Group Favorite League matches (which bypassed the allowed list)
                     for (const match of favLeagueMatches) {
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
-                        // NEW: Store logo
                         if (!favLeagueGroups[leagueId]) {
                              favLeagueGroups[leagueId] = { name: leagueName, logo: match.league.logo, matches: [] };
                         }
                         favLeagueGroups[leagueId].matches.push(match);
                     }
 
-                    // Group the remaining *allowed* matches
                     for (const match of allowedOtherMatches) { 
                         const leagueId = match.league.id;
                         const leagueName = match.league.name;
-                        // NEW: Store logo
                         if (!otherLeagueGroups[leagueId]) {
                             otherLeagueGroups[leagueId] = { name: leagueName, logo: match.league.logo, matches: [] };
                         }
@@ -1286,7 +1504,6 @@
                         `;
                     }
 
-                    // NEW: Combined render function for league groups
                     const renderLeagueGroup = (leagueId, group) => {
                         const isFav = Config.isFav('league', leagueId);
                         const leagueLogoHtml = group.logo ? `<img src="${group.logo}" alt="" class="league-header-logo">` : '';
@@ -1317,14 +1534,34 @@
                     if (html === '') {
                         html = '<p>No matches found for this date.</p>';
                     }
+                    
+                    // NEW: Add "Load All" button if not already loaded
+                    if (!homePageLoadAllState) {
+                         html += `
+                            <div style="text-align: center; margin-top: 1.5rem;">
+                                <button id="load-all-matches-btn" class="styled-button" style="padding: 0.75rem 1rem;">
+                                    Load All Matches (Ignore Filters)
+                                </button>
+                            </div>
+                         `;
+                    }
 
                     container.innerHTML = html;
                     
-                    // RENAMED - Add card listeners after render
                     addCardListeners(container);
+                    
+                    // NEW: Bind the "Load All" button
+                    const loadAllBtn = container.querySelector('#load-all-matches-btn');
+                    if (loadAllBtn) {
+                        loadAllBtn.addEventListener('click', () => loadHomePageMatches(true, false));
+                    }
 
                 } catch (error) {
-                    showError(container, error.message);
+                    if (!isRefresh) { // Don't show error on background refresh
+                        showError(container, error.message);
+                    } else {
+                        console.error("Home page refresh failed:", error);
+                    }
                 }
             }
 
@@ -1332,7 +1569,6 @@
                 document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
                 showLoader(container);
                 
-                // Define state variables *within* this function's scope
                 let lastScore = '';
                 let lastEventsCount = 0;
                 
@@ -1342,46 +1578,78 @@
                         throw new Error("Match not found.");
                     }
                     
-                    const events = await apiFetch(`fixtures/events?fixture=${id}`);
-
                     const { fixture, league, teams, goals } = matchData;
+                    const { home, away } = teams;
+                    const h2hId = `${home.id}-${away.id}`;
+                    const status = fixture.status.short;
                     
-                    // Set initial state
+                    // NEW: Set global team ID for event renderer
+                    window.currentMatchHomeTeamId = home.id;
+
+                    const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
+                    const isFinished = ['FT', 'AET', 'PEN', 'PST', 'CANC', 'ABD'].includes(status);
+                    const isNotStarted = status === 'NS';
+                    
+                    // NEW: Fetch all data
+                    const [events, lineup, statistics, headtohead] = await Promise.all([
+                        apiFetch(`fixtures/events?fixture=${id}`),
+                        apiFetch(`fixtures/lineup?fixture=${id}`),
+                        // Only fetch stats if finished, otherwise API might return error
+                        isFinished ? apiFetch(`fixtures/statistics?fixture=${id}`) : Promise.resolve([]),
+                        apiFetch(`fixtures/headtohead?h2h=${h2hId}`)
+                    ]);
+
                     lastScore = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
                     lastEventsCount = events.length;
-                    
-                    const renderEvent = (event) => {
-                        let icon = '';
-                        let detail = event.detail;
-                        if (event.type === 'Goal') icon = '⚽';
-                        if (event.type === 'subst') icon = '🔄';
-                        if (event.type === 'Card') icon = event.detail === 'Yellow Card' ? '🟨' : '🟥';
-                        
-                        return `
-                            <div class="event-item ${event.team.id === teams.home.id ? 'home-event' : 'away-event'}">
-                                <div class="event-time">${event.time.elapsed}'</div>
-                                <div class="event-icon">${icon}</div>
-                                <div class="event-info">
-                                    <div class="event-player">${event.player.name}</div>
-                                    <div class="event-detail">${event.assist.name ? `Assist: ${event.assist.name}` : detail}</div>
-                                </div>
-                            </div>
-                        `;
-                    };
 
-                    const status = fixture.status.short;
-                    const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
+                    // --- NEW: Build Tabs ---
+                    let tabsHtml = '<div class="tabs">';
+                    let tabContentsHtml = '';
+                    
+                    if (isNotStarted) {
+                        if (lineup && lineup.length > 0) {
+                            tabsHtml += `<button class="tab-button active" data-tab="lineup">Lineup</button>`;
+                            tabsHtml += `<button class="tab-button" data-tab="h2h">Head to Head</button>`;
+                            tabContentsHtml += `<div id="lineup" class="tab-content active">${renderLineup(lineup)}</div>`;
+                            tabContentsHtml += `<div id="h2h" class="tab-content">${renderH2H(headtohead)}</div>`;
+                        } else {
+                            tabsHtml += `<button class="tab-button active" data-tab="h2h">Head to Head</button>`;
+                            tabsHtml += `<button class="tab-button" data-tab="lineup">Lineup</button>`;
+                            tabContentsHtml += `<div id="h2h" class="tab-content active">${renderH2H(headtohead)}</div>`;
+                            tabContentsHtml += `<div id="lineup" class="tab-content">${renderLineup(lineup)}</div>`;
+                        }
+                    } else if (isLive) {
+                        tabsHtml += `<button class="tab-button active" data-tab="events">Events</button>`;
+                        tabsHtml += `<button class="tab-button" data-tab="lineup">Lineup</button>`;
+                        tabsHtml += `<button class="tab-button" data-tab="h2h">Head to Head</button>`;
+                        tabContentsHtml += `<div id="events" class="tab-content active"><div class="match-events">${events.map(renderEvent).join('')}</div></div>`;
+                        tabContentsHtml += `<div id="lineup" class="tab-content">${renderLineup(lineup)}</div>`;
+                        tabContentsHtml += `<div id="h2h" class="tab-content">${renderH2H(headtohead)}</div>`;
+                    } else { // Finished
+                        tabsHtml += `<button class="tab-button active" data-tab="stats">Stats</button>`;
+                        tabsHtml += `<button class="tab-button" data-tab="events">Events</button>`;
+                        tabsHtml += `<button class="tab-button" data-tab="lineup">Lineup</button>`;
+                        tabsHtml += `<button class="tab-button" data-tab="h2h">Head to Head</button>`;
+                        tabContentsHtml += `<div id="stats" class="tab-content active">${renderStatistics(statistics)}</div>`;
+                        tabContentsHtml += `<div id="events" class="tab-content"><div class="match-events">${events.map(renderEvent).join('')}</div></div>`;
+                        tabContentsHtml += `<div id="lineup" class="tab-content">${renderLineup(lineup)}</div>`;
+                        tabContentsHtml += `<div id="h2h" class="tab-content">${renderH2H(headtohead)}</div>`;
+                    }
+                    tabsHtml += '</div>';
+                    // --- End Build Tabs ---
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="#/">Home</a> &gt; Match Details</h2>
+                        <h2 class="page-title"><span><a href="#/">Home</a> &gt; Match Details</span></h2>
                         
                         ${isLive ? `
                         <div class="live-track-controls">
                             <label class="switch-toggle">
-                               <input type="checkbox" id="live-track-checkbox">
+                               <!-- NEW: Changed ID and purpose -->
+                               <input type="checkbox" id="live-sound-checkbox">
                                <span class="slider"></span>
                             </label>
-                            <label for="live-track-checkbox" style="margin-left: 0.5rem;">Track Live (Sound on change)</label>
+                            <!-- NEW: Changed label -->
+                            <label for="live-sound-checkbox" style="margin-left: 0.5rem;">Sound on change</label>
                         </div>
                         ` : ''}
 
@@ -1389,16 +1657,16 @@
                             <div class="league"><a href="#/league/${league.id}">${league.name}</a> - ${league.round}</div>
                             <div class="match-details-teams">
                                 <div class="match-details-team">
-                                    <a href="#/team/${teams.home.id}">
-                                        <img src="${teams.home.logo}" alt="${teams.home.name}">
-                                        <h2>${teams.home.name}</h2>
+                                    <a href="#/team/${home.id}">
+                                        <img src="${home.logo}" alt="${home.name}">
+                                        <h2>${home.name}</h2>
                                     </a>
                                 </div>
                                 <div class="match-details-score">${goals.home ?? '0'} - ${goals.away ?? '0'}</div>
                                 <div class="match-details-team">
-                                    <a href="#/team/${teams.away.id}">
-                                        <img src="${teams.away.logo}" alt="${teams.away.name}">
-                                        <h2>${teams.away.name}</h2>
+                                    <a href="#/team/${away.id}">
+                                        <img src="${away.logo}" alt="${away.name}">
+                                        <h2>${away.name}</h2>
                                     </a>
                                 </div>
                             </div>
@@ -1408,62 +1676,86 @@
                             </div>
                         </div>
                         
-                        <h3 class="page-title" style="font-size: 1.3rem;">Events</h3>
-                        <div id="match-events-content" class="match-events">
-                            ${events.map(renderEvent).join('')}
-                        </div>
+                        <!-- NEW: Tabs and Content -->
+                        ${tabsHtml}
+                        ${tabContentsHtml}
                     `;
                     
-                    // --- Bind Listener ---
-                    if (isLive) {
-                        const checkbox = document.getElementById('live-track-checkbox');
-                        checkbox.addEventListener('change', (e) => {
-                            if (e.target.checked) {
-                                if (liveMatchTimer) clearInterval(liveMatchTimer);
-                                // Start timer
-                                liveMatchTimer = setInterval(async () => {
-                                    try {
-                                        // Refresh data
-                                        const [refreshedMatchData] = await apiFetch(`fixtures?id=${id}`);
-                                        const refreshedEvents = await apiFetch(`fixtures/events?fixture=${id}`);
-                                        
-                                        const { fixture: rFix, goals: rGoals } = refreshedMatchData;
-                                        
-                                        const newScore = `${rGoals.home ?? '0'} - ${rGoals.away ?? '0'}`;
-                                        const newEventsCount = refreshedEvents.length;
-
-                                        let changed = false;
-                                        if (newScore !== lastScore) {
-                                            changed = true;
-                                            lastScore = newScore;
-                                        }
-                                        if (newEventsCount !== lastEventsCount) {
-                                            changed = true;
-                                            lastEventsCount = newEventsCount;
-                                        }
-                                        
-                                        if (changed) {
-                                            playSound();
-                                        }
-
-                                        // --- Update UI ---
-                                        // Update score and status
-                                        document.querySelector('.match-details-score').textContent = newScore;
-                                        document.querySelector('.match-details-status').textContent = `${rFix.status.long} ${rFix.status.elapsed ? `(${rFix.status.elapsed}')` : ''}`;
-                                        
-                                        // Re-render events list
-                                        document.getElementById('match-events-content').innerHTML = refreshedEvents.map(renderEvent).join('');
-
-                                    } catch (err) {
-                                        console.error("Error during live refresh:", err);
-                                        // Don't stop the timer, just log the error
-                                    }
-                                }, 30000); // 30 seconds
-                            } else {
-                                if (liveMatchTimer) clearInterval(liveMatchTimer);
-                                liveMatchTimer = null;
-                            }
+                    // --- Bind Tab Listeners ---
+                    container.querySelectorAll('.tab-button').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const tabId = button.dataset.tab;
+                            
+                            container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                            container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                            
+                            button.classList.add('active');
+                            const activeContent = container.querySelector(`#${tabId}`);
+                            if (activeContent) activeContent.classList.add('active');
                         });
+                    });
+                    
+                    // --- NEW: Modified Live Timer Logic ---
+                    if (isLive) {
+                        if (liveMatchTimer) clearInterval(liveMatchTimer); // Clear any old timer
+                        
+                        // Start timer unconditionally
+                        liveMatchTimer = setInterval(async () => {
+                            try {
+                                // Refresh data
+                                const [refreshedMatchData, refreshedEvents, refreshedLineup] = await Promise.all([
+                                    apiFetch(`fixtures?id=${id}`),
+                                    apiFetch(`fixtures/events?fixture=${id}`),
+                                    apiFetch(`fixtures/lineup?fixture=${id}`)
+                                ]);
+                                
+                                const { fixture: rFix, goals: rGoals } = refreshedMatchData[0];
+                                const rStatus = rFix.status.short;
+                                const rIsLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(rStatus);
+
+                                // If match finished, stop timer and reload page to get stats tab
+                                if (!rIsLive) {
+                                    clearInterval(liveMatchTimer);
+                                    liveMatchTimer = null;
+                                    window.location.reload(); 
+                                    return;
+                                }
+                                
+                                const newScore = `${rGoals.home ?? '0'} - ${rGoals.away ?? '0'}`;
+                                const newEventsCount = refreshedEvents.length;
+
+                                let changed = false;
+                                if (newScore !== lastScore) {
+                                    changed = true;
+                                    lastScore = newScore;
+                                }
+                                if (newEventsCount !== lastEventsCount) {
+                                    changed = true;
+                                    lastEventsCount = newEventsCount;
+                                }
+                                
+                                // NEW: Check if sound is enabled
+                                const soundEnabled = document.getElementById('live-sound-checkbox')?.checked;
+                                if (changed && soundEnabled) {
+                                    playSound();
+                                }
+
+                                // --- Update UI ---
+                                document.querySelector('.match-details-score').textContent = newScore;
+                                document.querySelector('.match-details-status').textContent = `${rFix.status.long} ${rFix.status.elapsed ? `(${rFix.status.elapsed}')` : ''}`;
+                                
+                                // Re-render tab content
+                                const eventsTab = document.getElementById('events');
+                                if (eventsTab) eventsTab.innerHTML = `<div class="match-events">${refreshedEvents.map(renderEvent).join('')}</div>`;
+                                
+                                const lineupTab = document.getElementById('lineup');
+                                if (lineupTab) lineupTab.innerHTML = renderLineup(refreshedLineup);
+
+                            } catch (err) {
+                                console.error("Error during live refresh:", err);
+                                // Don't stop the timer, just log the error
+                            }
+                        }, 60000); // MODIFIED: 60 seconds
                     }
 
                 } catch (error) {
@@ -1477,21 +1769,34 @@
                 
                 try {
                     const season = getCurrentSeason();
-                    const [standingsData, scorersData, assistsData] = await Promise.all([
+                    // NEW: Await all, but handle potential empty standings
+                    const [standingsResponse, scorersData, assistsData] = await Promise.all([
                         apiFetch(`standings?league=${id}&season=${season}`),
                         apiFetch(`players/topscorers?league=${id}&season=${season}`),
                         apiFetch(`players/topassists?league=${id}&season=${season}`),
                     ]);
 
-                    const leagueInfo = standingsData[0]?.league;
+                    // Use a fallback object if standings are empty but we want to show other tabs
+                    const leagueInfo = standingsResponse[0]?.league || 
+                                     (scorersData[0] ? scorersData[0].statistics[0].league : null) ||
+                                     (assistsData[0] ? assistsData[0].statistics[0].league : null);
+                    
                     if (!leagueInfo) {
                         throw new Error("League data not found.");
                     }
                     
-                    const standings = leagueInfo.standings;
+                    // Standings might be empty, default to empty array
+                    const standings = standingsResponse[0]?.league.standings || [];
                     
+                    // NEW: Add fav button
+                    const isFav = Config.isFav('league', leagueInfo.id);
+
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="#/">Home</a> &gt; ${leagueInfo.name}</h2>
+                        <!-- NEW: Added span for title and fav-toggle -->
+                        <h2 class="page-title">
+                            <span><a href="#/">Home</a> &gt; ${leagueInfo.name}</span>
+                            <span class="fav-toggle" data-type="league" data-id="${leagueInfo.id}">${isFav ? '⭐' : '☆'}</span>
+                        </h2>
                         <div class="tabs">
                             <button class="tab-button active" data-tab="standings">Standings</button>
                             <button class="tab-button" data-tab="scorers">Top Scorers</button>
@@ -1580,9 +1885,11 @@
                             container.querySelector(`#${tabId}`).classList.add('active');
                         });
                     });
+                    
+                    // NEW: Add listener for the fav button
+                    addCardListeners(container);
 
-                } catch (error)
- {
+                } catch (error) {
                     showError(container, error.message);
                 }
             }
@@ -1598,7 +1905,7 @@
                     const isFav = Config.isFav('team', team.id);
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="#/">Home</a> &gt; Team</h2>
+                        <h2 class="page-title"><span><a href="#/">Home</a> &gt; Team</span></h2>
                         <div class="team-info-header">
                             <img src="${team.logo}" alt="${team.name}">
                             <div class="team-info-details">
@@ -1612,7 +1919,6 @@
                         <p>More team details like squad and recent matches could be loaded here.</p>
                     `;
                     
-                    // RENAMED - Add card listeners
                     addCardListeners(container);
 
                 } catch (error) {
@@ -1631,7 +1937,7 @@
                     const stats = statistics[0]; // First team stats
 
                     container.innerHTML = `
-                        <h2 class="page-title"><a href="#/">Home</a> &gt; Player</h2>
+                        <h2 class="page-title"><span><a href="#/">Home</a> &gt; Player</span></h2>
                         <div class="team-info-header"> <!-- Re-using team header style -->
                             <img src="${player.photo}" alt="${player.name}" style="border-radius: 50%;">
                                 <div class="team-info-details">
@@ -1664,10 +1970,14 @@
 
             // --- App Router ---
             function AppRouter() {
-                // NEW: Clear any live match timer when navigating
+                // NEW: Clear ALL timers on navigation
                 if (liveMatchTimer) {
                     clearInterval(liveMatchTimer);
                     liveMatchTimer = null;
+                }
+                if (homePageTimer) {
+                    clearInterval(homePageTimer);
+                    homePageTimer = null;
                 }
                 
                 const path = window.location.hash.substring(1) || '/';
@@ -1675,6 +1985,9 @@
 
                 document.getElementById('app-header').innerHTML = '';
                 showLoader(mainContainer);
+                
+                // NEW: Clean up match-specific globals
+                delete window.currentMatchHomeTeamId;
 
                 if (path.startsWith('/match/')) {
                     const id = path.split('/')[2];
@@ -1690,19 +2003,22 @@
                     renderPlayerPage(mainContainer, id);
                 } else {
                     renderHomePage(mainContainer);
+                    // NEW: Start home page refresh timer
+                    homePageTimer = setInterval(() => {
+                        // Refresh with current 'loadAll' state, as a background refresh
+                        loadHomePageMatches(homePageLoadAllState, true); 
+                    }, 60000); // 60 seconds
                 }
             }
             
             /* Applies theme class to body and sets dropdown
              */
             function applyTheme(theme) {
-                // Use default 'dark-bleu' if theme is invalid
-                // MODIFIED: Added new themes
                 const validThemes = ['dark-bleu', 'dark-red', 'darky-dark', 'light', 'morocco', 'morocco-away', 'usk', 'raja'];
                 const themeToApply = validThemes.includes(theme) ? theme : 'dark-bleu';
                 
-                document.body.className = ''; // Clear old themes
-                if (themeToApply !== 'dark-bleu') { // 'dark-bleu' is the default (no class)
+                document.body.className = ''; 
+                if (themeToApply !== 'dark-bleu') { 
                     document.body.classList.add(`theme-${themeToApply}`);
                 }
                 
@@ -1714,18 +2030,15 @@
             
             /**
              * NEW: Loads the app.json config file *from the server*
-             * This holds app-wide settings like allowed_leagues
              */
             async function loadAppSettings(onSuccessCallback) {
                 try {
-                    // Use cache-busting query param to ensure freshness
                     const response = await fetch(`users/app.json?_=${new Date().getTime()}`);
                     if (!response.ok) {
                         throw new Error("Could not load users/app.json");
                     }
                     appSettings = await response.json();
                     
-                    // Now that app settings are loaded, proceed with user logic
                     if (onSuccessCallback) onSuccessCallback();
                     
                 } catch (error) {
@@ -1736,30 +2049,28 @@
             
             /**
              * Loads the user config file (e.g., users/username.json)
-             * Saves it to localStorage and calls onComplete
              */
             async function loadConfigFromServer(username, onComplete) {
                 let configUrl = `users/${username.toLowerCase()}.json`;
                 try {
-                    let response = await fetch(configUrl);
+                    // NEW: Add cache buster
+                    let response = await fetch(`${configUrl}?_=${new Date().getTime()}`);
                     if (!response.ok) {
                         console.warn(`User config ${configUrl} not found, falling back to default.`);
                         configUrl = 'users/default.json';
-                        response = await fetch(configUrl);
+                        response = await fetch(`${configUrl}?_=${new Date().getTime()}`);
                     }
                     
                     if (!response.ok) {
                         throw new Error("Could not load default.json config.");
                     }
                     
-                    // This is the USER config (api_key, favs, theme)
                     appConfig = await response.json();
                     
-                    // Ensure fav arrays exist to prevent errors later
                     if (!appConfig.favourit_teams) appConfig.favourit_teams = [];
                     if (!appConfig.favourite_leagues) appConfig.favourite_leagues = [];
                     
-                    Storage.setLocalConfig(appConfig); // Save to localStorage
+                    Storage.setLocalConfig(appConfig); 
                     applyTheme(appConfig.theme);
                     
                     if(onComplete) onComplete();
@@ -1772,7 +2083,6 @@
             
             /**
              * Fetches server config and merges favorites
-             * This function remains unchanged as it only deals with user favs
              */
             async function updateFavoritesFromServer() {
                 const username = Storage.getUsername();
@@ -1780,22 +2090,20 @@
                 
                 let configUrl = `users/${username.toLowerCase()}.json`;
                 try {
-                    let response = await fetch(configUrl);
+                    // NEW: Add cache buster
+                    let response = await fetch(`${configUrl}?_=${new Date().getTime()}`);
                     if (!response.ok) {
                         configUrl = 'users/default.json';
-                        response = await fetch(configUrl);
+                        response = await fetch(`${configUrl}?_=${new Date().getTime()}`);
                     }
                     if (!response.ok) throw new Error("Could not load config file for update.");
                     
                     const jsonConfig = await response.json();
                     const localConfig = Storage.getLocalConfig() || appConfig;
                     
-                    // MODIFIED: Helper to merge arrays of objects by ID, favoring local items
                     const mergeById = (arr1, arr2) => {
                         const map = new Map();
-                        // Add items from the first array (local, which might be newer)
                         (arr1 || []).forEach(item => map.set(item.id, item));
-                        // Add items from the second array (server) only if not already present
                         (arr2 || []).forEach(item => {
                             if (!map.has(item.id)) {
                                 map.set(item.id, item);
@@ -1804,7 +2112,6 @@
                         return Array.from(map.values());
                     };
                     
-                    // MODIFIED: Use new merge function
                     const mergedTeams = mergeById(localConfig.favourit_teams, jsonConfig.favourit_teams);
                     const mergedLeagues = mergeById(localConfig.favourite_leagues, jsonConfig.favourite_leagues);
                     
@@ -1812,64 +2119,64 @@
                     localConfig.favourite_leagues = mergedLeagues;
                     
                     Storage.setLocalConfig(localConfig);
-                    appConfig = localConfig; // Update in-memory config
+                    appConfig = localConfig;
                     
-                    alert("Favorites updated!"); // Simple alert
-                    loadHomePageMatches(); // Reload matches to show new favs
+                    alert("Favorites updated!");
+                    // NEW: Reload current page to reflect changes
+                    AppRouter();
                     
                 } catch (error) {
                     console.error("Error updating favorites:", error);
-                    alert("Could not update favorites."); // Simple alert
+                    alert("Could not update favorites.");
                 }
             }
             
             /**
-             * NEW: This logic runs *after* app settings are loaded
-             * MODIFIED: Loads 'default' config if no user is set.
+             * This logic runs *after* app settings are loaded
              */
             function initUserLogic() {
                 const modal = document.getElementById('user-modal');
-                modal.classList.remove('visible'); // Ensure it's hidden on load
+                modal.classList.remove('visible'); 
                 
                 const username = Storage.getUsername();
-                const configToLoad = username || 'default'; // Load 'default' if no user
                 
-                appConfig = Storage.getLocalConfig();
-                
-                if (appConfig) {
-                    applyTheme(appConfig.theme);
-                    AppRouter();
+                // If no user, show modal
+                if (!username) {
+                    modal.classList.add('visible');
+                    // Load default config in background so app is usable
+                    loadConfigFromServer('default', AppRouter); 
                 } else {
-                    loadConfigFromServer(configToLoad, AppRouter);
+                    appConfig = Storage.getLocalConfig();
+                
+                    if (appConfig) {
+                        applyTheme(appConfig.theme);
+                        AppRouter();
+                    } else {
+                        loadConfigFromServer(username, AppRouter);
+                    }
                 }
             }
             
             /**
              * First function to run on load
-             * UPDATED: Now starts the new loading chain
              */
             function init() {
-                // --- Bind Footer Events ---
-                // MODIFIED: 'Change User' now shows the modal
                 document.getElementById('change-user-btn').addEventListener('click', () => {
                     document.getElementById('user-modal').classList.add('visible');
                 });
                 
-                // NEW: Bind the modal submit button
                 document.getElementById('user-submit').onclick = () => {
                     const newUsername = document.getElementById('username-input').value;
                     if (newUsername) {
                         Storage.setUsername(newUsername);
-                        Storage.clearLocalConfig(); // Force reload of config
+                        Storage.clearLocalConfig(); 
                         window.location.reload();
                     } else {
-                        // If no name, just hide the modal
                         document.getElementById('user-modal').classList.remove('visible');
                     }
                 };
                 
                 document.getElementById('reset-settings-btn').addEventListener('click', () => {
-                    // MODIFIED: Also clear username to return to default
                     Storage.clearUsername();
                     Storage.clearLocalConfig();
                     window.location.reload();
@@ -1879,16 +2186,13 @@
                 
                 document.getElementById('theme-select').addEventListener('change', (e) => {
                     const newTheme = e.target.value;
-                    if (appConfig) { // Only save if config is loaded
+                    if (appConfig) { 
                         appConfig.theme = newTheme;
                         Storage.setLocalConfig(appConfig);
                     }
                     applyTheme(newTheme);
                 });
                 
-                // --- NEW LOADING CHAIN ---
-                // 1. Load app-wide settings (app.json)
-                // 2. On success, initialize user-specific logic (username.json)
                 loadAppSettings(initUserLogic);
             }
 
