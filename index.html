@@ -1371,7 +1371,7 @@
                 const renderPlayerList = (players) => {
                     return players.map(p => `
                         <li>
-                            <span class="player-number">${p.number}</span>
+                            <span class="player-number">${p.player.number}</span>
                             ${p.player.name}
                         </li>
                     `).join('');
