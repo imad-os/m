@@ -156,6 +156,29 @@
             font-size: 1rem;
         }
         
+        /* NEW: Header Username */
+        .header-username {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-secondary);
+            flex-basis: 100%;
+            text-align: right;
+            order: -1; /* Move to top on mobile */
+            padding: 0 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .header-username {
+                flex-basis: auto;
+                order: 0; /* Reset order */
+                text-align: left;
+            }
+            #app-header h1 {
+                flex-basis: auto;
+                order: 0;
+            }
+        }
+        
         .switch-toggle {
             position: relative;
             display: inline-block;
@@ -951,6 +974,7 @@
             let liveMatchTimer = null;
             let homePageTimer = null; // NEW: Timer for home page refresh
             let homePageLoadAllState = false; // NEW: State for home page "load all"
+            let loadedUsername = 'default'; // NEW: Global state for current user
 
             // --- Storage Service ---
             // Stores username and the user's config
@@ -1004,11 +1028,17 @@
                         });
 
                         if (!response.ok) {
+                            // NEW: Handle 204 No Content gracefully
+                            if (response.status === 204) {
+                                console.warn(`API warning for ${endpoint}: 204 No Content`);
+                                return []; // Return empty array
+                            }
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
                         const data = await response.json();
                         
+                        // MODIFIED: Broader error checking
                         if (data.errors && Object.keys(data.errors).length > 0) {
                             console.error("API Errors:", data.errors);
                             if (data.errors.token || data.errors.key) {
@@ -1016,8 +1046,8 @@
                                 return;
                             }
                             // NEW: Handle "not found" or "bad request" gracefully by returning empty
-                            if (data.errors.requests) {
-                                console.warn(`API warning for ${endpoint}: ${data.errors.requests}`);
+                            if (data.errors.requests || data.errors.endpoint) {
+                                console.warn(`API warning for ${endpoint}: ${JSON.stringify(data.errors)}`);
                                 return []; // Return empty array for things like stats/lineup not found
                             }
                             throw new Error(JSON.stringify(data.errors));
@@ -1084,7 +1114,9 @@
             }
 
             function renderHeader(container) {
+                // NEW: Reads from global loadedUsername state
                 container.innerHTML = `
+                    <span class="header-username">User: ${loadedUsername}</span>
                     <h1>Lite Football</h1>
                     <div class="date-nav">
                         <button id="prev-day" class="styled-button">&lt;</button>
@@ -2133,27 +2165,23 @@
             
             /**
              * This logic runs *after* app settings are loaded
+             * MODIFIED: To load 'default' user first without showing modal.
              */
             function initUserLogic() {
                 const modal = document.getElementById('user-modal');
-                modal.classList.remove('visible'); 
+                modal.classList.remove('visible'); // Always ensure it's hidden on load
                 
                 const username = Storage.getUsername();
+                loadedUsername = username || 'default'; // Set global state
                 
-                // If no user, show modal
-                if (!username) {
-                    modal.classList.add('visible');
-                    // Load default config in background so app is usable
-                    loadConfigFromServer('default', AppRouter); 
+                appConfig = Storage.getLocalConfig();
+                
+                if (appConfig) {
+                    applyTheme(appConfig.theme);
+                    AppRouter();
                 } else {
-                    appConfig = Storage.getLocalConfig();
-                
-                    if (appConfig) {
-                        applyTheme(appConfig.theme);
-                        AppRouter();
-                    } else {
-                        loadConfigFromServer(username, AppRouter);
-                    }
+                    // Load config and *then* route
+                    loadConfigFromServer(loadedUsername, AppRouter);
                 }
             }
             
