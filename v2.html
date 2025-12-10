@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lite Football</title>
-    <!-- 
-      A single, lightweight HTML file for old browsers.
-      All CSS and JS are inline.
-      By Gemini (v2 - Features Restored)
-    -->
+    
+    <!-- Firebase SDKs (Compat version for easier drop-in) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
         /* --- Global Styles --- */
         * {
@@ -36,1026 +37,1935 @@
             transition: background-color 0.3s, color 0.3s;
         }
         
-        #app-shell {
-            max-width: 1200px;
+        #app-wrapper {
+            max-width: 1400px; /* Max width for wide TVs */
             margin: 0 auto;
-            padding: 10px;
-            padding-top: 60px; /* Space for user display */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
-        /* --- User Display (Top Right) --- */
-        #user-display {
-            position: fixed; /* Fixed to viewport */
-            top: 10px;
-            right: 15px;
-            z-index: 1001; /* Above modal overlay */
-            display: flex;
+        #content-container {
+            flex-grow: 1;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* --- API Key Modal --- */
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none; /* Hidden by default */
+            justify-content: center;
             align-items: center;
-            background-color: var(--bg-panel);
-            padding: 8px 12px;
+            z-index: 1000;
+        }
+
+        #auth-modal.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            padding: 2rem;
             border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
         }
 
-        #user-info {
+        .modal-content h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal-content p {
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        /* --- Header --- */
+        #app-header {
+            background: var(--bg-panel);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* For small screens */
+            gap: 0.5rem;
+        }
+
+        #app-header h1 {
+            font-size: 1.5rem;
+            flex-basis: 100%; /* Full width on small screens */
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .date-nav {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-nav button,
+        .styled-button { /* NEW: Reusable button class */
+            background: var(--bg-element);
             color: var(--text-primary);
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .styled-button:hover {
+            filter: brightness(1.1);
+        }
+
+        #current-date {
+            font-size: 1.1rem;
             font-weight: bold;
-            max-width: 200px; /* Prevent wide names from breaking layout */
+            min-width: 100px;
+            text-align: center;
         }
 
-        #user-icon {
-            margin-right: 8px;
-            font-size: 20px; /* Larger emoji */
-            line-height: 1;
+        .live-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        /* NEW: Header Username */
+        .header-username {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-secondary);
+            flex-basis: 100%;
+            text-align: right;
+            order: -1; /* Move to top on mobile */
+            padding: 0 0.5rem;
         }
 
-        #username-display {
-            font-size: 16px;
+        @media (min-width: 768px) {
+            .header-username {
+                flex-basis: auto;
+                order: 0; /* Reset order */
+                text-align: left;
+            }
+            #app-header h1 {
+                flex-basis: auto;
+                order: 0;
+            }
+        }
+        
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-element);
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--accent-color);
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(22px);
+            -ms-transform: translateX(22px);
+            transform: translateX(22px);
+        }
+        
+        /* --- Main Content --- */
+        #content-container {
+            padding: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            /* NEW: For fav button */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loader {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 3rem;
+        }
+
+        .error-message {
+            background: #5a1d1d;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* --- Home Page (Matches) --- */
+        .league-group {
+            margin-bottom: 2rem;
+        }
+
+        .league-header {
+            font-size: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .league-header-link {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; 
+            flex-grow: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .league-header-link:hover {
+            color: var(--accent-color);
+        }
+        
+        .league-header-link span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .league-header-logo {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .matches-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem; /* Space between cards */
+        }
+
+        .match-card {
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            padding: 1rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-basis: 350px;
+            flex-grow: 0;
+            align-items: center;
+            text-align: center;
+            border: 2px solid transparent; 
+        }
+
+        .match-card.is-live {
+            border-color: var(--accent-color);
+        }
+
+        .match-league {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            width: 100%;
+            justify-content: center; /* Center align it */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .match-league img {
+            width: 20px; /* Small league logo */
+            height: 20px;
+            flex-shrink: 0; /* Prevent logo from shrinking */
+        }
+        
+        .match-league span {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        /* Style the sign-in button */
-        #sign-in-btn {
-            padding: 6px 12px;
-            font-size: 14px;
-            background-color: var(--accent-color);
-            color: var(--bg-body);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+
+        @media (max-width: 600px) {
+            .match-card {
+                flex-basis: calc(50% - 0.5rem);
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .match-card {
+                flex-basis: 100%;
+            }
+        }
+
+        .match-status {
+            text-align: center;
+            font-size: 1rem;
+            color: var(--accent-color);
             font-weight: bold;
         }
         
-        /* NEW: Settings Button */
-        #settings-btn {
+        .match-status.not-started {
+            color: var(--text-secondary);
+            font-weight: normal;
+            font-size: 0.9rem;
+        }
+
+        .match-teams {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.25rem;
+            width: 100%;
+        }
+
+        .team {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.5rem; 
+            width: 100%;
+        }
+
+        .team img {
+            width: 36px;
+            height: 36px;
+        }
+
+        .team-name {
+            font-size: 0.9rem; 
+            font-weight: bold;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        .team-name.team-link {
+            cursor: pointer;
+        }
+        .team-name.team-link:hover {
+            text-decoration: underline;
+            color: var(--accent-color);
+        }
+
+        .score-container {
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0.25rem 0;
+        }
+        
+        .fav-toggle {
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            /* NEW: Ensure it doesn't shrink */
+            flex-shrink: 0;
+        }
+
+        /* --- League Page & Match Page Tabs --- */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-button {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 22px; /* Emoji icon size */
-            cursor: pointer;
-            margin-left: 10px;
-            padding: 4px;
-            line-height: 1;
-        }
-        #settings-btn:hover {
-            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
         }
 
-        #sign-in-btn.hidden,
-        #user-info.hidden {
+        .tab-button.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .tab-content {
             display: none;
         }
-        
-        /* --- Main Content --- */
-        #main-content {
-            background-color: var(--bg-panel);
-            padding: 15px;
-            border-radius: 8px;
-        }
-                
-        h1 {
-            color: var(--accent-color);
-            margin-bottom: 15px;
-            font-size: 24px;
+
+        .tab-content.active {
+            display: block;
         }
 
-        /* --- Loading Indicator --- */
-        #loading-indicator {
-            text-align: center;
-            padding: 40px;
-            font-size: 18px;
-            color: var(--text-secondary);
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table th,
+        .standings-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .standings-table th {
+            background: var(--bg-panel);
+            font-size: 0.8rem;
+            text-transform: uppercase;
         }
         
-        /* --- Match List --- */
-        .match-list {
-            list-style: none;
+        .standings-table td.rank {
+            font-weight: bold;
+            width: 30px;
         }
         
-        .match-item {
-            background-color: var(--bg-element);
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+        .standings-table td.team-cell {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border: 1px solid var(--border-color);
+            gap: 0.5rem;
         }
         
-        /* NEW: Highlight favorite teams */
-        .match-item.fav-team {
-            border-left: 4px solid var(--accent-color);
-            padding-left: 9px;
+        .standings-table img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .group-title {
+            font-size: 1.3rem;
+            color: var(--accent-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
         }
         
-        .match-info {
+        .stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-panel);
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+        
+        .stat-item .rank {
+            font-size: 1.2rem;
+            font-weight: bold;
+            width: 30px;
+        }
+        
+        .stat-item img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        
+        .stat-item-info {
             flex-grow: 1;
         }
         
-        .team-name {
+        .stat-item-player {
             font-weight: bold;
-            font-size: 18px;
         }
         
-        .match-details {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 5px;
-        }
-        
-        .favorite-btn {
-            background-color: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .favorite-btn.is-favorite {
-            color: #FFD700; /* Gold color for favorite */
-        }
-        
-        /* --- Settings Elements --- */
-        .settings-group {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--bg-element);
-        }
-        .settings-group:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        
-        .settings-group label,
-        .settings-group .settings-label { /* For checkbox groups */
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+        .stat-item-team {
+            font-size: 0.9rem;
             color: var(--text-secondary);
         }
         
-        .settings-select, .settings-input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            background-color: var(--bg-element);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-        }
-        
-        .settings-button {
-            background-color: var(--accent-color);
-            color: var(--bg-body);
-            border: none;
-            padding: 12px 18px;
-            margin-right: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+        .stat-item-value {
+            font-size: 1.2rem;
             font-weight: bold;
-            transition: background-color 0.2s;
-            margin-top: 5px; /* For stacking */
-        }
-        
-        .settings-button:hover {
-            opacity: 0.9;
-        }
-        
-        #reset-settings-btn {
-            background-color: #e04f4f; /* Red for reset */
-            color: var(--text-primary);
-        }
-        
-        /* Checkbox styling */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .checkbox-group input {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-            accent-color: var(--accent-color);
-        }
-        .checkbox-group label {
-            font-weight: normal;
-            color: var(--text-primary);
-            margin-bottom: 0; /* Override group label */
-        }
-        
-        #league-filter-list {
-            max-height: 150px;
-            overflow-y: auto;
-            background-color: var(--bg-element);
-            padding: 10px;
-            border-radius: 5px;
         }
 
-        /* --- Modal --- */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+        /* --- Match Details Page --- */
+        .match-details-header {
+            text-align: center;
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
         }
         
-        .modal.visible {
+        .match-details-header .league {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .match-details-teams {
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 1rem;
+        }
+        
+        .match-details-team {
+            width: 35%;
+            text-align: center;
+        }
+        
+        .match-details-team img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .match-details-team h2 {
+            font-size: 1.2rem;
+        }
+        
+        .match-details-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .match-details-status {
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-top: 0.5rem;
+        }
+        
+        .live-track-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .match-details-info {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+        
+        .match-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .event-item.home-event {
+            /* No change */
+        }
+        
+        .event-item.away-event {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+        
+        .event-time {
+            font-weight: bold;
+            width: 40px;
+        }
+        
+        .event-icon {
+            font-size: 1rem;
+        }
+        
+        .event-player {
+            font-weight: bold;
+        }
+        
+        .event-detail {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        /* NEW: Statistics Tab */
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            background: var(--bg-panel);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .stat-value {
+            padding: 0.75rem;
+            font-weight: bold;
+            width: 80px;
+            text-align: center;
+        }
+        .stat-name {
+            flex-grow: 1;
+            text-align: center;
+            font-weight: bold;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* NEW: Lineup Tab */
+        .lineup-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap; /* For small screens */
+        }
+        .lineup-team {
+            flex: 1;
+            min-width: 250px;
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .lineup-team h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .lineup-team img {
+            width: 30px;
+            height: 30px;
+        }
+        .lineup-info {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        .lineup-list {
+            list-style: none;
+            padding: 0;
+        }
+        .lineup-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .lineup-list li:last-child {
+            border-bottom: none;
+        }
+        .lineup-list .player-number {
+            display: inline-block;
+            width: 30px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+        .lineup-list-title {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        /* NEW: H2H Tab */
+        .h2h-container .matches-container {
+            /* Re-use existing styles */
+        }
+        .h2h-container h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        
+        /* --- Team Page --- */
+        .team-info-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: var(--bg-panel);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .team-info-header img {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .team-info-details h2 {
+            font-size: 1.8rem;
+            display: flex; /* For fav button */
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .team-info-details p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        /* --- Footer --- */
+        #app-footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        #btn-logout,
+        #reset-settings-btn,
+        #update-settings-btn,
+        #theme-select {
+            /* Use the reusable class */
+            background: var(--bg-element);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #theme-select {
+            padding-right: 1.5rem; /* For select arrow */
+        }
+        
+        /* --- Theme Overrides (NEW & DEEPER) --- */
+        
+        /* Dark Red Theme */
+        .theme-dark-red {
+            --bg-body: #1a0b0b;
+            --bg-panel: #2b1111;
+            --bg-element: #4a1c1c;
+            --text-primary: #f0e0e0;
+            --text-secondary: #c0a0a0;
+            --border-color: #4a1c1c;
+            --accent-color: #ff6464;
         }
 
-        .modal-content {
-            background-color: var(--bg-panel);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            width: 90%;
-            max-width: 450px; /* Wider for settings */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-header h2 {
-            margin: 0;
-            color: var(--accent-color);
-        }
-        
-        .modal-close-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 1;
-        }
-        .modal-close-btn:hover {
-            color: var(--text-primary);
-        }
-        
-        .modal-body {
-             max-height: 60vh;
-             overflow-y: auto;
-             padding-right: 10px; /* space for scrollbar */
-        }
-        
-        .modal-content label {
-            text-align: left;
-        }
-        
-        .modal-content input {
-            margin-bottom: 15px;
-        }
-        
-        .modal-footer {
-            text-align: right;
-            margin-top: 20px;
-        }
-        
-        .modal-button {
-             background-color: var(--accent-color);
-            color: var(--bg-body);
-            border: none;
-            padding: 12px 18px;
-            margin: 0 0 0 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        
-        .modal-button.cancel-btn {
-            background-color: var(--bg-element);
-            color: var(--text-secondary);
-        }
-        
-        /* --- Themes --- */
-        body[data-theme="light"] {
-            --bg-body: #f0f2f5;
-            --bg-panel: #ffffff;
-            --bg-element: #e0e6eb;
-            --text-primary: #1c1e21;
-            --text-secondary: #606770;
-            --border-color: #dddfe2;
-            --accent-color: #1877f2;
-        }
-        
-        body[data-theme="oled"] {
-            --bg-body: #000000;
-            --bg-panel: #111111;
-            --bg-element: #222222;
+        /* Darky Dark Theme */
+        .theme-darky-dark {
+            --bg-body: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-element: #333333;
             --text-primary: #e0e0e0;
             --text-secondary: #a0a0a0;
             --border-color: #333333;
-            --accent-color: #ff4500;
+            --accent-color: #bb86fc;
+        }
+        
+        /* Light Theme */
+        .theme-light {
+            --bg-body: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-element: #e4e6eb;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --border-color: #dddfe2;
+            --accent-color: #006aff;
+        }
+        
+        /* --- NEW THEMES --- */
+        
+        /* Morocco (Dark) */
+        .theme-morocco {
+            --bg-body: #002a16; /* Dark Green */
+            --bg-panel: #003f22;
+            --bg-element: #005a31;
+            --text-primary: #f0f0f0;
+            --text-secondary: #b0b0b0;
+            --border-color: #005a31;
+            --accent-color: #C1272D; /* Red */
+        }
+        
+        /* Morocco Away (Light) */
+        .theme-morocco-away {
+            --bg-body: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-element: #e4e6eb;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --border-color: #dddfe2;
+            --accent-color: #006233; /* Green */
+        }
+        
+        /* USK (Dark) */
+        .theme-usk {
+            --bg-body: #1a0b0b; /* Dark Red */
+            --bg-panel: #2b1111;
+            --bg-element: #4a1c1c;
+            --text-primary: #f0e0e0;
+            --text-secondary: #c0a0a0;
+            --border-color: #4a1c1c;
+            --accent-color: #FFFFFF; /* White */
+        }
+        
+        /* Raja (Dark) */
+        .theme-raja {
+            --bg-body: #002a16; /* Dark Green */
+            --bg-panel: #003f22;
+            --bg-element: #005a31;
+            --text-primary: #FFFFFF;
+            --text-secondary: #c0c0c0;
+            --border-color: #005a31;
+            --accent-color: #FFFFFF; /* White */
+        }
+        
+        
+        .theme-light .match-card,
+        .theme-light .modal-content,
+        .theme-light .standings-table th,
+        .theme-light .stat-item,
+        .theme-light .match-details-header,
+        .theme-light .team-info-header,
+        .theme-light .lineup-team, /* NEW */
+        .theme-light .stat-row /* NEW */
+        {
+            border: 1px solid var(--border-color);
+        }
+
+        .theme-light .match-card.is-live {
+             border: 2px solid var(--accent-color);
         }
 
     </style>
 </head>
-<body data-theme="dark">
+<body>
 
-    <!-- NEW: User Display Area -->
-    <div id="user-display">
-        <span id="user-info" class="hidden">
-            <span id="user-icon">👤</span>
-            <span id="username-display"></span>
-        </span>
-        <button id="sign-in-btn" class="hidden">Sign in</button>
-        <button id="settings-btn" title="Settings">⚙️</button> <!-- NEW Settings Button -->
-    </div>
+<div id="app-wrapper"> <!-- New wrapper for max-width -->
 
-    <div id="app-shell">
-        <main id="main-content">
-            <h1 id="page-title">Matches</h1>
-            <div id="loading-indicator">
-                Loading...
-            </div>
-            
-            <!-- Main Matches View -->
-            <div id="matches-view">
-                <ul id="matches-list" class="match-list">
-                    <!-- JS will populate this -->
-                </ul>
-            </div>
-            
-        </main>
-    </div>
-    
-    <!-- User Modal (Unchanged) -->
-    <div id="user-modal" class="modal">
+    <!-- Auth Modal (Replaced old user-modal) -->
+    <div id="auth-modal">
         <div class="modal-content">
-             <div class="modal-header">
-                <h2>Change User</h2>
-                <button id="close-user-modal" class="modal-close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <label for="username-input">Enter Username (e.g., user1, user2)</label>
-                <input type="text" id="username-input" class="settings-input" placeholder="user1">
-            </div>
-            <div class="modal-footer">
-                <button id="save-user-btn" class="modal-button">Load User</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- NEW: Settings Modal -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Settings</h2>
-                <button id="close-settings-modal" class="modal-close-btn">&times;</button>
-            </div>
+            <h2 id="auth-title">Sign In</h2>
+            <p id="auth-message">Please sign in to load your Firebase settings.</p>
             
-            <div class="modal-body">
-                 <!-- Match Display Settings -->
-                <div class="settings-group">
-                    <span class="settings-label">Match Display</span>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="setting-show-favs">
-                        <label for="setting-show-favs">Show only favorited matches</label>
-                    </div>
-                    
-                    <label for="setting-fav-teams">Favorite Teams (comma-separated)</label>
-                    <input type="text" id="setting-fav-teams" class="settings-input" placeholder="e.g., Team A, Team B">
-                    
-                    <label style="margin-top: 15px;">Filter Leagues</label>
-                    <div id="league-filter-list">
-                        <!-- JS will populate this -->
-                        <p style="color: var(--text-secondary); font-size: 14px;">Leagues will appear here when matches load.</p>
-                    </div>
-                </div>
-                
-                <!-- Theme Settings -->
-                <div class="settings-group">
-                    <label for="theme-select">Theme</label>
-                    <select id="theme-select" class="settings-select">
-                        <option value="dark">Dark Blue</option>
-                        <option value="light">Light</option>
-                        <option value="oled">OLED Black</option>
-                    </select>
-                </div>
-                
-                <!-- User Settings -->
-                <div class="settings-group">
-                    <label>User Settings</label>
-                    <button id="change-user-btn" class="settings-button">Change User</button>
-                </div>
-
-                <!-- Data Management -->
-                <div class="settings-group">
-                    <label>Data Management</label>
-                    <button id="update-settings-btn" class="settings-button">Fetch Latest Config</button>
-                    <button id="reset-settings-btn" class="settings-button">Reset All</button>
-                </div>
-            </div>
+            <input type="email" id="auth-email" placeholder="Email Address" required>
+            <input type="password" id="auth-password" placeholder="Password" required>
             
-            <div class="modal-footer">
-                <button id="cancel-settings-btn" class="modal-button cancel-btn">Cancel</button>
-                <button id="save-settings-btn" class="modal-button">Save</button>
+            <div id="auth-error" style="color: #ff6464; margin-bottom: 1rem; font-size: 0.9rem; min-height: 1.2em;"></div>
+            
+            <button id="btn-login" class="styled-button" style="width: 100%; margin-bottom: 0.5rem;">Sign In</button>
+            <button id="btn-signup" class="styled-button" style="width: 100%; display: none;">Sign Up</button>
+            
+            <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                <span id="auth-toggle-text">Don't have an account?</span> 
+                <a href="#" id="auth-toggle-link" style="font-weight: bold;">Sign Up</a>
             </div>
         </div>
     </div>
 
-    <script>
-        (function() {
-            'use strict';
+    <!-- The header is static, but its content will be built by JS -->
+    <header id="app-header">
+        <!-- JS will populate this -->
+    </header>
 
-            // --- State ---
-            let appConfig = null;
-            let allMatches = []; // Cache for all matches
-            let uniqueLeagues = []; // Cache for league filters
-            
-            const defaultConfig = {
-                "theme": "dark",
-                "favorites": [],
-                "username": "default",
-                "isDefault": true,
-                "showOnlyFavorites": false, // NEW
-                "favoriteTeams": [],       // NEW
-                "leagues": {}              // NEW e.g., {"Premier League": true, "La Liga": false}
-            };
-            
-            // --- DOM Elements ---
-            const DOM = {
-                pageTitle: null,
-                mainContent: null,
-                loadingIndicator: null,
-                matchesList: null,
-                userDisplay: {
-                    container: null,
-                    userInfo: null,
-                    username: null,
-                    signInBtn: null
-                },
-                settingsBtn: null,
-                userModal: { // NEW structure
-                    container: null,
-                    closeBtn: null,
-                    saveBtn: null,
-                    input: null
-                },
-                settingsModal: { // NEW
-                    container: null,
-                    closeBtn: null,
-                    saveBtn: null,
-                    cancelBtn: null,
-                    showFavs: null,
-                    favTeams: null,
-                    leagueList: null,
-                    themeSelect: null
+    <!-- All page content will be injected here -->
+    <main id="content-container">
+        <div class="loader">Loading...</div>
+    </main>
+
+    <footer id="app-footer">
+        <div>
+            <label for="theme-select" style="margin-right: 0.5rem; font-size: 0.9rem;">Theme:</label>
+            <select id="theme-select">
+                <option value="dark-bleu">Dark Blue</option>
+                <option value="dark-red">Dark Red</option>
+                <option value="darky-dark">Darky Dark</option>
+                <option value="light">Light</option>
+                <!-- NEW OPTIONS -->
+                <option value="morocco">Morocco</option>
+                <option value="morocco-away">Morocco Away</option>
+                <option value="usk">USK</option>
+                <option value="raja">Raja</option>
+            </select>
+        </div>
+        <button id="btn-logout">Logout</button>
+    </footer>
+
+</div> <!-- End #app-wrapper -->
+
+<script>
+    // --- FIREBASE CONFIGURATION ---
+    // TODO: REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyClgzoMBEKizx-r7abMvAmLgGpk_p748IU",
+        authDomain: "iptv-8b60c.firebaseapp.com",
+        projectId: "iptv-8b60c",
+        storageBucket: "iptv-8b60c.firebasestorage.app",
+        messagingSenderId: "259048691910",
+        appId: "1:259048691910:web:b57f9eeda5546ce4d8dfc7"
+      };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // --- CLOUD FUNCTION ENDPOINT ---
+    // If hosted on the same Firebase project, use relative path. 
+    // Otherwise use full URL: https://us-central1-YOUR-PROJECT.cloudfunctions.net/footballRequest
+    const CLOUD_FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
+    const CLOUD_FUNCTION_URL = CLOUD_FUNCTIONS_BASE+'/footballRequest'; 
+
+    (function() {
+        "use strict";
+
+        // --- App State ---
+        let currentDate = new Date(); 
+        let appConfig = null; // Holds the user's settings document
+        let globalSettings = null; // Holds the global 'app' settings document
+        let liveMatchTimer = null;
+        let homePageTimer = null; 
+        let homePageLoadAllState = false; 
+        let currentUser = null; // Holds the Firebase User Object
+
+        // --- Storage Service (Firebase) ---
+        const Storage = {
+            // Get user config from Firestore 'userssettings/{uid}'
+            loadUserConfig: async (uid) => {
+                try {
+                    const doc = await db.collection('usersSettings').doc(uid).get();
+                    if (doc.exists) {
+                        return doc.data();
+                    }
+                    return null; // No config found for this user
+                } catch (e) {
+                    console.error("Error loading user config:", e);
+                    throw e;
                 }
-            };
-
-            // --- Storage ---
-            const Storage = {
-                // Using localStorage for simplicity on TV browsers
-                getLocalConfig: () => {
-                    try {
-                        const config = localStorage.getItem('liteFootballConfig');
-                        return config ? JSON.parse(config) : null;
-                    } catch (e) {
-                        // console.error('Error reading local config:', e);
-                        return null;
-                    }
-                },
-                setLocalConfig: (config) => {
-                    try {
-                        localStorage.setItem('liteFootballConfig', JSON.stringify(config));
-                    } catch (e) {
-                        // console.error('Error saving local config:', e);
-                    }
-                },
-                clearLocalConfig: () => {
-                    try {
-                        localStorage.removeItem('liteFootballConfig');
-                    } catch (e) {
-                        // console.error('Error clearing local config:', e);
-                    }
-                },
-                // Username is stored separately to know which config to load
-                getUsername: () => {
-                    try {
-                        return localStorage.getItem('liteFootballUser') || 'default';
-                    } catch (e) {
-                        return 'default';
-                    }
-                },
-                setUsername: (username) => {
-                    try {
-                        localStorage.setItem('liteFootballUser', username);
-                    } catch (e) {
-                        // console.error('Error saving username:', e);
-                    }
-                },
-                clearUsername: () => {
-                     try {
-                        localStorage.removeItem('liteFootballUser');
-                    } catch (e) {
-                        // console.error('Error clearing username:', e);
-                    }
-                }
-            };
+            },
             
-            // --- API ---
-            const Api = {
-                // Simple fetch wrapper with timeout for slow devices
-                fetchJSON: (url, timeout = 5000) => {
-                    // Basic timeout fallback for old browsers that don't support AbortController
-                    return new Promise((resolve, reject) => {
-                        const timer = setTimeout(() => {
-                            reject(new Error('Request timed out'));
-                        }, timeout);
+            // Save user config to Firestore 'userssettings/{uid}'
+            saveUserConfig: async (uid, config) => {
+                if (!uid) return;
+                try {
+                    await db.collection('usersSettings').doc(uid).set(config, { merge: true });
+                    appConfig = config; // Update local state
+                } catch (e) {
+                    console.error("Error saving user config:", e);
+                }
+            },
+            
+            // Get global app settings from 'userssettings/global'
+            loadGlobalSettings: async () => {
+                try {
+                    const doc = await db.collection('usersSettings').doc('global').get();
+                    if (doc.exists) {
+                        return doc.data();
+                    }
+                    return { allowed_leagues: [] }; // Default fallback
+                } catch (e) {
+                    console.error("Error loading global settings:", e);
+                    return { allowed_leagues: [] };
+                }
+            }
+        };
+        
+        // --- Config & Favs Helper ---
+        const Config = {
+            isFav: (type, id) => {
+                if (!appConfig) return false;
+                const idNum = Number(id);
+                if (type === 'team') {
+                    return appConfig.favourit_teams && appConfig.favourit_teams.some(team => team.id === idNum);
+                }
+                if (type === 'league') {
+                    if (idNum === 0) return appConfig.favourit_teams && appConfig.favourit_teams.length > 0;
+                    return appConfig.favourite_leagues && appConfig.favourite_leagues.some(league => league.id === idNum);
+                }
+                return false;
+            },
+            getAllowedLeagues: () => globalSettings ? globalSettings.allowed_leagues : [],
+            
+            getTvKeys: () => {
+                const defaults = {
+                    next_day: "VolumeUp",
+                    prev_day: "VolumeDown",
+                    live_on: "AudioVolumeMute",
+                    live_off: "AudioVolumeUp" 
+                };
+                if (appConfig && appConfig.tv_remote_keys) {
+                    return { ...defaults, ...appConfig.tv_remote_keys };
+                }
+                return defaults;
+            }
+        };
 
-                        fetch(url)
-                            .then(response => {
-                                clearTimeout(timer);
-                                if (!response.ok) {
-                                    throw new Error('Network response was not ok');
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                resolve(data);
-                            })
-                            .catch(err => {
-                                clearTimeout(timer);
-                                reject(err);
-                            });
+        // --- Global TV Remote Handler ---
+        function handleTvKeydown(event) {
+            if (!appConfig) return;
+            const nextDayBtn = document.getElementById('next-day');
+            const prevDayBtn = document.getElementById('prev-day');
+            const liveToggle = document.getElementById('live-toggle');
+
+            if (!nextDayBtn || !prevDayBtn || !liveToggle) return;
+
+            const keys = Config.getTvKeys();
+
+            switch (event.key) {
+                case keys.next_day:
+                    event.preventDefault(); 
+                    nextDayBtn.click();
+                    break;
+                case keys.prev_day:
+                    event.preventDefault();
+                    prevDayBtn.click();
+                    break;
+                case keys.live_on:
+                    event.preventDefault();
+                    if (!liveToggle.checked || keys.live_off==keys.live_on) {
+                        liveToggle.click();
+                    }
+                    break;
+                case keys.live_off:
+                    event.preventDefault();
+                    if (liveToggle.checked) {
+                        liveToggle.click();
+                    }
+                    break;
+            }
+        }
+
+        // --- API Service (Via Firebase Cloud Functions) ---
+        async function apiFetch(endpointUrl) {
+            // Parse the endpoint string from the old app logic
+            // e.g., "fixtures?live=all" -> endpoint: "fixtures", params: { live: "all" }
+            const [path, queryString] = endpointUrl.split('?');
+            const params = {};
+            if (queryString) {
+                new URLSearchParams(queryString).forEach((value, key) => {
+                    params[key] = value;
+                });
+            }
+
+            let attempts = 0;
+            while (attempts < 3) {
+                try {
+                    const response = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            endpoint: path,
+                            params: params
+                        })
                     });
-                },
-                
-                // Fetch app-wide settings (Not currently used, but here for future)
-                getAppSettings: () => {
-                    return Api.fetchJSON('app.json');
-                },
-                
-                // Fetch user-specific config
-                getUserConfig: (username) => {
-                    // MODIFIED: Point to users/ directory
-                    return Api.fetchJSON(`users/${username}.json`);
-                },
-                
-                // Fetch all match data
-                getAllMatches: () => {
-                    return Api.fetchJSON('matches.json');
+
+                    if (!response.ok) {
+                        if (response.status === 204) return []; 
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    // The Cloud Function returns the API response directly
+                    // It usually contains { response: [...] } or { errors: ... }
+                    
+                    if (data.errors && Object.keys(data.errors).length > 0) {
+                         if (data.errors.requests || data.errors.endpoint) {
+                            console.warn(`API warning for ${endpointUrl}:`, data.errors);
+                            return []; 
+                        }
+                        throw new Error(JSON.stringify(data.errors));
+                    }
+                    
+                    // The standard API-Football response structure puts data in 'response'
+                    return data.response || []; 
+
+                } catch (error) {
+                    console.error(`API fetch error (attempt ${attempts + 1}):`, error);
+                    attempts++;
+                    if (attempts < 3) {
+                        await new Promise(res => setTimeout(res, 1000 * attempts)); 
+                    } else {
+                        throw error; 
+                    }
                 }
-            };
+            }
+        }
+
+        // --- UI Rendering Functions ---
+
+        async function playSound(type = "default") {
+            if (!globalSettings || !globalSettings.soundMap) return;
             
-            // --- Rendering ---
-            function renderLoading(show) {
-                if (DOM.loadingIndicator) {
-                    DOM.loadingIndicator.style.display = show ? 'block' : 'none';
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            
+            const audioContext = new AudioContext();
+            const url = globalSettings.soundMap[type.toLowerCase()] || globalSettings.soundMap["default"];
+            if (!url) return;
+
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (error) {
+                console.warn(`Failed to play sound:`, error);
+            }
+        }
+
+        function showLoader(container) {
+            container.innerHTML = '<div class="loader">Loading...</div>';
+        }
+
+        function showError(container, e) {
+            container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`;
+            console.log(e)
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        function getCurrentSeason() {
+            const today = new Date();
+            const month = today.getMonth(); 
+            return (month < 6) ? today.getFullYear() - 1 : today.getFullYear();
+        }
+
+        function renderHeader(container) {
+            // Display email or UID
+            const displayUser = currentUser ? (currentUser.email || 'User') : 'Guest';
+            
+            container.innerHTML = `
+                <span class="header-username">User: ${displayUser}</span>
+                <h1>Lite Football</h1>
+                <div class="date-nav">
+                    <button id="prev-day" class="styled-button">&lt;</button>
+                    <span id="current-date">${formatDate(currentDate)}</span>
+                    <button id="next-day" class="styled-button">&gt;</button>
+                </div>
+                <div class="live-toggle">
+                    <label class="switch-toggle">
+                       <input type="checkbox" id="live-toggle">
+                       <span class="slider"></span>
+                    </label>
+                    <label for="live-toggle" style="margin-left: 0.5rem;">Live</label>
+                </div>
+            `;
+
+            document.getElementById('prev-day').addEventListener('click', () => {
+                currentDate.setDate(currentDate.getDate() - 1);
+                document.getElementById('live-toggle').checked = false;
+                loadHomePageMatches();
+            });
+            document.getElementById('next-day').addEventListener('click', () => {
+                currentDate.setDate(currentDate.getDate() + 1);
+                document.getElementById('live-toggle').checked = false;
+                loadHomePageMatches();
+            });
+            document.getElementById('live-toggle').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    currentDate = new Date(); 
+                }
+                loadHomePageMatches();
+            });
+        }
+        
+        function renderMatchCard(match, isFavSectionMatch = false) {
+            const fixture = match.fixture;
+            const league = match.league;
+            const teams = match.teams;
+            const goals = match.goals;
+            const status = fixture.status.short;
+
+            const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(status);
+
+            let scoreText;
+            let statusText = fixture.status.long;
+
+            if (status === 'NS') {
+                scoreText = '-';
+                statusText = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
+                if (isLive || status === 'HT') {
+                     statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
+                } else {
+                    statusText = fixture.status.long;
                 }
             }
             
-            function renderError(message, container) {
-                if (container) {
-                    container.innerHTML = `<p style="color: #e04f4f; text-align: center;">${message}</p>`;
-                }
-            }
-            
-            function createMatchElement(match, isFavTeam) {
-                const li = document.createElement('li');
-                // NEW: Add fav-team class if match
-                li.className = 'match-item' + (isFavTeam ? ' fav-team' : '');
-                li.dataset.matchId = match.id;
-                
-                const isFav = appConfig.favorites.includes(match.id);
-                
-                li.innerHTML = `
-                    <div class="match-info">
-                        <div class="team-name">${match.home} vs ${match.away}</div>
-                        <div class="match-details">${new Date(match.date).toLocaleString()} - ${match.league}</div>
+            const isFavHome = Config.isFav('team', teams.home.id);
+            const isFavAway = Config.isFav('team', teams.away.id);
+
+            const leagueHtml = isFavSectionMatch ? `
+                <div class="match-league" title="${league.name}">
+                    ${league.logo ? `<img src="${league.logo}" alt="">` : ''}
+                    <span>${league.name}</span>
+                </div>
+            ` : '';
+
+            return `
+                <a href="#/match/${fixture.id}" class="match-card ${isLive ? 'is-live' : ''}">
+                    ${leagueHtml}
+                    <div class="match-status ${status === 'NS' ? 'not-started' : ''}">
+                        ${statusText}
                     </div>
-                    <button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-match-id="${match.id}">
-                        ${isFav ? '★' : '☆'}
-                    </button>
-                `;
-                
-                // Add event listener directly
-                li.querySelector('.favorite-btn').addEventListener('click', toggleFavorite);
-                
-                return li;
-            }
+                    <div class="match-teams">
+                        <div class="team">
+                            <img src="${teams.home.logo}" alt="${teams.home.name}">
+                            <span class="team-name team-link" data-team-id="${teams.home.id}">${teams.home.name}</span>
+                            <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
+                                ${isFavHome ? '⭐' : '☆'}
+                            </span>
+                        </div>
+                        <div class="score-container">${scoreText}</div>
+                        <div class="team">
+                            <img src="${teams.away.logo}" alt="${teams.away.name}">
+                            <span class="team-name team-link" data-team-id="${teams.away.id}">${teams.away.name}</span>
+                            <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
+                                ${isFavAway ? '⭐' : '☆'}
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }
+        
+        function addCardListeners(container) {
+            container.querySelectorAll('.fav-toggle').forEach(toggle => {
+                toggle.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-            /**
-             * NEW: Main match rendering function with filtering and sorting
-             */
-            function renderMatches() {
-                if (!DOM.matchesList) return;
-                
-                renderLoading(true);
-                DOM.matchesList.innerHTML = ''; // Clear list
+                    const type = e.currentTarget.dataset.type;
+                    const id = Number(e.currentTarget.dataset.id);
+                    
+                    if (!type || !id || !appConfig || !currentUser) return;
+                    
+                    // Clone config to avoid mutation issues before save
+                    const newConfig = JSON.parse(JSON.stringify(appConfig));
+                    let favArray;
 
-                // Fetch matches if not already cached
-                const fetchPromise = allMatches.length > 0 
-                    ? Promise.resolve(allMatches) 
-                    : Api.getAllMatches();
-                    
-                fetchPromise.then(matches => {
-                    allMatches = matches; // Cache them
-                    extractLeagues(matches); // Populate league filter list
-                    
-                    // --- Start Algorithm ---
-                    let processedMatches = [...allMatches];
-                    
-                    // 1. Filter by "Show Only Favorites"
-                    if (appConfig.showOnlyFavorites) {
-                        processedMatches = processedMatches.filter(m => appConfig.favorites.includes(m.id));
-                    }
-                    
-                    // 2. Filter by League
-                    // Ensure all leagues are in the config
-                    for (const league of uniqueLeagues) {
-                        if (appConfig.leagues[league] === undefined) {
-                            appConfig.leagues[league] = true;
-                        }
-                    }
-                    processedMatches = processedMatches.filter(m => appConfig.leagues[m.league] === true);
-                    
-                    // 3. Sort by Favorite Teams, then Date
-                    const favTeamsLower = appConfig.favoriteTeams.map(t => t.toLowerCase().trim());
-                    
-                    const getMatchScore = (match) => {
-                        const homeLower = match.home.toLowerCase();
-                        const awayLower = match.away.toLowerCase();
-                        
-                        if (favTeamsLower.some(t => homeLower.includes(t) || awayLower.includes(t))) {
-                            return 1; // It's a favorite team
-                        }
-                        return 0;
-                    };
-                    
-                    processedMatches.sort((a, b) => {
-                        const scoreA = getMatchScore(a);
-                        const scoreB = getMatchScore(b);
-                        
-                        if (scoreA !== scoreB) {
-                            return scoreB - scoreA; // Higher score comes first
-                        }
-                        
-                        // If scores are equal, sort by date
-                        return new Date(a.date) - new Date(b.date);
-                    });
-                    // --- End Algorithm ---
-
-                    renderLoading(false);
-                    if (processedMatches.length === 0) {
-                        DOM.matchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No matches found with current filters.</p>';
+                    if (type === 'team') {
+                        if (!newConfig.favourit_teams) newConfig.favourit_teams = [];
+                        favArray = newConfig.favourit_teams;
+                    } else if (type === 'league') {
+                        if (!newConfig.favourite_leagues) newConfig.favourite_leagues = [];
+                        favArray = newConfig.favourite_leagues;
+                    } else {
                         return;
                     }
+
+                    const index = favArray.findIndex(item => item.id === id);
                     
-                    processedMatches.forEach(match => {
-                        const isFavTeam = getMatchScore(match) > 0;
-                        DOM.matchesList.appendChild(createMatchElement(match, isFavTeam));
-                    });
-                }).catch(err => {
-                    renderLoading(false);
-                    renderError('Could not load matches: ' + err.message, DOM.matchesList);
-                });
-            }
-            
-            /**
-             * NEW: Populates the league filter list in settings
-             */
-            function extractLeagues(matches) {
-                if (uniqueLeagues.length > 0) return; // Only run once
-                
-                const leagues = new Set();
-                matches.forEach(m => leagues.add(m.league));
-                uniqueLeagues = Array.from(leagues).sort();
-                
-                // Ensure all found leagues are in the config, default to true
-                uniqueLeagues.forEach(league => {
-                    if (appConfig.leagues[league] === undefined) {
-                        appConfig.leagues[league] = true;
-                    }
-                });
-            }
-            
-            /**
-             * NEW: Renders the settings modal with current config values
-             */
-            function renderSettingsModal() {
-                if (!appConfig) return;
-                
-                // Populate simple values
-                DOM.settingsModal.themeSelect.value = appConfig.theme;
-                DOM.settingsModal.showFavs.checked = appConfig.showOnlyFavorites;
-                DOM.settingsModal.favTeams.value = appConfig.favoriteTeams.join(', ');
-                
-                // Populate league list
-                DOM.settingsModal.leagueList.innerHTML = '';
-                if (uniqueLeagues.length === 0) {
-                     DOM.settingsModal.leagueList.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">No leagues loaded yet.</p>';
-                }
-                
-                uniqueLeagues.forEach(league => {
-                    const isChecked = appConfig.leagues[league] !== false; // Default to true if undefined
-                    const item = document.createElement('div');
-                    item.className = 'checkbox-group';
-                    item.innerHTML = `
-                        <input type="checkbox" id="league-${league}" data-league="${league}" ${isChecked ? 'checked' : ''}>
-                        <label for="league-${league}">${league}</label>
-                    `;
-                    DOM.settingsModal.leagueList.appendChild(item);
-                });
-            }
-
-            /**
-             * Updates the user display in the top-right corner
-             */
-            function updateUserDisplay(config) {
-                if (!config || !DOM.userDisplay.container) {
-                    return;
-                }
-
-                if (config.isDefault) {
-                    // Show Sign in button, hide user info
-                    DOM.userDisplay.userInfo.classList.add('hidden');
-                    DOM.userDisplay.signInBtn.classList.remove('hidden');
-                } else {
-                    // Show user info, hide Sign in button
-                    if (DOM.userDisplay.username) {
-                         DOM.userDisplay.username.textContent = config.username;
-                    }
-                    DOM.userDisplay.userInfo.classList.remove('hidden');
-                    DOM.userDisplay.signInBtn.classList.add('hidden');
-                }
-            }
-
-            // --- Actions ---
-            function toggleFavorite(event) {
-                event.stopPropagation(); // Prevent any parent clicks
-                const button = event.currentTarget;
-                const matchId = button.dataset.matchId;
-                
-                if (!matchId || !appConfig) return;
-                
-                const index = appConfig.favorites.indexOf(matchId);
-                
-                if (index > -1) {
-                    // Remove from favorites
-                    appConfig.favorites.splice(index, 1);
-                    button.classList.remove('is-favorite');
-                    button.textContent = '☆';
-                } else {
-                    // Add to favorites
-                    appConfig.favorites.push(matchId);
-                    button.classList.add('is-favorite');
-                    button.textContent = '★';
-                }
-                
-                // Save config
-                Storage.setLocalConfig(appConfig);
-                
-                // If on favorites page, re-render to remove item
-                if (appConfig.showOnlyFavorites) {
-                    renderMatches();
-                }
-            }
-            
-            function applyTheme(themeName) {
-                document.body.dataset.theme = themeName || 'dark';
-            }
-            
-            function updateFavoritesFromServer() {
-                if (!appConfig || appConfig.isDefault) {
-                    DOM.userModal.container.classList.add('visible');
-                    return;
-                }
-                
-                Api.getUserConfig(appConfig.username)
-                    .then(serverConfig => {
-                        // Merge strategies could be complex, but here we just overwrite favorites
-                        appConfig.favorites = serverConfig.favorites || [];
-                        appConfig.theme = serverConfig.theme || appConfig.theme;
-                        // NEW: Also merge settings
-                        appConfig.showOnlyFavorites = serverConfig.showOnlyFavorites || appConfig.showOnlyFavorites;
-                        appConfig.favoriteTeams = serverConfig.favoriteTeams || appConfig.favoriteTeams;
-                        appConfig.leagues = serverConfig.leagues || appConfig.leagues;
+                    if (index > -1) {
+                        favArray.splice(index, 1);
+                        e.currentTarget.textContent = '☆';
+                    } else {
+                        let name = 'Unknown';
                         
-                        Storage.setLocalConfig(appConfig);
-                        applyTheme(appConfig.theme);
-                        
-                        // Re-render current view to reflect changes
-                        renderMatches();
-                    })
-                    .catch(err => {
-                        // console.error('Failed to fetch server config:', err);
-                    });
-            }
-            
-            /**
-             * NEW: Saves all settings from the modal
-             */
-            function saveSettings() {
-                if (!appConfig) return;
-                
-                // 1. Save Theme
-                appConfig.theme = DOM.settingsModal.themeSelect.value;
-                applyTheme(appConfig.theme);
-                
-                // 2. Save Display Settings
-                appConfig.showOnlyFavorites = DOM.settingsModal.showFavs.checked;
-                appConfig.favoriteTeams = DOM.settingsModal.favTeams.value
-                    .split(',')
-                    .map(t => t.trim())
-                    .filter(t => t.length > 0);
-                    
-                // 3. Save League Filters
-                const leagueCheckboxes = DOM.settingsModal.leagueList.querySelectorAll('input[type="checkbox"]');
-                leagueCheckboxes.forEach(box => {
-                    appConfig.leagues[box.dataset.league] = box.checked;
-                });
-                
-                // 4. Save to Storage
-                Storage.setLocalConfig(appConfig);
-                
-                // 5. Close modal and re-render
-                DOM.settingsModal.container.classList.remove('visible');
-                renderMatches();
-            }
-
-            // --- Initialization ---
-            
-            function loadAppSettings(callback) {
-                Api.getAppSettings()
-                    .then(settings => {
-                        callback(); // Proceed to user logic
-                    })
-                    .catch(err => {
-                        callback(); // Proceed even if app.json fails
-                    });
-            }
-            
-            function loadUserConfig(username) {
-                if (username === 'default') {
-                    return Promise.reject(new Error('Using default user'));
-                }
-                return Api.getUserConfig(username);
-            }
-
-            function initUserLogic(callback) {
-                const localConfig = Storage.getLocalConfig();
-                const username = Storage.getUsername();
-
-                // Priority 1: Use fresh local config if available and matches stored user
-                if (localConfig && localConfig.username === username && !localConfig.isDefault) {
-                    appConfig = { ...defaultConfig, ...localConfig }; // Merge with defaults just in case
-                    applyTheme(appConfig.theme);
-                    updateUserDisplay(appConfig);
-                    renderMatches(); // Load initial page
-                    callback();
-                    return;
-                }
-                
-                // Priority 2: No valid local config, try fetching from server
-                loadUserConfig(username)
-                    .then(userConfig => {
-                        appConfig = { ...defaultConfig, ...userConfig }; // Merge with defaults
-                        appConfig.username = username;
-                        appConfig.isDefault = false;
-                        
-                        applyTheme(appConfig.theme);
-                        Storage.setLocalConfig(appConfig); // Save merged config
-                        updateUserDisplay(appConfig); 
-                        renderMatches(); // Load initial page
-                        callback();
-                    })
-                    .catch(err => {
-                        // Priority 3: All else fails, use default
-                        appConfig = { ...defaultConfig, isDefault: true, username: 'default' };
-                        applyTheme(appConfig.theme);
-                        updateUserDisplay(appConfig);
-                        renderMatches(); // Load initial page
-                        callback();
-                    });
-            }
-
-            function init() {
-                // Populate DOM object
-                DOM.pageTitle = document.getElementById('page-title');
-                DOM.mainContent = document.getElementById('main-content');
-                DOM.loadingIndicator = document.getElementById('loading-indicator');
-                DOM.matchesList = document.getElementById('matches-list');
-                
-                DOM.userDisplay.container = document.getElementById('user-display');
-                DOM.userDisplay.userInfo = document.getElementById('user-info');
-                DOM.userDisplay.username = document.getElementById('username-display');
-                DOM.userDisplay.signInBtn = document.getElementById('sign-in-btn');
-                
-                DOM.settingsBtn = document.getElementById('settings-btn');
-                
-                DOM.userModal.container = document.getElementById('user-modal');
-                DOM.userModal.closeBtn = document.getElementById('close-user-modal');
-                DOM.userModal.saveBtn = document.getElementById('save-user-btn');
-                DOM.userModal.input = document.getElementById('username-input');
-                
-                DOM.settingsModal.container = document.getElementById('settings-modal');
-                DOM.settingsModal.closeBtn = document.getElementById('close-settings-modal');
-                DOM.settingsModal.saveBtn = document.getElementById('save-settings-btn');
-                DOM.settingsModal.cancelBtn = document.getElementById('cancel-settings-btn');
-                DOM.settingsModal.showFavs = document.getElementById('setting-show-favs');
-                DOM.settingsModal.favTeams = document.getElementById('setting-fav-teams');
-                DOM.settingsModal.leagueList = document.getElementById('league-filter-list');
-                DOM.settingsModal.themeSelect = document.getElementById('theme-select');
-
-                function setupEventListeners() {
-                    
-                    // --- User Display Listeners ---
-                    DOM.userDisplay.signInBtn.addEventListener('click', () => {
-                         DOM.userModal.container.classList.add('visible');
-                    });
-                    
-                    DOM.settingsBtn.addEventListener('click', () => {
-                        renderSettingsModal(); // Populate with current data
-                        DOM.settingsModal.container.classList.add('visible');
-                    });
-                    
-                    // --- User Modal Listeners ---
-                    DOM.userModal.closeBtn.addEventListener('click', () => {
-                        DOM.userModal.container.classList.remove('visible');
-                    });
-                    
-                    DOM.userModal.saveBtn.addEventListener('click', () => {
-                        const username = DOM.userModal.input.value;
-                        if (username) {
-                            Storage.setUsername(username);
-                            Storage.clearLocalConfig(); // Clear old config
-                            window.location.reload();
+                        if (type === 'team') {
+                            let teamNameEl = e.currentTarget.closest('.team-info-details')?.querySelector('h2');
+                            if (!teamNameEl) teamNameEl = e.currentTarget.closest('.team-cell')?.querySelector('a');
+                            if (!teamNameEl) teamNameEl = e.currentTarget.closest('.team')?.querySelector('.team-name');
+                            name = teamNameEl ? teamNameEl.textContent.replace('⭐','').replace('☆','').trim() : 'Unknown Team';
+                        } else if (type === 'league') {
+                            if (id === 0) {
+                                name = 'Favorites';
+                            } else {
+                                let leagueNameEl = e.currentTarget.closest('.page-title')?.querySelector('span');
+                                if (!leagueNameEl) leagueNameEl = e.currentTarget.closest('.league-header')?.querySelector('.league-header-link span');
+                                name = leagueNameEl ? leagueNameEl.textContent : 'Unknown League';
+                            }
                         }
-                        DOM.userModal.container.classList.remove('visible');
-                    });
+                        
+                        favArray.push({ id: id, name: name });
+                        e.currentTarget.textContent = '⭐';
+                    }
                     
-                    // --- Settings Modal Listeners ---
-                    DOM.settingsModal.closeBtn.addEventListener('click', () => {
-                        DOM.settingsModal.container.classList.remove('visible');
-                    });
-                    
-                    DOM.settingsModal.cancelBtn.addEventListener('click', () => {
-                        DOM.settingsModal.container.classList.remove('visible');
-                    });
-                    
-                    DOM.settingsModal.saveBtn.addEventListener('click', saveSettings);
-                    
-                    // --- Buttons inside Settings Modal ---
-                    document.getElementById('change-user-btn').addEventListener('click', () => {
-                        DOM.settingsModal.container.classList.remove('visible'); // Close settings
-                        DOM.userModal.container.classList.add('visible'); // Open user modal
-                    });
-                    
-                    document.getElementById('reset-settings-btn').addEventListener('click', () => {
-                        Storage.clearUsername();
-                        Storage.clearLocalConfig();
-                        window.location.reload();
-                    });
-                    
-                    document.getElementById('update-settings-btn').addEventListener('click', updateFavoritesFromServer);
-                    
-                    // Theme select needs to apply live for preview, but is saved with main modal
-                    DOM.settingsModal.themeSelect.addEventListener('change', (e) => {
-                        applyTheme(e.target.value);
-                    });
+                    // Save to Firebase using UID
+                    await Storage.saveUserConfig(currentUser.uid, newConfig);
+                });
+            });
+            
+            container.querySelectorAll('.team-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
+                    const teamId = e.currentTarget.dataset.teamId;
+                    if (teamId) window.location.hash = `#/team/${teamId}`;
+                });
+            });
+        }
+        
+        // --- Tab Renderers ---
+        function renderEvent(event) {
+            let icon = '';
+            let detail = event.detail;
+            if (event.type === 'Goal') icon = '⚽';
+            if (event.type === 'subst') icon = '🔄';
+            if (event.type === 'Card') icon = event.detail === 'Yellow Card' ? '🟨' : '🟥';
+            
+            return `
+                <div class="event-item ${event.team.id === window.currentMatchHomeTeamId ? 'home-event' : 'away-event'}">
+                    <div class="event-time">${event.time.elapsed}'</div>
+                    <div class="event-icon">${icon}</div>
+                    <div class="event-info">
+                        <div class="event-player">${event.player.name}</div>
+                        <div class="event-detail">${event.assist.name ? `Assist: ${event.assist.name}` : detail}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderLineup(lineupData) {
+            if (!lineupData || lineupData.length < 2) return '<p>Lineups not available.</p>';
+            
+            const home = lineupData[0];
+            const away = lineupData[1];
+            
+            const renderPlayerList = (players) => {
+                if(!players){
+                    return "";
+                }
+                return players.map(p => `
+                    <li>
+                        <span class="player-number">${p.player.number}</span>
+                        ${p.player.name}
+                    </li>
+                `).join('');
+            };
+            
+            return `
+                <div class="lineup-container">
+                    <div class="lineup-team">
+                        <h3><img src="${home.team.logo}" alt=""> ${home.team.name}</h3>
+                        <div class="lineup-info">Manager: ${home.coach.name || 'N/A'}<br>Formation: ${home.formation || 'N/A'}</div>
+                        <div class="lineup-list-title">Starting XI</div>
+                        <ul class="lineup-list">${renderPlayerList(home.startXI)}</ul>
+                        <div class="lineup-list-title">Substitutes</div>
+                        <ul class="lineup-list">${renderPlayerList(home.substitutes)}</ul>
+                    </div>
+                    <div class="lineup-team">
+                        <h3><img src="${away.team.logo}" alt=""> ${away.team.name}</h3>
+                        <div class="lineup-info">Manager: ${away.coach.name || 'N/A'}<br>Formation: ${away.formation || 'N/A'}</div>
+                        <div class="lineup-list-title">Starting XI</div>
+                        <ul class="lineup-list">${renderPlayerList(away.startXI)}</ul>
+                        <div class="lineup-list-title">Substitutes</div>
+                        <ul class="lineup-list">${renderPlayerList(away.substitutes)}</ul>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderStatistics(statsData) {
+            if (!statsData || statsData.length < 2) return '<p>Statistics not available.</p>';
+            const home = statsData[0];
+            const away = statsData[1];
+            const statsMap = new Map();
+            home.statistics.forEach(stat => statsMap.set(stat.type, { home: stat.value ?? 0 }));
+            away.statistics.forEach(stat => {
+                const existing = statsMap.get(stat.type) || { home: 0 };
+                existing.away = stat.value ?? 0;
+                statsMap.set(stat.type, existing);
+            });
+            let html = `<div class="stats-container">`;
+            statsMap.forEach((values, type) => {
+                html += `
+                    <div class="stat-row">
+                        <div class="stat-value">${values.home}</div>
+                        <div class="stat-name">${type}</div>
+                        <div class="stat-value">${values.away}</div>
+                    </div>
+                `;
+            });
+            return html + `</div>`;
+        }
+        
+        function renderH2H(h2hData) {
+            if (!h2hData || h2hData.length === 0) return '<p>No head-to-head data available.</p>';
+            const homeTeamId = h2hData[0].teams.home.id;
+            let homeWins = 0, awayWins = 0, draws = 0;
+            h2hData.forEach(match => {
+                if (match.fixture.status.short !== 'FT') return; 
+                if (match.goals.home === match.goals.away) draws++;
+                else if (match.teams.home.id === homeTeamId) match.goals.home > match.goals.away ? homeWins++ : awayWins++;
+                else match.goals.home > match.goals.away ? awayWins++ : homeWins++;
+            });
+            return `
+                <div class="h2h-container">
+                    <h3>${homeWins} Wins | ${draws} Draws | ${awayWins} Wins</h3>
+                    <div class="matches-container">${h2hData.map(match => renderMatchCard(match, true)).join('')}</div>
+                </div>
+            `;
+        }
+
+
+        // --- Page Controllers ---
+
+        async function renderHomePage(container) {
+            const headerContainer = document.getElementById('app-header');
+            renderHeader(headerContainer);
+            container.innerHTML = '<div class="loader">Loading matches...</div>';
+            homePageLoadAllState = false; 
+            await loadHomePageMatches(false, false);
+        }
+
+        async function loadHomePageMatches(loadAll = false, isRefresh = false) {
+            if (loadAll) homePageLoadAllState = true;
+            const container = document.getElementById('content-container');
+            const isLive = document.getElementById('live-toggle') ? document.getElementById('live-toggle').checked : false;
+            const date = formatDate(currentDate);
+            
+            if (document.getElementById('current-date')) document.getElementById('current-date').textContent = date;
+            if (!isRefresh) showLoader(container);
+
+            try {
+                const allowedLeagues = Config.getAllowedLeagues();
+                const allowedLeagueIds = allowedLeagues.map(l => l.id);
+
+                let endpoint = `fixtures?date=${date}&season=${getCurrentSeason()}`;
+                if (isLive) endpoint = `fixtures?live=all`;
+                
+                const matchesResponse = await apiFetch(endpoint);
+                
+                const favTeamIds = new Set((appConfig.favourit_teams || []).map(team => team.id));
+                const favLeagueIds = new Set((appConfig.favourite_leagues || []).map(league => league.id));
+
+                const favTeamMatches = [];
+                const favLeagueMatches = [];
+                const otherMatches = []; 
+
+                for (const match of matchesResponse) {
+                    const leagueId = match.league.id;
+                    const isFavTeamMatch = favTeamIds.has(match.teams.home.id) || favTeamIds.has(match.teams.away.id);
+                    const isFavLeagueMatch = favLeagueIds.has(leagueId);
+
+                    if (isFavTeamMatch) favTeamMatches.push(match);
+                    else if (isFavLeagueMatch) favLeagueMatches.push(match);
+                    else otherMatches.push(match);
                 }
                 
-                setupEventListeners();
+                const allowedOtherMatches = (homePageLoadAllState || allowedLeagueIds.length === 0) 
+                    ? otherMatches 
+                    : otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
                 
-                // --- Start App ---
-                loadAppSettings(() => {
-                    initUserLogic(() => {
-                        // console.log('User logic complete. App is ready.');
+                const favLeagueGroups = {};
+                const otherLeagueGroups = {};
+
+                for (const match of favLeagueMatches) {
+                    const id = match.league.id;
+                    if (!favLeagueGroups[id]) favLeagueGroups[id] = { name: match.league.name, logo: match.league.logo, matches: [] };
+                    favLeagueGroups[id].matches.push(match);
+                }
+
+                for (const match of allowedOtherMatches) { 
+                    const id = match.league.id;
+                    if (!otherLeagueGroups[id]) otherLeagueGroups[id] = { name: match.league.name, logo: match.league.logo, matches: [] };
+                    otherLeagueGroups[id].matches.push(match);
+                }
+
+                let html = '';
+                if (favTeamMatches.length > 0) {
+                    html += `
+                        <div class="league-group">
+                            <div class="league-header">
+                                <span>⭐ Favorites</span>
+                                <span class="fav-toggle" data-type="league" data-id="0">${Config.isFav('league', 0) ? '⭐' : '☆'}</span>
+                            </div>
+                            <div class="matches-container">${favTeamMatches.map(match => renderMatchCard(match, true)).join('')}</div>
+                        </div>
+                    `;
+                }
+
+                const renderLeagueGroup = (leagueId, group) => `
+                    <div class="league-group">
+                        <div class="league-header">
+                            <a href="#/league/${leagueId}" class="league-header-link">
+                                ${group.logo ? `<img src="${group.logo}" alt="" class="league-header-logo">` : ''}
+                                <span>${group.name}</span>
+                            </a>
+                            <span class="fav-toggle" data-type="league" data-id="${leagueId}">${Config.isFav('league', leagueId) ? '⭐' : '☆'}</span>
+                        </div>
+                        <div class="matches-container">${group.matches.map(match => renderMatchCard(match, false)).join('')}</div>
+                    </div>
+                `;
+
+                for (const leagueId in favLeagueGroups) html += renderLeagueGroup(leagueId, favLeagueGroups[leagueId]);
+                for (const leagueId in otherLeagueGroups) html += renderLeagueGroup(leagueId, otherLeagueGroups[leagueId]);
+                
+                if (html === '') html = '<p>No matches found for this date.</p>';
+                if (!homePageLoadAllState) {
+                     html += `<div style="text-align: center; margin-top: 1.5rem;"><button id="load-all-matches-btn" class="styled-button">Load All Matches</button></div>`;
+                }
+
+                container.innerHTML = html;
+                addCardListeners(container);
+                
+                const loadAllBtn = container.querySelector('#load-all-matches-btn');
+                if (loadAllBtn) loadAllBtn.addEventListener('click', () => loadHomePageMatches(true, false));
+
+            } catch (error) {
+                if (!isRefresh) showError(container, error);
+                else console.error("Home page refresh failed:", error);
+            }
+        }
+
+        async function renderMatchPage(container, id) {
+            document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
+            showLoader(container);
+            
+            let lastScore = '';
+            let lastEventsCount = 0;
+            
+            try {
+                const matchDataArr = await apiFetch(`fixtures?id=${id}`);
+                const matchData = matchDataArr[0];
+                if (!matchData) throw new Error("Match not found.");
+                
+                const { fixture, league, teams, goals } = matchData;
+                const { home, away } = teams;
+                window.currentMatchHomeTeamId = home.id;
+
+                const isLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(fixture.status.short);
+                const isFinished = ['FT', 'AET', 'PEN', 'PST', 'CANC', 'ABD'].includes(fixture.status.short);
+                
+                const [events, lineup, statistics, headtohead] = await Promise.all([
+                    apiFetch(`fixtures/events?fixture=${id}`),
+                    apiFetch(`fixtures/lineups?fixture=${id}`),
+                    isFinished ? apiFetch(`fixtures/statistics?fixture=${id}`) : Promise.resolve([]),
+                    apiFetch(`fixtures/headtohead?h2h=${home.id}-${away.id}`)
+                ]);
+
+                lastScore = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
+                lastEventsCount = events.length;
+
+                let tabsHtml = '<div class="tabs">';
+                let tabContentsHtml = '';
+                
+                const addTab = (id, name, active = false, content) => {
+                    tabsHtml += `<button class="tab-button ${active ? 'active' : ''}" data-tab="${id}">${name}</button>`;
+                    tabContentsHtml += `<div id="${id}" class="tab-content ${active ? 'active' : ''}">${content}</div>`;
+                };
+
+                if (isLive) {
+                    addTab('events', 'Events', true, `<div class="match-events">${events.map(renderEvent).join('')}</div>`);
+                    addTab('lineup', 'Lineup', false, renderLineup(lineup));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                } else if (isFinished) {
+                    addTab('stats', 'Stats', true, renderStatistics(statistics));
+                    addTab('events', 'Events', false, `<div class="match-events">${events.map(renderEvent).join('')}</div>`);
+                    addTab('lineup', 'Lineup', false, renderLineup(lineup));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                } else {
+                    addTab('lineup', 'Lineup', true, renderLineup(lineup));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                }
+                tabsHtml += '</div>';
+
+                container.innerHTML = `
+                    <h2 class="page-title"><span><a href="#/">Home</a> &gt; Match Details</span></h2>
+                    ${isLive ? `<div class="live-track-controls"><label class="switch-toggle"><input type="checkbox" id="live-sound-checkbox"><span class="slider"></span></label><label style="margin-left: 0.5rem;">Sound on change</label></div>` : ''}
+                    <div class="match-details-header">
+                        <div class="league"><a href="#/league/${league.id}">${league.name}</a> - ${league.round}</div>
+                        <div class="match-details-teams">
+                            <div class="match-details-team"><a href="#/team/${home.id}"><img src="${home.logo}" alt=""><h2>${home.name}</h2></a></div>
+                            <div class="match-details-score">${goals.home ?? '0'} - ${goals.away ?? '0'}</div>
+                            <div class="match-details-team"><a href="#/team/${away.id}"><img src="${away.logo}" alt=""><h2>${away.name}</h2></a></div>
+                        </div>
+                        <div class="match-details-status">${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}</div>
+                    </div>
+                    ${tabsHtml}
+                    ${tabContentsHtml}
+                `;
+                
+                container.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                        container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                        button.classList.add('active');
+                        container.querySelector(`#${button.dataset.tab}`).classList.add('active');
                     });
                 });
+                
+                if (isLive) {
+                    if (liveMatchTimer) clearInterval(liveMatchTimer);
+                    liveMatchTimer = setInterval(async () => {
+                        try {
+                            const [refreshedMatchDataArr, refreshedEvents, refreshedLineup] = await Promise.all([
+                                apiFetch(`fixtures?id=${id}`),
+                                apiFetch(`fixtures/events?fixture=${id}`),
+                                apiFetch(`fixtures/lineups?fixture=${id}`)
+                            ]);
+                            
+                            const rFix = refreshedMatchDataArr[0].fixture;
+                            const rGoals = refreshedMatchDataArr[0].goals;
+                            const rIsLive = !['NS', 'FT', 'PST', 'CANC', 'ABD'].includes(rFix.status.short);
+
+                            if (!rIsLive) {
+                                clearInterval(liveMatchTimer);
+                                window.location.reload(); 
+                                return;
+                            }
+                            
+                            const newScore = `${rGoals.home ?? '0'} - ${rGoals.away ?? '0'}`;
+                            const changed = (newScore !== lastScore || refreshedEvents.length !== lastEventsCount);
+                            
+                            if (changed) {
+                                lastScore = newScore;
+                                lastEventsCount = refreshedEvents.length;
+                                if (document.getElementById('live-sound-checkbox')?.checked) playSound();
+                            }
+
+                            document.querySelector('.match-details-score').textContent = newScore;
+                            document.querySelector('.match-details-status').textContent = `${rFix.status.long} ${rFix.status.elapsed ? `(${rFix.status.elapsed}')` : ''}`;
+                            
+                            const eventsTab = document.getElementById('events');
+                            if (eventsTab) eventsTab.innerHTML = `<div class="match-events">${refreshedEvents.map(renderEvent).join('')}</div>`;
+                            
+                            const lineupTab = document.getElementById('lineup');
+                            if (lineupTab) lineupTab.innerHTML = renderLineup(refreshedLineup);
+
+                        } catch (err) { console.error("Error during live refresh:", err); }
+                    }, 60000);
+                }
+            } catch (error) { showError(container, error); }
+        }
+
+        async function renderLeaguePage(container, id) {
+            document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
+            showLoader(container);
+            
+            try {
+                const season = getCurrentSeason();
+                const [standingsResponse, scorersData, assistsData] = await Promise.all([
+                    apiFetch(`standings?league=${id}&season=${season}`),
+                    apiFetch(`players/topscorers?league=${id}&season=${season}`),
+                    apiFetch(`players/topassists?league=${id}&season=${season}`),
+                ]);
+
+                const leagueInfo = standingsResponse[0]?.league || 
+                                 (scorersData[0] ? scorersData[0].statistics[0].league : null) ||
+                                 (assistsData[0] ? assistsData[0].statistics[0].league : null);
+                
+                if (!leagueInfo) throw new Error("League data not found.");
+                
+                const standings = standingsResponse[0]?.league.standings || [];
+                const isFav = Config.isFav('league', leagueInfo.id);
+
+                container.innerHTML = `
+                    <h2 class="page-title">
+                        <span><a href="#/">Home</a> &gt; ${leagueInfo.name}</span>
+                        <span class="fav-toggle" data-type="league" data-id="${leagueInfo.id}">${isFav ? '⭐' : '☆'}</span>
+                    </h2>
+                    <div class="tabs">
+                        <button class="tab-button active" data-tab="standings">Standings</button>
+                        <button class="tab-button" data-tab="scorers">Top Scorers</button>
+                        <button class="tab-button" data-tab="assists">Top Assists</button>
+                    </div>
+                    <div id="standings" class="tab-content active"></div>
+                    <div id="scorers" class="tab-content"></div>
+                    <div id="assists" class="tab-content"></div>
+                `;
+                
+                let standingsHtml = '';
+                if (standings.length === 0) standingsHtml = '<p>Standings not available.</p>';
+                else {
+                    for (const group of standings) {
+                        if (standings.length > 1) standingsHtml += `<h3 class="group-title">${group[0].group}</h3>`;
+                        standingsHtml += `
+                            <table class="standings-table">
+                                <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+                                <tbody>
+                                    ${group.map(team => `
+                                        <tr>
+                                            <td class="rank">${team.rank}</td>
+                                            <td class="team-cell"><img src="${team.team.logo}"><a href="#/team/${team.team.id}">${team.team.name}</a></td>
+                                            <td>${team.all.played}</td><td>${team.all.win}</td><td>${team.all.draw}</td><td>${team.all.lose}</td>
+                                            <td>${team.goalsDiff}</td><td><strong>${team.points}</strong></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    }
+                }
+                container.querySelector('#standings').innerHTML = standingsHtml;
+                
+                const renderStatsList = (data) => {
+                    if (data.length === 0) return '<p>Data not available.</p>';
+                    return `<div class="stats-list">${data.map((item, index) => `
+                        <div class="stat-item">
+                            <div class="rank">${index + 1}</div><img src="${item.player.photo}">
+                            <div class="stat-item-info"><div class="stat-item-player">${item.player.name}</div><div class="stat-item-team">${item.statistics[0].team.name}</div></div>
+                            <div class="stat-item-value">${item.statistics[0].goals.total || item.statistics[0].goals.assists}</div>
+                        </div>`).join('')}</div>`;
+                };
+                
+                container.querySelector('#scorers').innerHTML = renderStatsList(scorersData);
+                container.querySelector('#assists').innerHTML = renderStatsList(assistsData);
+                
+                container.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                        container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                        button.classList.add('active');
+                        container.querySelector(`#${button.dataset.tab}`).classList.add('active');
+                    });
+                });
+                addCardListeners(container);
+            } catch (error) { showError(container, error); }
+        }
+
+        async function renderTeamPage(container, id) {
+            document.getElementById('app-header').innerHTML = `<h1><a href="#/" style="color:var(--text-primary); text-decoration:none;">Lite Football</a></h1>`;
+            showLoader(container);
+            try {
+                const teamDataArr = await apiFetch(`teams?id=${id}`);
+                const teamData = teamDataArr[0];
+                if (!teamData) throw new Error("Team not found.");
+
+                const { team, venue } = teamData;
+                const isFav = Config.isFav('team', team.id);
+
+                container.innerHTML = `
+                    <h2 class="page-title"><span><a href="#/">Home</a> &gt; Team</span></h2>
+                    <div class="team-info-header">
+                        <img src="${team.logo}" alt="${team.name}">
+                        <div class="team-info-details">
+                            <h2>${team.name} <span class="fav-toggle" data-type="team" data-id="${team.id}">${isFav ? '⭐' : '☆'}</span></h2>
+                            <p>${team.country} | Founded: ${team.founded}</p>
+                            <p>${venue.name}, ${venue.city} (Capacity: ${venue.capacity})</p>
+                        </div>
+                    </div>
+                `;
+                addCardListeners(container);
+            } catch (error) { showError(container, error); }
+        }
+
+        function AppRouter() {
+            if (liveMatchTimer) clearInterval(liveMatchTimer);
+            if (homePageTimer) clearInterval(homePageTimer);
+            
+            const path = window.location.hash.substring(1) || '/';
+            const mainContainer = document.getElementById('content-container');
+            document.getElementById('app-header').innerHTML = '';
+            showLoader(mainContainer);
+            delete window.currentMatchHomeTeamId;
+
+            if (path.startsWith('/match/')) renderMatchPage(mainContainer, path.split('/')[2]);
+            else if (path.startsWith('/league/')) renderLeaguePage(mainContainer, path.split('/')[2]);
+            else if (path.startsWith('/team/')) renderTeamPage(mainContainer, path.split('/')[2]);
+            else {
+                renderHomePage(mainContainer);
+                homePageTimer = setInterval(() => loadHomePageMatches(homePageLoadAllState, true), 60000);
             }
+        }
+        
+        function applyTheme(theme) {
+            const validThemes = ['dark-bleu', 'dark-red', 'darky-dark', 'light', 'morocco', 'morocco-away', 'usk', 'raja'];
+            const themeToApply = validThemes.includes(theme) ? theme : 'dark-bleu';
+            document.body.className = ''; 
+            if (themeToApply !== 'dark-bleu') document.body.classList.add(`theme-${themeToApply}`);
+            const themeSelect = document.getElementById('theme-select');
+            if (themeSelect) themeSelect.value = themeToApply;
+        }
+        
+        async function init() {
+            document.addEventListener('keydown', handleTvKeydown);
+            
+            // Wait for Global Settings First
+            globalSettings = await Storage.loadGlobalSettings();
+            
+            const modal = document.getElementById('auth-modal');
+            const authError = document.getElementById('auth-error');
+            const authTitle = document.getElementById('auth-title');
+            const authMessage = document.getElementById('auth-message');
+            const btnLogin = document.getElementById('btn-login');
+            const btnSignup = document.getElementById('btn-signup');
+            const toggleLink = document.getElementById('auth-toggle-link');
+            const toggleText = document.getElementById('auth-toggle-text');
+            
+            let isLoginMode = true;
 
-            // --- Start the App ---
-            document.addEventListener('DOMContentLoaded', init);
-            // No longer need hashchange listener
+            // Auth State Listener
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    // User is signed in.
+                    currentUser = user;
+                    modal.classList.remove('visible');
+                    
+                    // Reset App Config
+                    appConfig = { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' };
+                    
+                    // Load User Config
+                    const savedConfig = await Storage.loadUserConfig(user.uid);
+                    if (savedConfig) appConfig = savedConfig;
+                    else await Storage.saveUserConfig(user.uid, appConfig);
+                    
+                    applyTheme(appConfig.theme);
+                    AppRouter();
+                } else {
+                    // User is signed out.
+                    currentUser = null;
+                    appConfig = null;
+                    modal.classList.add('visible');
+                    document.body.className = ''; // Reset theme
+                }
+            });
 
-        })();
-    </script>
+            // Toggle Login/Signup
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                isLoginMode = !isLoginMode;
+                authError.textContent = '';
+                
+                if (isLoginMode) {
+                    authTitle.textContent = "Sign In";
+                    authMessage.textContent = "Please sign in to load your Firebase settings.";
+                    btnLogin.style.display = 'block';
+                    btnSignup.style.display = 'none';
+                    toggleText.textContent = "Don't have an account?";
+                    toggleLink.textContent = "Sign Up";
+                } else {
+                    authTitle.textContent = "Register";
+                    authMessage.textContent = "Create an account to save your favorites.";
+                    btnLogin.style.display = 'none';
+                    btnSignup.style.display = 'block';
+                    toggleText.textContent = "Already have an account?";
+                    toggleLink.textContent = "Sign In";
+                }
+            });
+
+            // Login Action
+            btnLogin.addEventListener('click', async () => {
+                const email = document.getElementById('auth-email').value;
+                const password = document.getElementById('auth-password').value;
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (error) {
+                    authError.textContent = error.message;
+                }
+            });
+
+            // Signup Action
+            btnSignup.addEventListener('click', async () => {
+                const email = document.getElementById('auth-email').value;
+                const password = document.getElementById('auth-password').value;
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } catch (error) {
+                    authError.textContent = error.message;
+                }
+            });
+
+            // Logout Action
+            document.getElementById('btn-logout').addEventListener('click', () => {
+                auth.signOut();
+            });
+            
+            // Theme Select Listener
+            document.getElementById('theme-select').addEventListener('change', (e) => {
+                const newTheme = e.target.value;
+                if (appConfig && currentUser) { 
+                    appConfig.theme = newTheme;
+                    Storage.saveUserConfig(currentUser.uid, appConfig);
+                }
+                applyTheme(newTheme);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('hashchange', AppRouter);
+
+    })();
+</script>
 </body>
 </html>
