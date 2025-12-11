@@ -358,7 +358,23 @@
 
             if (status === 'NS') {
                 scoreText = '-';
-                statusText = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // NEW DATE LOGIC
+                const matchDate = new Date(fixture.date);
+                const now = new Date();
+                const isToday = matchDate.getDate() === now.getDate() && 
+                                matchDate.getMonth() === now.getMonth() && 
+                                matchDate.getFullYear() === now.getFullYear();
+                
+                const timeStr = matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                if (isToday) {
+                     statusText = timeStr;
+                } else {
+                     const dateStr = matchDate.toLocaleDateString([], { day: 'numeric', month: 'numeric' });
+                     statusText = `${dateStr} ${timeStr}`;
+                }
+
             } else {
                 scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
                 if (isLive || status === 'HT') {
@@ -884,6 +900,11 @@
                     const roundToPhaseMap = {};
                     
                     fixturesData.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
+
+                    // Find "Current" Round (Closest date to today)
+                    const today = new Date();
+                    let closestMatch = null;
+                    let minDiff = Infinity;
                     
                     fixturesData.forEach(m => {
                         const round = m.league.round;
@@ -899,13 +920,23 @@
                         
                         phasesSet.add(phase);
                         roundToPhaseMap[round] = phase;
+
+                        // Calculate diff for current round
+                        const diff = Math.abs(new Date(m.fixture.date) - today);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestMatch = m;
+                        }
                     });
                     
+                    const currentRound = closestMatch ? closestMatch.league.round : null;
+                    const currentPhase = currentRound ? roundToPhaseMap[currentRound] : null;
+
                     // Populate Filters
                     phasesSet.forEach(p => {
                         const opt = document.createElement('option');
                         opt.value = p;
-                        opt.textContent = p;
+                        opt.textContent = p + (p === currentPhase ? ' (Current)' : '');
                         phaseFilter.appendChild(opt);
                     });
                     
@@ -916,32 +947,19 @@
                             if (selectedPhase === 'all' || roundToPhaseMap[r] === selectedPhase) {
                                 const opt = document.createElement('option');
                                 opt.value = r;
-                                opt.textContent = r;
+                                opt.textContent = r + (r === currentRound ? ' (Current)' : '');
                                 roundFilter.appendChild(opt);
                             }
                         });
                     };
-                    populateRounds('all');
-                    
-                    // Find "Current" Round (Closest date to today)
-                    const today = new Date();
-                    let closestMatch = null;
-                    let minDiff = Infinity;
-                    
-                    fixturesData.forEach(m => {
-                        const diff = Math.abs(new Date(m.fixture.date) - today);
-                        if (diff < minDiff) {
-                            minDiff = diff;
-                            closestMatch = m;
-                        }
-                    });
-                    
-                    const currentRound = closestMatch ? closestMatch.league.round : null;
-                    const currentPhase = currentRound ? roundToPhaseMap[currentRound] : 'all';
                     
                     // Set Defaults
-                    if (currentPhase) phaseFilter.value = currentPhase;
-                    populateRounds(currentPhase);
+                    if (currentPhase) {
+                        phaseFilter.value = currentPhase;
+                        populateRounds(currentPhase);
+                    } else {
+                        populateRounds('all');
+                    }
                     if (currentRound) roundFilter.value = currentRound;
 
                     const renderFilteredMatches = () => {
