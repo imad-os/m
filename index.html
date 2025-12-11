@@ -55,7 +55,6 @@
                 <option value="dark-red">Dark Red</option>
                 <option value="darky-dark">Darky Dark</option>
                 <option value="light">Light</option>
-                <!-- NEW OPTIONS -->
                 <option value="morocco">Morocco</option>
                 <option value="morocco-away">Morocco Away</option>
                 <option value="usk">USK</option>
@@ -69,7 +68,6 @@
 
 <script>
     // --- FIREBASE CONFIGURATION ---
-    // TODO: REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyClgzoMBEKizx-r7abMvAmLgGpk_p748IU",
         authDomain: "iptv-8b60c.firebaseapp.com",
@@ -85,8 +83,6 @@
     const auth = firebase.auth();
 
     // --- CLOUD FUNCTION ENDPOINT ---
-    // If hosted on the same Firebase project, use relative path. 
-    // Otherwise use full URL: https://us-central1-YOUR-PROJECT.cloudfunctions.net/footballRequest
     const CLOUD_FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
     const CLOUD_FUNCTION_URL = CLOUD_FUNCTIONS_BASE+'/footballRequest'; 
 
@@ -95,48 +91,49 @@
 
         // --- App State ---
         let currentDate = new Date(); 
-        let appConfig = null; // Holds the user's settings document
-        let globalSettings = null; // Holds the global 'app' settings document
+        // Default appConfig to prevent crashes before auth loads
+        let appConfig = { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' }; 
+        let globalSettings = null; 
         let liveMatchTimer = null;
         let homePageTimer = null; 
         let homePageLoadAllState = false; 
-        let currentUser = null; // Holds the Firebase User Object
+        let currentUser = null; 
 
         // --- Storage Service (Firebase) ---
         const Storage = {
-            // Get user config from Firestore 'userssettings/{uid}'
+            // Get user config from Firestore 'usersSettings/{uid}'
             loadUserConfig: async (uid) => {
                 try {
                     const doc = await db.collection('usersSettings').doc(uid).get();
                     if (doc.exists) {
                         return doc.data();
                     }
-                    return null; // No config found for this user
+                    return null; 
                 } catch (e) {
                     console.error("Error loading user config:", e);
                     throw e;
                 }
             },
             
-            // Save user config to Firestore 'userssettings/{uid}'
+            // Save user config to Firestore 'usersSettings/{uid}'
             saveUserConfig: async (uid, config) => {
                 if (!uid) return;
                 try {
                     await db.collection('usersSettings').doc(uid).set(config, { merge: true });
-                    appConfig = config; // Update local state
+                    appConfig = config; 
                 } catch (e) {
                     console.error("Error saving user config:", e);
                 }
             },
             
-            // Get global app settings from 'userssettings/global'
+            // Get global app settings from 'usersSettings/global'
             loadGlobalSettings: async () => {
                 try {
                     const doc = await db.collection('usersSettings').doc('global').get();
                     if (doc.exists) {
                         return doc.data();
                     }
-                    return { allowed_leagues: [] }; // Default fallback
+                    return { allowed_leagues: [] }; 
                 } catch (e) {
                     console.error("Error loading global settings:", e);
                     return { allowed_leagues: [] };
@@ -211,8 +208,6 @@
 
         // --- API Service (Via Firebase Cloud Functions) ---
         async function apiFetch(endpointUrl) {
-            // Parse the endpoint string from the old app logic
-            // e.g., "fixtures?live=all" -> endpoint: "fixtures", params: { live: "all" }
             const [path, queryString] = endpointUrl.split('?');
             const params = {};
             if (queryString) {
@@ -243,9 +238,6 @@
 
                     const data = await response.json();
                     
-                    // The Cloud Function returns the API response directly
-                    // It usually contains { response: [...] } or { errors: ... }
-                    
                     if (data.errors && Object.keys(data.errors).length > 0) {
                          if (data.errors.requests || data.errors.endpoint) {
                             console.warn(`API warning for ${endpointUrl}:`, data.errors);
@@ -254,7 +246,6 @@
                         throw new Error(JSON.stringify(data.errors));
                     }
                     
-                    // The standard API-Football response structure puts data in 'response'
                     return data.response || []; 
 
                 } catch (error) {
@@ -314,7 +305,6 @@
         }
 
         function renderHeader(container) {
-            // Display email or UID
             const displayUser = currentUser ? (currentUser.email || 'User') : 'Guest';
             
             container.innerHTML = `
@@ -419,7 +409,6 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    // GUEST CHECK: If not logged in, show auth modal
                     if (!currentUser) {
                         document.getElementById('auth-modal').classList.add('visible');
                         document.getElementById('auth-message').textContent = "Please sign in to save favorites.";
@@ -431,7 +420,6 @@
                     
                     if (!type || !id || !appConfig) return;
                     
-                    // Clone config to avoid mutation issues before save
                     const newConfig = JSON.parse(JSON.stringify(appConfig));
                     let favArray;
 
@@ -472,7 +460,6 @@
                         e.currentTarget.textContent = '⭐';
                     }
                     
-                    // Save to Firebase using UID
                     await Storage.saveUserConfig(currentUser.uid, newConfig);
                 });
             });
@@ -618,7 +605,6 @@
                 
                 const matchesResponse = await apiFetch(endpoint);
                 
-                // GUEST: Default empty arrays if appConfig is just basic guest config
                 const favTeamIds = new Set((appConfig.favourit_teams || []).map(team => team.id));
                 const favLeagueIds = new Set((appConfig.favourite_leagues || []).map(league => league.id));
 
@@ -636,7 +622,11 @@
                     else otherMatches.push(match);
                 }
                 
-                const allowedOtherMatches = (homePageLoadAllState || allowedLeagueIds.length === 0) 
+                // If global settings haven't loaded yet (allowedLeagueIds is empty), default to showing everything
+                // This prevents blank screens during the initial fast load
+                const shouldFilter = allowedLeagueIds.length > 0;
+                
+                const allowedOtherMatches = (homePageLoadAllState || !shouldFilter) 
                     ? otherMatches 
                     : otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
                 
@@ -685,7 +675,7 @@
                 for (const leagueId in otherLeagueGroups) html += renderLeagueGroup(leagueId, otherLeagueGroups[leagueId]);
                 
                 if (html === '') html = '<p>No matches found for this date.</p>';
-                if (!homePageLoadAllState) {
+                if (!homePageLoadAllState && shouldFilter) {
                      html += `<div style="text-align: center; margin-top: 1.5rem;"><button id="load-all-matches-btn" class="styled-button">Load All Matches</button></div>`;
                 }
 
@@ -828,15 +818,18 @@
             
             try {
                 const season = getCurrentSeason();
-                const [standingsResponse, scorersData, assistsData] = await Promise.all([
+                // Fetch Standings, Scorers, Assists AND Fixtures
+                const [standingsResponse, scorersData, assistsData, fixturesData] = await Promise.all([
                     apiFetch(`standings?league=${id}&season=${season}`),
                     apiFetch(`players/topscorers?league=${id}&season=${season}`),
                     apiFetch(`players/topassists?league=${id}&season=${season}`),
+                    apiFetch(`fixtures?league=${id}&season=${season}`)
                 ]);
 
                 const leagueInfo = standingsResponse[0]?.league || 
                                  (scorersData[0] ? scorersData[0].statistics[0].league : null) ||
-                                 (assistsData[0] ? assistsData[0].statistics[0].league : null);
+                                 (assistsData[0] ? assistsData[0].statistics[0].league : null) ||
+                                 (fixturesData[0] ? fixturesData[0].league : null);
                 
                 if (!leagueInfo) throw new Error("League data not found.");
                 
@@ -849,15 +842,131 @@
                         <span class="fav-toggle" data-type="league" data-id="${leagueInfo.id}">${isFav ? '⭐' : '☆'}</span>
                     </h2>
                     <div class="tabs">
+                        <button class="tab-button" data-tab="matches">Matches</button>
                         <button class="tab-button active" data-tab="standings">Standings</button>
                         <button class="tab-button" data-tab="scorers">Top Scorers</button>
                         <button class="tab-button" data-tab="assists">Top Assists</button>
+                    </div>
+                    <div id="matches" class="tab-content">
+                        <div class="filters-container">
+                            <select id="phase-filter" class="filter-select"><option value="all">All Phases</option></select>
+                            <select id="round-filter" class="filter-select"><option value="all">All Rounds</option></select>
+                        </div>
+                        <div id="matches-list" class="matches-container"></div>
                     </div>
                     <div id="standings" class="tab-content active"></div>
                     <div id="scorers" class="tab-content"></div>
                     <div id="assists" class="tab-content"></div>
                 `;
                 
+                // --- Matches Tab Logic ---
+                const matchesContainer = container.querySelector('#matches-list');
+                const phaseFilter = container.querySelector('#phase-filter');
+                const roundFilter = container.querySelector('#round-filter');
+                
+                if (fixturesData.length === 0) {
+                    matchesContainer.innerHTML = '<p>No matches available.</p>';
+                } else {
+                    // Extract Phases and Rounds
+                    const roundsSet = new Set();
+                    const phasesSet = new Set();
+                    const roundToPhaseMap = {};
+                    
+                    fixturesData.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
+                    
+                    fixturesData.forEach(m => {
+                        const round = m.league.round;
+                        roundsSet.add(round);
+                        
+                        // Heuristic: Extract Phase (e.g. "Regular Season - 1" -> "Regular Season")
+                        let phase = round;
+                        if (round.includes(" - ")) {
+                            phase = round.split(" - ")[0];
+                        } else if (round.includes("Group Stage")) {
+                            phase = "Group Stage";
+                        }
+                        
+                        phasesSet.add(phase);
+                        roundToPhaseMap[round] = phase;
+                    });
+                    
+                    // Populate Filters
+                    phasesSet.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p;
+                        opt.textContent = p;
+                        phaseFilter.appendChild(opt);
+                    });
+                    
+                    // Helper to populate rounds based on phase
+                    const populateRounds = (selectedPhase) => {
+                        roundFilter.innerHTML = '<option value="all">All Rounds</option>';
+                        roundsSet.forEach(r => {
+                            if (selectedPhase === 'all' || roundToPhaseMap[r] === selectedPhase) {
+                                const opt = document.createElement('option');
+                                opt.value = r;
+                                opt.textContent = r;
+                                roundFilter.appendChild(opt);
+                            }
+                        });
+                    };
+                    populateRounds('all');
+                    
+                    // Find "Current" Round (Closest date to today)
+                    const today = new Date();
+                    let closestMatch = null;
+                    let minDiff = Infinity;
+                    
+                    fixturesData.forEach(m => {
+                        const diff = Math.abs(new Date(m.fixture.date) - today);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestMatch = m;
+                        }
+                    });
+                    
+                    const currentRound = closestMatch ? closestMatch.league.round : null;
+                    const currentPhase = currentRound ? roundToPhaseMap[currentRound] : 'all';
+                    
+                    // Set Defaults
+                    if (currentPhase) phaseFilter.value = currentPhase;
+                    populateRounds(currentPhase);
+                    if (currentRound) roundFilter.value = currentRound;
+
+                    const renderFilteredMatches = () => {
+                        const pVal = phaseFilter.value;
+                        const rVal = roundFilter.value;
+                        
+                        const filtered = fixturesData.filter(m => {
+                            const mPhase = roundToPhaseMap[m.league.round];
+                            const mRound = m.league.round;
+                            
+                            const phaseMatch = (pVal === 'all' || mPhase === pVal);
+                            const roundMatch = (rVal === 'all' || mRound === rVal);
+                            
+                            return phaseMatch && roundMatch;
+                        });
+                        
+                        if (filtered.length === 0) {
+                            matchesContainer.innerHTML = '<p>No matches found for selection.</p>';
+                        } else {
+                            matchesContainer.innerHTML = filtered.map(m => renderMatchCard(m, false)).join('');
+                        }
+                        addCardListeners(matchesContainer);
+                    };
+                    
+                    // Event Listeners
+                    phaseFilter.addEventListener('change', () => {
+                        populateRounds(phaseFilter.value);
+                        renderFilteredMatches();
+                    });
+                    roundFilter.addEventListener('change', renderFilteredMatches);
+                    
+                    // Initial Render
+                    renderFilteredMatches();
+                }
+
+                // --- Standings Logic ---
                 let standingsHtml = '';
                 if (standings.length === 0) standingsHtml = '<p>Standings not available.</p>';
                 else {
@@ -961,12 +1070,23 @@
             if (themeSelect) themeSelect.value = themeToApply;
         }
         
-        async function init() {
+        // --- Initialization ---
+        function init() {
             document.addEventListener('keydown', handleTvKeydown);
             
-            // Wait for Global Settings First
-            globalSettings = await Storage.loadGlobalSettings();
+            // 1. Start App Immediately (Fixes slow F5)
+            // We run AppRouter immediately to show the loader and start fetching API data.
+            // We do NOT wait for Auth or Global Settings here.
+            AppRouter();
+
+            // 2. Load Global Settings in background
+            Storage.loadGlobalSettings().then(settings => {
+                globalSettings = settings;
+                // If on homepage, we might want to refresh to apply allowed_leagues if needed,
+                // but usually the default 'show all' is fine for the first second.
+            });
             
+            // 3. UI Elements Setup
             const modal = document.getElementById('auth-modal');
             const authError = document.getElementById('auth-error');
             const authTitle = document.getElementById('auth-title');
@@ -977,59 +1097,33 @@
             const toggleText = document.getElementById('auth-toggle-text');
             const btnAuthAction = document.getElementById('btn-auth-action');
             const btnModalClose = document.getElementById('modal-close-btn');
-            
             let isLoginMode = true;
             
-            // Close modal when X is clicked
-            btnModalClose.addEventListener('click', () => {
-                modal.classList.remove('visible');
-            });
-            
-            // Close modal when clicking outside content
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('visible');
-                }
-            });
+            btnModalClose.addEventListener('click', () => { modal.classList.remove('visible'); });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('visible'); });
 
-            // Auth State Listener
+            // 4. Auth State Listener
+            // This runs in parallel. When it finishes (after ~1-2s), it updates the UI.
             auth.onAuthStateChanged(async (user) => {
                 if (user) {
-                    // User is signed in.
                     currentUser = user;
                     modal.classList.remove('visible');
-                    
-                    // Update footer button
                     btnAuthAction.textContent = "Logout";
                     
-                    // Reset App Config
-                    appConfig = { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' };
-                    
-                    // Load User Config
                     const savedConfig = await Storage.loadUserConfig(user.uid);
                     if (savedConfig) appConfig = savedConfig;
                     else await Storage.saveUserConfig(user.uid, appConfig);
                     
                     applyTheme(appConfig.theme);
-                    AppRouter();
+                    // Optional: Re-run router if you want to ensure favs are marked immediately,
+                    // but it might reload the page content. 
+                    // For now, we just let the next interaction pick up the config.
                 } else {
-                    // User is signed out (Guest Mode).
                     currentUser = null;
-                    
-                    // Default Guest Config
                     appConfig = { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' };
-                    
-                    // Do NOT show modal by default for guests
                     modal.classList.remove('visible');
-                    
-                    // Update footer button
                     btnAuthAction.textContent = "Login";
-                    
-                    document.body.className = ''; // Reset theme to default
                     applyTheme('dark-bleu');
-                    
-                    // Render App for Guest
-                    AppRouter();
                 }
             });
 
