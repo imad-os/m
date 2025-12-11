@@ -91,7 +91,6 @@
 
         // --- App State ---
         let currentDate = new Date(); 
-        // Default appConfig to prevent crashes before auth loads
         let appConfig = { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' }; 
         let globalSettings = null; 
         let liveMatchTimer = null;
@@ -327,17 +326,20 @@
             document.getElementById('prev-day').addEventListener('click', () => {
                 currentDate.setDate(currentDate.getDate() - 1);
                 document.getElementById('live-toggle').checked = false;
+                homePageLoadAllState = false; // RESET STATE ON CHANGE
                 loadHomePageMatches();
             });
             document.getElementById('next-day').addEventListener('click', () => {
                 currentDate.setDate(currentDate.getDate() + 1);
                 document.getElementById('live-toggle').checked = false;
+                homePageLoadAllState = false; // RESET STATE ON CHANGE
                 loadHomePageMatches();
             });
             document.getElementById('live-toggle').addEventListener('change', (e) => {
                 if (e.target.checked) {
                     currentDate = new Date(); 
                 }
+                homePageLoadAllState = false; // RESET STATE ON CHANGE
                 loadHomePageMatches();
             });
         }
@@ -588,6 +590,14 @@
         }
 
         async function loadHomePageMatches(loadAll = false, isRefresh = false) {
+            // Check for global settings availability first to ensure filtering works correctly
+            if (!globalSettings) {
+                try {
+                    // We wait for settings here so we know what to filter
+                    globalSettings = await Storage.loadGlobalSettings();
+                } catch(e) { console.error("Lazy load settings failed", e); }
+            }
+
             if (loadAll) homePageLoadAllState = true;
             const container = document.getElementById('content-container');
             const isLive = document.getElementById('live-toggle') ? document.getElementById('live-toggle').checked : false;
@@ -622,11 +632,10 @@
                     else otherMatches.push(match);
                 }
                 
-                // If global settings haven't loaded yet (allowedLeagueIds is empty), default to showing everything
-                // This prevents blank screens during the initial fast load
-                const shouldFilter = allowedLeagueIds.length > 0;
+                // RESTORED LOGIC: Show All only if state is true OR if no leagues are allowed/configured
+                const showAll = homePageLoadAllState || allowedLeagueIds.length === 0;
                 
-                const allowedOtherMatches = (homePageLoadAllState || !shouldFilter) 
+                const allowedOtherMatches = showAll
                     ? otherMatches 
                     : otherMatches.filter(m => allowedLeagueIds.includes(m.league.id));
                 
@@ -675,7 +684,9 @@
                 for (const leagueId in otherLeagueGroups) html += renderLeagueGroup(leagueId, otherLeagueGroups[leagueId]);
                 
                 if (html === '') html = '<p>No matches found for this date.</p>';
-                if (!homePageLoadAllState && shouldFilter) {
+                
+                // RESTORED BUTTON: Only show if we are NOT showing all matches (and there are actually matches to show)
+                if (!homePageLoadAllState && allowedLeagueIds.length > 0) {
                      html += `<div style="text-align: center; margin-top: 1.5rem;"><button id="load-all-matches-btn" class="styled-button">Load All Matches</button></div>`;
                 }
 
