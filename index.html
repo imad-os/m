@@ -303,7 +303,9 @@
             return (month < 6) ? today.getFullYear() - 1 : today.getFullYear();
         }
 
-        function renderHeader(container) {
+        function renderHeader() {
+            const container = document.getElementById('app-header');
+
             const displayUser = currentUser ? (currentUser.email || 'User') : 'Guest';
             
             container.innerHTML = `
@@ -613,8 +615,7 @@
         // --- Page Controllers ---
 
         async function renderHomePage(container) {
-            const headerContainer = document.getElementById('app-header');
-            renderHeader(headerContainer);
+            renderHeader();
             container.innerHTML = '<div class="loader">Loading matches...</div>';
             homePageLoadAllState = false; 
             await loadHomePageMatches(false, false);
@@ -1169,6 +1170,7 @@
                     btnAuthAction.textContent = "Login";
                     applyTheme('dark-bleu');
                 }
+                renderHeader()
             });
 
             // Toggle Login/Signup
