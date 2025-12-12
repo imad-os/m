@@ -321,7 +321,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    flex-basis: 350px;
+    flex-basis: 400px;
     align-items: center;
     text-align: center;
     border: 2px solid transparent; 
