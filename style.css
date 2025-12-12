@@ -311,6 +311,7 @@ input:checked + .slider:before {
     gap: 1rem; /* Space between cards */
 }
 
+/* --- UPDATED MATCH CARD LAYOUT --- */
 .match-card {
     background-color: var(--bg-panel);
     border-radius: 8px;
@@ -321,7 +322,6 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 0.5rem;
     flex-basis: 350px;
-    flex-grow: 0;
     align-items: center;
     text-align: center;
     border: 2px solid transparent; 
@@ -338,16 +338,16 @@ input:checked + .slider:before {
     font-size: 0.9rem;
     color: var(--text-secondary);
     width: 100%;
-    justify-content: center; /* Center align it */
+    justify-content: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .match-league img {
-    width: 20px; /* Small league logo */
+    width: 20px;
     height: 20px;
-    flex-shrink: 0; /* Prevent logo from shrinking */
+    flex-shrink: 0;
 }
 
 .match-league span {
@@ -359,14 +359,7 @@ input:checked + .slider:before {
 
 @media (max-width: 600px) {
     .match-card {
-        flex-basis: calc(50% - 0.5rem);
-        min-width: 150px;
-    }
-}
-
-@media (max-width: 400px) {
-    .match-card {
-        flex-basis: 100%;
+        flex-basis: 100%; /* Full width on mobile */
     }
 }
 
@@ -375,6 +368,7 @@ input:checked + .slider:before {
     font-size: 1rem;
     color: var(--accent-color);
     font-weight: bold;
+    margin-bottom: 0.25rem;
 }
 
 .match-status.not-started {
@@ -383,38 +377,50 @@ input:checked + .slider:before {
     font-size: 0.9rem;
 }
 
+/* New Layout: Side by Side Teams */
 .match-teams {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 0.25rem;
+    flex-direction: row; /* Horizontal alignment */
+    justify-content: space-between;
+    align-items: flex-start; /* Align tops */
+    gap: 0.5rem;
     width: 100%;
 }
 
 .team {
     display: flex;
-    flex-direction: row;
+    flex-direction: column; /* Vertical stack inside team */
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
     gap: 0.5rem; 
-    width: 100%;
+    flex: 1; /* Equal width */
+    width: 40%;
 }
 
 .team img {
-    width: 36px;
-    height: 36px;
+    width: 60px; /* Big Logo */
+    height: 60px;
+    object-fit: contain;
+}
+
+.team-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 100%;
 }
 
 .team-name {
-    font-size: 0.9rem; 
+    font-size: 0.95rem; 
     font-weight: bold;
     line-height: 1.2;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    flex-grow: 1;
+    /* Allow multi-line for names under big logos */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .team-name.team-link {
@@ -426,18 +432,26 @@ input:checked + .slider:before {
 }
 
 .score-container {
-    font-size: 1.4rem;
+    font-size: 1.8rem; /* Larger Score */
     font-weight: bold;
     text-align: center;
-    margin: 0.25rem 0;
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px; /* Match logo height approximately */
+    color: var(--text-primary);
 }
 
 .fav-toggle {
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 0;
-    /* NEW: Ensure it doesn't shrink */
     flex-shrink: 0;
+    color: var(--text-secondary);
+}
+.fav-toggle:hover {
+    color: var(--accent-color);
 }
 
 /* --- League Page & Match Page Tabs --- */
@@ -657,10 +671,6 @@ input:checked + .slider:before {
     padding: 0.5rem;
 }
 
-.event-item.home-event {
-    /* No change */
-}
-
 .event-item.away-event {
     flex-direction: row-reverse;
     text-align: right;
@@ -766,10 +776,7 @@ input:checked + .slider:before {
     font-size: 1.1rem;
 }
 
-/* NEW: H2H Tab */
-.h2h-container .matches-container {
-    /* Re-use existing styles */
-}
+
 .h2h-container h3 {
     font-size: 1.3rem;
     margin-bottom: 1rem;

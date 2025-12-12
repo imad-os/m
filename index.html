@@ -395,6 +395,7 @@
                 </div>
             ` : '';
 
+            // UPDATED STRUCTURE FOR VERTICAL TEAM LAYOUT
             return `
                 <a href="#/match/${fixture.id}" class="match-card ${isLive ? 'is-live' : ''}">
                     ${leagueHtml}
@@ -404,18 +405,22 @@
                     <div class="match-teams">
                         <div class="team">
                             <img src="${teams.home.logo}" alt="${teams.home.name}">
-                            <span class="team-name team-link" data-team-id="${teams.home.id}">${teams.home.name}</span>
-                            <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
-                                ${isFavHome ? '⭐' : '☆'}
-                            </span>
+                            <div class="team-info-row">
+                                <span class="team-name team-link" data-team-id="${teams.home.id}">${teams.home.name}</span>
+                                <span class="fav-toggle" data-type="team" data-id="${teams.home.id}">
+                                    ${isFavHome ? '⭐' : '☆'}
+                                </span>
+                            </div>
                         </div>
                         <div class="score-container">${scoreText}</div>
                         <div class="team">
                             <img src="${teams.away.logo}" alt="${teams.away.name}">
-                            <span class="team-name team-link" data-team-id="${teams.away.id}">${teams.away.name}</span>
-                            <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
-                                ${isFavAway ? '⭐' : '☆'}
-                            </span>
+                            <div class="team-info-row">
+                                <span class="team-name team-link" data-team-id="${teams.away.id}">${teams.away.name}</span>
+                                <span class="fav-toggle" data-type="team" data-id="${teams.away.id}">
+                                    ${isFavAway ? '⭐' : '☆'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </a>
