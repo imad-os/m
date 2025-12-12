@@ -355,9 +355,9 @@
 
             let scoreText;
             let statusText = fixture.status.long;
-
-            if (status === 'NS') {
-                scoreText = '-';
+            scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
+            if (status !== 'HT') {
+                scoreText = status === 'NS' ? '-': scoreText;
                 
                 // NEW DATE LOGIC
                 const matchDate = new Date(fixture.date);
@@ -376,7 +376,6 @@
                 }
 
             } else {
-                scoreText = `${goals.home ?? '0'} - ${goals.away ?? '0'}`;
                 if (isLive || status === 'HT') {
                      statusText = `${fixture.status.long} ${fixture.status.elapsed ? `(${fixture.status.elapsed}')` : ''}`;
                 } else {
@@ -576,16 +575,32 @@
             return html + `</div>`;
         }
         
-        function renderH2H(h2hData) {
+        function renderH2H(h2hData, teamHome, teamAway) {
             if (!h2hData || h2hData.length === 0) return '<p>No head-to-head data available.</p>';
-            const homeTeamId = h2hData[0].teams.home.id;
-            let homeWins = 0, awayWins = 0, draws = 0;
+            
+            let homeWins = 0;
+            let awayWins = 0;
+            let draws = 0;
+
             h2hData.forEach(match => {
-                if (match.fixture.status.short !== 'FT') return; 
-                if (match.goals.home === match.goals.away) draws++;
-                else if (match.teams.home.id === homeTeamId) match.goals.home > match.goals.away ? homeWins++ : awayWins++;
-                else match.goals.home > match.goals.away ? awayWins++ : homeWins++;
+                // Check if match is finished (FT, AET, PEN)
+                if (!['FT', 'AET', 'PEN'].includes(match.fixture.status.short)) return;
+                
+                const matchHomeGoals = match.goals.home;
+                const matchAwayGoals = match.goals.away;
+
+                if (matchHomeGoals === matchAwayGoals) {
+                    draws++;
+                } else {
+                    // Determine which team won this specific match
+                    const winnerId = matchHomeGoals > matchAwayGoals ? match.teams.home.id : match.teams.away.id;
+                    
+                    // Assign win to correct side of current view
+                    if (winnerId === teamHome.id) homeWins++;
+                    else if (winnerId === teamAway.id) awayWins++;
+                }
             });
+
             return `
                 <div class="h2h-container">
                     <h3>${homeWins} Wins | ${draws} Draws | ${awayWins} Wins</h3>
@@ -758,15 +773,15 @@
                 if (isLive) {
                     addTab('events', 'Events', true, `<div class="match-events">${events.map(renderEvent).join('')}</div>`);
                     addTab('lineup', 'Lineup', false, renderLineup(lineup));
-                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead, home, away));
                 } else if (isFinished) {
                     addTab('stats', 'Stats', true, renderStatistics(statistics));
                     addTab('events', 'Events', false, `<div class="match-events">${events.map(renderEvent).join('')}</div>`);
                     addTab('lineup', 'Lineup', false, renderLineup(lineup));
-                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead, home, away));
                 } else {
                     addTab('lineup', 'Lineup', true, renderLineup(lineup));
-                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead));
+                    addTab('h2h', 'Head to Head', false, renderH2H(headtohead, home, away));
                 }
                 tabsHtml += '</div>';
 
