@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://yourdomain/FootballLive" version="1.0.0" viewmodes="maximized">
+   <name>FootballLive</name>
+   <icon src="assets/icon.png"></icon>
+   <content src="index.html"></content>
+   <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"></feature>
+   <tizen:setting screen-orientation="landscape" context-menu="enable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"></tizen:setting>
+   <tizen:application id="KxG0vA59Nf.FootballLive" package="KxG0vA59Nf" required_version="2.3"></tizen:application>
+   <tizen:metadata key="http://tizen.org/metadata/app_ui_type/base_screen_resolution" value="extensive"></tizen:metadata>
+   <tizen:profile name="tv-samsung"></tizen:profile>
+    <access origin="*" subdomains="true"/>
+
+   <tizen:privilege name="http://tizen.org/privilege/network"/>
+   <tizen:privilege name="http://tizen.org/privilege/network.get"/>
+   <tizen:privilege name="http://tizen.org/privilege/network.control"/>
+
+    <feature name="http://tizen.org/feature/network.internet"/>
+    <tizen:privilege name="http://tizen.org/privilege/download"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+
+
+</widget>
