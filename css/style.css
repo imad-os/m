@@ -817,3 +817,16 @@ body {
     color: #f55;
     /* background-color: #6e464685;*/
 }
+.pitch-fomation{
+    color: var(--bg-card);
+    font-size: 1.5em;
+    font-weight: bold;
+    position: absolute;
+    top: 5px;
+}
+.pitch-fomation.home{
+    left: 25%;
+}
+.pitch-fomation.away{
+    right: 25%;
+}

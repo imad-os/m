@@ -655,18 +655,16 @@
                     </div>`;
         },
         
-        // UPDATED: Now accepts playerStats to show ratings
+        // UPDATED: Now resilient to missing Grid info
         renderLineups: (l, playerStats) => {
             if(!l || l.length < 2) return '<div class="scrollable-content focusable" tabindex="0">No Lineups.</div>';
             
             // Map ratings if available
-            // playerStats structure: [ { team: {id}, players: [ { player: {id}, statistics: [{games:{rating}}] } ] } ]
             const ratingsMap = {};
             if (playerStats && playerStats.length) {
                 playerStats.forEach(teamGroup => {
                     if(teamGroup.players) {
                         teamGroup.players.forEach(p => {
-                            // rating is string "7.5"
                             if(p.statistics && p.statistics[0] && p.statistics[0].games.rating) {
                                 ratingsMap[p.player.id] = p.statistics[0].games.rating;
                             }
@@ -677,113 +675,160 @@
 
             const getRating = (playerId) => ratingsMap[playerId] || null;
 
-            const createDot = (player, isHome) => {
-                const teamData = isHome ? l[0].team : l[1].team;
-                const colors = player.pos === 'G' ? teamData?.colors?.goalkeeper : teamData?.colors?.player;
-                const bgColor = colors && colors.primary ? '#' + colors.primary : (isHome ? '#e50914' : '#fff');
-                const numColor = colors && colors.number ? '#' + colors.number : (isHome ? '#fff' : '#000');
-                const borderColor = colors && colors.border ? '#' + colors.border : '#000';
-                
-                return {
-                    name: player.name,
-                    number: player.number,
-                    id: player.id,
-                    grid: player.grid,
-                    bg: bgColor,
-                    fg: numColor,
-                    br: borderColor,
-                    rating: getRating(player.id)
-                };
-            };
-            
-            const processTeam = (teamIndex) => {
-                const xi = l[teamIndex].startXI.map(x => x.player);
-                const isHome = teamIndex === 0;
-                const rows = {};
-                xi.forEach(p => {
-                    if(!p.grid) return;
-                    const r = p.grid.split(':')[0];
-                    if(!rows[r]) rows[r] = [];
-                    rows[r].push(p);
-                });
-                
-                Object.keys(rows).forEach(r => {
-                    rows[r].sort((a,b) => parseInt(a.grid.split(':')[1]) - parseInt(b.grid.split(':')[1]));
-                });
-                
-                return xi.map(p => {
-                    let data = p ? createDot(p, isHome) :{};
-                    let style = '';
-                    if (p.grid) {
-                        const parts = p.grid.split(':');
-                        const r = parseInt(parts[0]);
-                        const rowPlayers = rows[r];
-                        const idx = rowPlayers.indexOf(p);
-                        const count = rowPlayers.length;
-                        const seg = 100 / (count + 1);
-                        const topPct = seg * (idx + 1);
-                        
-                        let leftPct;
-                        if (isHome) {
-                            leftPct = 5 + ((r-1) * 10); 
-                        } else {
-                            leftPct = 95 - ((r-1) * 10);
-                        }
-                        style = `left:${leftPct}%; top:${topPct}%;`;
-                    }
-                    return { ...data, style };
-                });
-            };
+            // CHECK: Do we have enough grid info to show the pitch?
+            // We check if at least 7 players in starting XI have grid data.
+            const countGrid = (xi) => xi.filter(x => x.player && x.player.grid).length;
+            const usePitch = countGrid(l[0].startXI) > 7 && countGrid(l[1].startXI) > 7;
 
-            const homePlayers = processTeam(0);
-            const awayPlayers = processTeam(1);
-            
-            const renderRatingBadge = (rating) => {
-                if(!rating) return '';
-                const rVal = parseFloat(rating);
-                const colorClass = rVal >= 7.0 ? 'high' : (rVal < 6.0 ? 'low' : 'mid');
-                return `<div class="player-rating-badge ${colorClass}">${rating}</div>`;
-            };
-
-            const renderDot = (p) => `
-                <div class="pitch-player" style="${p.style}">
-                    <div class="player-dot" style="background:${p.bg}; color:${p.fg}; border-color:${p.br}">${p.number}</div>
-                    ${renderRatingBadge(p.rating)}
-                    <div class="player-name">${p.name.split(' ').pop()}</div>
-                </div>`;
-
-            const renderSubs = (teamIdx) => l[teamIdx].substitutes.map(s => {
-                const rating = getRating(s?.player?.id);
+            // HELPER: Render a single row for List View (XI fallback or Subs)
+            const renderListRow = (p) => {
+                if (!p) return '';
+                const rating = getRating(p.id);
                 const rHtml = rating ? `<span class="sub-rating ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
                 return `
                 <div class="sub-row">
-                    <span class="sub-num">${s?.player?.number}</span>
-                    <span style="flex-grow:1; text-align:left; padding-left:1rem;">${s?.player?.name}</span>
+                    <span class="sub-num">${p.number || '-'}</span>
+                    <span style="flex-grow:1; text-align:left; padding-left:1rem;">${p.name}</span>
                     ${rHtml}
-                </div>
-            `;
-            }).join('');
+                </div>`;
+            };
 
-            return `
-                <div class="scrollable-content focusable" tabindex="0">
+            let mainContent = '';
+
+            if (usePitch) {
+                // --- PITCH MODE ---
+                const createDot = (player, isHome) => {
+                    const teamData = isHome ? l[0].team : l[1].team;
+                    const colors = player.pos === 'G' ? teamData?.colors?.goalkeeper : teamData?.colors?.player;
+                    const bgColor = colors && colors.primary ? '#' + colors.primary : (isHome ? '#e50914' : '#fff');
+                    const numColor = colors && colors.number ? '#' + colors.number : (isHome ? '#fff' : '#000');
+                    const borderColor = colors && colors.border ? '#' + colors.border : '#000';
+                    
+                    return {
+                        name: player.name,
+                        number: player.number,
+                        id: player.id,
+                        grid: player.grid,
+                        bg: bgColor,
+                        fg: numColor,
+                        br: borderColor,
+                        rating: getRating(player.id)
+                    };
+                };
+                
+                const processTeam = (teamIndex) => {
+                    const xi = l[teamIndex].startXI.map(x => x.player);
+                    const isHome = teamIndex === 0;
+                    const rows = {};
+                    xi.forEach(p => {
+                        if(!p || !p.grid) return;
+                        const parts = p.grid.split(':');
+                        if (parts.length < 2) return;
+                        const r = parts[0];
+                        if(!rows[r]) rows[r] = [];
+                        rows[r].push(p);
+                    });
+                    
+                    Object.keys(rows).forEach(r => {
+                        rows[r].sort((a,b) => {
+                            const ga = a.grid ? parseInt(a.grid.split(':')[1]) : 0;
+                            const gb = b.grid ? parseInt(b.grid.split(':')[1]) : 0;
+                            return ga - gb;
+                        });
+                    });
+                    
+                    return xi.map(p => {
+                        if(!p || !p.grid) return {}; 
+                        let data = createDot(p, isHome);
+                        let style = '';
+                        if (p.grid) {
+                            const parts = p.grid.split(':');
+                            const r = parseInt(parts[0]);
+                            const rowPlayers = rows[r];
+                            if (!rowPlayers) return {}; 
+
+                            const idx = rowPlayers.indexOf(p);
+                            const count = rowPlayers.length;
+                            const seg = 100 / (count + 1);
+                            const topPct = seg * (idx + 1);
+                            
+                            let leftPct;
+                            if (isHome) {
+                                leftPct = 5 + ((r-1) * 10); 
+                            } else {
+                                leftPct = 95 - ((r-1) * 10);
+                            }
+                            style = `left:${leftPct}%; top:${topPct}%;`;
+                        }
+                        return { ...data, style };
+                    });
+                };
+
+                const homePlayers = processTeam(0);
+                const awayPlayers = processTeam(1);
+                
+                const renderRatingBadge = (rating) => {
+                    if(!rating) return '';
+                    const rVal = parseFloat(rating);
+                    const colorClass = rVal >= 7.0 ? 'high' : (rVal < 6.0 ? 'low' : 'mid');
+                    return `<div class="player-rating-badge ${colorClass}">${rating}</div>`;
+                };
+
+                const renderDot = (p) => {
+                    if (!p.style) return '';
+                    return `
+                    <div class="pitch-player" style="${p.style}">
+                        <div class="player-dot" style="background:${p.bg}; color:${p.fg}; border-color:${p.br}">${p.number}</div>
+                        ${renderRatingBadge(p.rating)}
+                        <div class="player-name">${p.name.split(' ').pop()}</div>
+                    </div>`;
+                };
+                const home_formation = l[0].formation || '';
+                const away_formation = l[1].formation || '';
+                mainContent = `
                     <div class="soccer-pitch">
+                        <div class="pitch-fomation home">${home_formation}</div>
+                        <div class="pitch-fomation away">${away_formation}</div>
                         <div class="pitch-line pitch-center-line"></div>
                         <div class="pitch-line pitch-center-circle"></div>
                         <div class="pitch-line pitch-penalty-area-left"></div>
                         <div class="pitch-line pitch-penalty-area-right"></div>
                         
-                        ${homePlayers.filter(p=>p.style).map(renderDot).join('')}
-                        ${awayPlayers.filter(p=>p.style).map(renderDot).join('')}
+                        ${homePlayers.map(renderDot).join('')}
+                        ${awayPlayers.map(renderDot).join('')}
+                    </div>`;
+            } else {
+                // --- LIST MODE (Fallback) ---
+                // Renders Starting XI as simple lists
+                mainContent = `
+                    <div class="subs-container" style="border-top:none; margin-top:0; padding-top:0;">
+                        <div class="subs-team">
+                            <h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[0].team.name} XI</h4>
+                            ${l[0].startXI.map(s => renderListRow(s.player)).join('')}
+                        </div>
+                        <div class="subs-team">
+                            <h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[1].team.name} XI</h4>
+                            ${l[1].startXI.map(s => renderListRow(s.player)).join('')}
+                        </div>
                     </div>
+                `;
+            }
+
+            // Always render Subs below
+            const renderSubsList = (teamIdx) => l[teamIdx].substitutes.map(s => renderListRow(s.player)).join('');
+
+            return `
+                <div class="scrollable-content focusable" tabindex="0">
+                    ${mainContent}
                     
                     <div class="subs-container">
                         <div class="subs-team">
                             <h4>${l[0].team.name} Subs</h4>
-                            ${renderSubs(0)}
+                            ${renderSubsList(0)}
                         </div>
                         <div class="subs-team">
                             <h4>${l[1].team.name} Subs</h4>
-                            ${renderSubs(1)}
+                            ${renderSubsList(1)}
                         </div>
                     </div>
                 </div>
