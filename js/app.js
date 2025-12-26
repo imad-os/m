@@ -311,12 +311,11 @@
             container.innerHTML = `<div class="page-container"><div class="skeleton-detail-header"><div class="shimmer"></div></div><div class="skeleton-detail-tabs"><div class="shimmer"></div></div><div class="skeleton-detail-list"><div class="shimmer"></div></div></div>`;
             try {
                 // ADDED: Fetch player stats to get ratings
-                const [matchData, events, lineups, stats, h2h, predictions, playerStats] = await Promise.all([
+                const [matchData, events, lineups, stats, predictions, playerStats] = await Promise.all([
                     API.fetch(`fixtures?id=${id}`),
                     API.fetch(`fixtures/events?fixture=${id}`),
                     API.fetch(`fixtures/lineups?fixture=${id}`),
                     API.fetch(`fixtures/statistics?fixture=${id}`),
-                    API.fetch(`fixtures/headtohead?h2h=${id}`),
                     API.fetch(`predictions?fixture=${id}`),
                     API.fetch(`fixtures/players?fixture=${id}`) 
                 ]);
@@ -397,7 +396,10 @@
                     </div>
                 `;
                 Navigation.scan();
-            } catch(e) { container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; }
+            } catch(e) { 
+                container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
+                console.error(e);
+            }
         },
 
         renderLeaguePage: async (container, id) => {
@@ -451,7 +453,10 @@
                         <div id="l-ast" class="tab-content ${activeTabId === 'l-ast' ? 'active' : ''}">${Components.renderPlayerStats(assists, 'assists')}</div>
                     </div>`;
                 Navigation.scan();
-            } catch(e) { container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; }
+            } catch(e) { 
+                container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
+                console.error(e);
+            }
         }
     };
 
@@ -586,13 +591,68 @@
             return html;
         },
         
+        // REWRITTEN: New Timeline Event Renderer
         renderEvents: (events, homeId) => {
             if(!events || !events.length) return '<div class="scrollable-content focusable" tabindex="0">No events available.</div>';
-            return `<div class="scrollable-content focusable" tabindex="0"><div class="events-list">${events.map(e => {
+            
+            // Build the timeline HTML
+            const timelineHtml = events.map(e => {
                 const isHome = e.team.id === homeId;
-                const icon = e.type==='Goal'?'⚽':(e.type==='Card'? (e.detail==='Yellow Card'?'🟨':'🟥') : '•');
-                return `<div style="display:flex; padding:0.8rem; border-bottom:1px solid #333; ${isHome?'':'flex-direction:row-reverse; text-align:right;'}"><div style="font-weight:bold; width:40px;">${e.time.elapsed}'</div><div style="flex-grow:1;">${icon} ${e.player.name} <small style="color:#888">${e.detail||''}</small></div></div>`;
-            }).join('')}</div></div>`;
+                const type = e.type.toLowerCase(); // goal, card, subst, var
+                const detail = e.detail || '';
+                
+                // Determine styling and icon based on event type
+                let icon = '•';
+                let importanceClass = 'normal';
+                let divclass1 = 'event-player';
+                let divclass2 = 'event-subtext';
+                let assistText = 'Asst: ';
+                if (type === 'goal') { 
+                    icon = '⚽'; 
+                    importanceClass = 'high'; 
+                } else if (type === 'card') { 
+                    icon = detail.includes('Red') ? '🟥' : '🟨'; 
+                    importanceClass = 'medium';
+                } else if (type === 'subst') { 
+                    icon = '🔄'; 
+                    importanceClass = 'low'; 
+                    divclass1 = 'subst-out';
+                    divclass2 = 'subst-in';
+                    assistText= '';
+                } else if (type === 'var') { 
+                    icon = '📺'; 
+                    importanceClass = 'low'; 
+                }
+
+                // Inner content of the event bubble
+                const contentHtml = `
+                    <div class="event-box ${importanceClass}">
+                        <div class="event-icon">${icon}</div>
+                        <div class="event-info">
+                            <div class="${divclass1}">${e.player.name}</div>
+                            ${e.assist.name ? `<div class="${divclass2}">${assistText}${e.assist.name}</div>` : ''}
+                            ${detail && type !== 'goal' ? `<div class="event-subtext">${detail}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                return `
+                <div class="timeline-row">
+                    <div class="timeline-side home">${isHome ? contentHtml : ''}</div>
+                    <div class="timeline-center">
+                        <div class="timeline-time">${e.time.elapsed}'${e.time.extra ? `+${e.time.extra}` : ''}</div>
+                        <div class="timeline-dot"></div>
+                    </div>
+                    <div class="timeline-side away">${!isHome ? contentHtml : ''}</div>
+                </div>`;
+            }).join('');
+
+            return `<div class="scrollable-content focusable" tabindex="0">
+                        <div class="timeline-container">
+                            <div class="timeline-vertical-line"></div>
+                            ${timelineHtml}
+                        </div>
+                    </div>`;
         },
         
         // UPDATED: Now accepts playerStats to show ratings
@@ -619,7 +679,7 @@
 
             const createDot = (player, isHome) => {
                 const teamData = isHome ? l[0].team : l[1].team;
-                const colors = player.pos === 'G' ? teamData.colors.goalkeeper : teamData.colors.player;
+                const colors = player.pos === 'G' ? teamData?.colors?.goalkeeper : teamData?.colors?.player;
                 const bgColor = colors && colors.primary ? '#' + colors.primary : (isHome ? '#e50914' : '#fff');
                 const numColor = colors && colors.number ? '#' + colors.number : (isHome ? '#fff' : '#000');
                 const borderColor = colors && colors.border ? '#' + colors.border : '#000';
@@ -652,7 +712,7 @@
                 });
                 
                 return xi.map(p => {
-                    const data = createDot(p, isHome);
+                    let data = p ? createDot(p, isHome) :{};
                     let style = '';
                     if (p.grid) {
                         const parts = p.grid.split(':');
@@ -693,12 +753,12 @@
                 </div>`;
 
             const renderSubs = (teamIdx) => l[teamIdx].substitutes.map(s => {
-                const rating = getRating(s.player.id);
+                const rating = getRating(s?.player?.id);
                 const rHtml = rating ? `<span class="sub-rating ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
                 return `
                 <div class="sub-row">
-                    <span class="sub-num">${s.player.number}</span>
-                    <span style="flex-grow:1; text-align:left; padding-left:1rem;">${s.player.name}</span>
+                    <span class="sub-num">${s?.player?.number}</span>
+                    <span style="flex-grow:1; text-align:left; padding-left:1rem;">${s?.player?.name}</span>
                     ${rHtml}
                 </div>
             `;
@@ -816,7 +876,7 @@
                 <table class="standings-table player-stats-table" data-type="${type}">
                     <thead><tr><th>#</th><th style="text-align:left">Player</th><th class="focusable clickable sort-header" tabindex="0" data-sort="pos">Pos</th><th class="focusable clickable sort-header" tabindex="0" data-sort="app">App</th><th class="focusable clickable sort-header" tabindex="0" data-sort="rating">Rate</th><th class="focusable clickable sort-header" tabindex="0" data-sort="shots">Shots (On)</th><th class="focusable clickable sort-header" tabindex="0" data-sort="main">${mainStat}</th></tr></thead>
                     <tbody>${data.map((item, index) => {
-                        const p = item.player; const s = item.statistics[0];
+                        const p = item?.player; const s = item.statistics[0];
                         const pos = posMap[s.games.position] || s.games.position.substring(0,3);
                         const rating = s.games.rating ? parseFloat(s.games.rating).toFixed(1) : '-';
                         const shots = s.shots.total === null ? '-' : `${s.shots.on}/${s.shots.total}`;

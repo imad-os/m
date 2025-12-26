@@ -676,3 +676,144 @@ body {
     font-weight: bold;
     letter-spacing: 0.5px;
 }
+
+
+/* --- Timeline Events Styling --- */
+.timeline-container {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+.timeline-vertical-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #333;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+.timeline-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-side {
+    flex: 1;
+    display: flex;
+}
+.timeline-side.home {
+    justify-content: flex-end;
+    padding-right: 1.5rem;
+}
+.timeline-side.away {
+    justify-content: flex-start;
+    padding-left: 1.5rem;
+}
+
+.timeline-center {
+    flex: 0 0 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.timeline-time {
+    font-weight: bold;
+    color: #aaa;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    background: var(--bg-body); /* hides line behind text if necessary */
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg-focus);
+    border: 2px solid #fff;
+    box-shadow: 0 0 8px var(--bg-focus);
+}
+
+/* Event Bubble */
+.event-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    background: #222;
+    border: 1px solid #333;
+    max-width: 80%;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.event-box:hover {
+    transform: scale(1.02);
+    border-color: #555;
+}
+
+/* High Priority (Goals) */
+.event-box.high {
+    border-color: var(--live-color);
+    box-shadow: 0 0 15px rgba(76, 217, 100, 0.2);
+    background: rgba(76, 217, 100, 0.05);
+}
+.event-box.high .event-player {
+    color: var(--live-color);
+    font-size: 1.2em;
+}
+
+/* Medium Priority (Cards) */
+.event-box.medium {
+    border-color: #e6b800; /* Yellow-ish default */
+}
+
+/* Low Priority (Subs/Var) */
+.event-box.low {
+    border-color: #444;
+    color: #aaa;
+}
+
+.event-icon {
+    font-size: 1.5em;
+}
+
+.event-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.event-player {
+    font-weight: bold;
+    font-size: 1.1em;
+    line-height: 1.2;
+}
+
+.event-subtext {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 2px;
+}
+.subst-in{
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--live-color);
+    /* background-color: #445c4581;*/
+}
+.subst-out{
+    font-size: 0.8em;
+    color: #f55;
+    /* background-color: #6e464685;*/
+}
