@@ -459,16 +459,19 @@
         card: (m, showBadge = false) => {
             const isActuallyLive = ['1H','HT','2H','ET','P','BT'].includes(m.fixture.status.short);
             let statusText = m.fixture.status.long;
-            
+
+            const matchDate = new Date(m.fixture.date);
+            const isToday = matchDate.toDateString() === new Date().toDateString();
+            const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
             if (isActuallyLive) {
                 if (m.fixture.status.short === 'HT') statusText = 'HT';
                 else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${m.fixture.status.elapsed}'</span>`;
                 else statusText = 'LIVE';
             } else if (m.fixture.status.short === 'NS') {
-                const matchDate = new Date(m.fixture.date);
-                const isToday = matchDate.toDateString() === new Date().toDateString();
-                const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                 statusText = isToday ? timeStr : `${matchDate.getMonth()+1}/${matchDate.getDate()} ${timeStr}`;
+            } else if (['FT', 'AET', 'PEN'].includes(m.fixture.status.short)) {
+                statusText = isToday ? timeStr : `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()}`;
             }
 
             const homeScore = m.fixture.status.short === 'NS' ? '-' : (m.goals.home ?? 0);
@@ -818,7 +821,11 @@
                         const rating = s.games.rating ? parseFloat(s.games.rating).toFixed(1) : '-';
                         const shots = s.shots.total === null ? '-' : `${s.shots.on}/${s.shots.total}`;
                         const mainVal = type === 'goals' ? (s.goals.total||0) : (s.goals.assists||0);
-                        return `<tr><td>${index + 1}</td><td style="text-align:left; display:flex; align-items:center; gap:10px;"><div style="position:relative; width:60px; height:50px; margin-right:10px;"><img src="${s.team.logo}" style="position:absolute; left:0; bottom:0; width:30px; height:30px; object-fit:contain; z-index:2; background:#111; border-radius:50%;"><img src="${p.photo}" style="position:absolute; right:0; top:0; width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #333;"></div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name}</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td style="color:${rating>=7.0?'var(--live-color)':(rating<6.0?'#f55':'#fff')}">${rating}</td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
+                        
+                        // NEW: Extract Nationality (first 3 chars)
+                        const natStr = p.nationality ? p.nationality.substring(0,3).toUpperCase() : '';
+
+                        return `<tr><td>${index + 1}</td><td style="text-align:left; display:flex; align-items:center; gap:10px;"><div style="position:relative; width:60px; height:50px; margin-right:10px;"><img src="${s.team.logo}" style="position:absolute; left:0; bottom:0; width:30px; height:30px; object-fit:contain; z-index:2; background:#111; border-radius:50%;"><img src="${p.photo}" style="position:absolute; right:0; top:0; width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #333;"><div class="player-nat-badge">${natStr}</div></div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name}</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td style="color:${rating>=7.0?'var(--live-color)':(rating<6.0?'#f55':'#fff')}">${rating}</td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
                     }).join('')}</tbody>
                 </table>
             </div>`;

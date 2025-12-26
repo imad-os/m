@@ -662,3 +662,17 @@ body {
     height: 80vh; /* Taller pitch in full screen */
     margin-top: 1rem;
 }
+/* NEW: Player Nationality Badge (Small overlay) */
+.player-nat-badge {
+    position: absolute;
+    bottom: -2px; right: -2px; /* Position at bottom-right of the square */
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    font-size: 0.7em;
+    padding: 1px 3px;
+    border-radius: 3px;
+    border: 1px solid #555;
+    z-index: 5;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
