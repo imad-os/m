@@ -14,6 +14,7 @@
     let lastEndpoint = null;
     let currentLeagueStats = { scorers: [], assists: [] }; 
     let currentTab = null;
+    let currentMatchId = null;
     // --- BACKGROUND MONITORING STATE ---
     let monitoredMatches = new Set();
     try {
@@ -54,6 +55,8 @@
         },
 
         render: function() {
+            console.log("Router render:", this.current);
+            currentMatchId = null;
             const container = document.getElementById('content-container');
             if (this.current.name === 'home') Views.renderHome(container);
             else if (this.current.name === 'match') Views.renderDetails(container, this.current.params);
@@ -147,14 +150,15 @@
                 const isTracked = monitoredMatches.has(mid);
                 const isFav = favTeams.has(m.teams.home.id) || favTeams.has(m.teams.away.id) || favLeagues.has(m.league.id);
                 const isAllowed = allowedIds.has(m.league.id);
+                const isCurrentMatch = (currentMatchId === mid);
 
-                if (!isTracked && !isFav && !isAllowed) continue;
+                if (!isTracked && !isFav && !isAllowed && !isCurrentMatch) continue;
 
                 const oldState = matchStates[mid];
                 const newScore = `${m.goals.home}-${m.goals.away}`;
                 const newStatusShort = m.fixture.status.short;
                 const card = document.getElementById(`match-card-${mid}`);
-                
+
                 if (card) {
                     const statusEl = card.querySelector('.match-status');
                     const scoreEls = card.querySelectorAll('.card-score');
@@ -162,6 +166,22 @@
                         const h = m.goals.home ?? 0; const a = m.goals.away ?? 0;
                         if (scoreEls[0].textContent != h) scoreEls[0].textContent = h;
                         if (scoreEls[1].textContent != a) scoreEls[1].textContent = a;
+                    }
+                    if (statusEl) {
+                        let statusText = m.fixture.status.long;
+                        if (['1H','HT','2H','ET','P','BT'].includes(newStatusShort)) {
+                            const time = newStatusShort === 'HT' ? 'HT' : (m.fixture.status.elapsed ? `<span class="live-time">${m.fixture.status.elapsed}'</span>` : 'LIVE');
+                            if (statusEl.innerHTML !== time) statusEl.innerHTML = time;
+                        } else if (statusEl.textContent !== statusText) statusEl.textContent = statusText;
+                    }
+                }
+                if(isCurrentMatch) {
+                    const scoreEl = document.querySelector('.details-score-box .details-score');
+                    const statusEl = document.querySelector('.details-score-box .details-status');
+                    if (scoreEl) {
+                        const h = m.goals.home ?? 0; const a = m.goals.away ?? 0;
+                        const newScoreText = `${h} - ${a}`;
+                        if (scoreEl.textContent != newScoreText) scoreEl.textContent = newScoreText;
                     }
                     if (statusEl) {
                         let statusText = m.fixture.status.long;
@@ -207,6 +227,8 @@
 
     const Views = {
         renderHome: async (container) => {
+            console.log("Rendering Home View");
+            currentMatchId = null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'flex';
 
@@ -235,7 +257,6 @@
                 const allowedLeagues = State.globalSettings.allowed_leagues || [];
                 const allowedIds = new Set(allowedLeagues.map(l => l.id));
                 const hasRestrictions = allowedIds.size > 0;
-
                 const teamFavorites = []; const leagueMatches = []; 
 
                 matches.forEach(m => {
@@ -305,6 +326,7 @@
         },
 
         renderDetails: async (container, id) => {
+            currentMatchId = parseInt(id) || null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'none';
 
@@ -370,11 +392,11 @@
 
                 let penaltyDisplay = '';
                 if (score.penalty.home !== null && score.penalty.away !== null) penaltyDisplay = `<div style="font-size:1.2rem; color:#aaa; margin-top:0.5rem;">(Pen: ${score.penalty.home} - ${score.penalty.away})</div>`;
-
+                const venue = fixture.venue.city ? `${fixture.venue.city}, ${fixture.venue.name}` : fixture?.venue?.name;
                 container.innerHTML = `
                     <div class="page-container">
                         <div class="details-hero" style="align-items:center; text-align:center;">
-                            <div class="details-hero-league" style="position:absolute; top:2rem; left:4rem; right:auto; margin:0;">
+                            <div class="details-hero-league" style="position:absolute; top:1rem; left:4rem; right:auto; margin:0;">
                                 <img src="${league.logo}"> <span>${league.name}</span>
                             </div>
                             <div class="details-hero-content" style="justify-content:center; padding:0;">
@@ -386,6 +408,7 @@
                                 </div>
                                 <div class="details-team"><img src="${teams.away.logo}"><h2>${teams.away.name}</h2></div>
                             </div>
+                            <div class="venue">${venue}</div>
                         </div>
                         <div class="tabs">${tabsHtml}</div>
                         <div id="pred" class="tab-content ${activeTabId === 'pred' ? 'active' : ''}">${hasPred ? Components.renderPredictions(predictions[0]) : ''}</div>
@@ -555,7 +578,20 @@
             const underOver = predictions.under_over || '-';
             
             let html = `<div class="scrollable-content focusable" tabindex="0" style="padding: 1rem 2rem 3rem;">`;
-            
+
+            if (comparison) {
+                html += `<h3 style="margin-bottom:1rem; text-align:center;">Head-to-Head Comparison</h3>`;
+                html += `<div style="max-width:800px; margin:0 auto;">`;
+                html += Components.renderStatBar('Total', comparison.total.home, comparison.total.away, true);
+                html += Components.renderStatBar('Form', comparison.form.home, comparison.form.away, true);
+                html += Components.renderStatBar('Attacking', comparison.att.home, comparison.att.away, true);
+                html += Components.renderStatBar('Defending', comparison.def.home, comparison.def.away, true);
+                html += Components.renderStatBar('H2H', comparison.h2h.home, comparison.h2h.away, true);
+                html += Components.renderStatBar('Goals', comparison.goals.home, comparison.goals.away, true);
+                html += Components.renderStatBar('Poisson Dist.', comparison.poisson_distribution.home, comparison.poisson_distribution.away, true);
+                html += `</div>`;
+            }
+
             html += `
                 <div style="background:#222; padding:1rem; border-radius:8px; border:1px solid #333; margin-bottom:1.5rem; text-align:center;">
                     <div style="font-size:1.3em; font-weight:bold; margin-bottom:0.5rem; color:var(--bg-focus);">${advice}</div>
@@ -575,17 +611,6 @@
                     </div>
                 </div>
             `;
-
-            if (comparison) {
-                html += `<h3 style="margin-bottom:1rem; text-align:center;">Head-to-Head Comparison</h3>`;
-                html += `<div style="max-width:800px; margin:0 auto;">`;
-                html += Components.renderStatBar('Form', comparison.form.home, comparison.form.away, true);
-                html += Components.renderStatBar('Attacking', comparison.att.home, comparison.att.away, true);
-                html += Components.renderStatBar('Defending', comparison.def.home, comparison.def.away, true);
-                html += Components.renderStatBar('H2H', comparison.h2h.home, comparison.h2h.away, true);
-                html += Components.renderStatBar('Poisson Dist.', comparison.poisson_distribution.home, comparison.poisson_distribution.away, true);
-                html += `</div>`;
-            }
 
             html += `</div>`;
             return html;
@@ -869,6 +894,7 @@
             let draws = 0;
             
             h.forEach(m => {
+                if (m.goals.home === null || m.goals.away === null) return; // Skip if no score
                 const hGoal = m.goals.home ?? 0;
                 const aGoal = m.goals.away ?? 0;
                 if (hGoal === aGoal) {

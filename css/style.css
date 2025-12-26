@@ -328,9 +328,16 @@ body {
     padding: 3rem;
     background: radial-gradient(circle at 70% 20%, #2a2a2a, #0f0f0f);
     border-bottom: 1px solid #333;
+    padding-bottom: 1em;
     /* margin-bottom: 2rem;*/
 }
 
+.details-hero .venue{
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5em;
+}
 .details-hero-league {
     font-size: 1.5em; 
     color: var(--bg-focus);
@@ -403,7 +410,7 @@ body {
 }
 .scrollable-content.focused {
     border-color: var(--bg-focus);
-    background: rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.425);
 }
 .scrollable-content::-webkit-scrollbar { display: none; }
 
