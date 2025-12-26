@@ -210,6 +210,10 @@ const Navigation = (function() {
                     }
                 }
             }
+            // never go to sidebar menues from rows with up/down buttons
+            if (currentRail) {
+                return;
+            }
         }
 
         // --- Fallback: Generic Spatial Search ---

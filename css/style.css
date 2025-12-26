@@ -117,7 +117,7 @@ body {
 
 /* --- Rows (Rails) --- */
 #content-container {
-    padding: 0 0 3rem 0; 
+    padding: 0.3rem; 
     min-height: 55vh;
     /* ADDED: Flex properties to pass height down to children */
     display: flex; 
