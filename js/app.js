@@ -310,13 +310,15 @@
 
             container.innerHTML = `<div class="page-container"><div class="skeleton-detail-header"><div class="shimmer"></div></div><div class="skeleton-detail-tabs"><div class="shimmer"></div></div><div class="skeleton-detail-list"><div class="shimmer"></div></div></div>`;
             try {
-                const [matchData, events, lineups, stats, h2h, predictions] = await Promise.all([
+                // ADDED: Fetch player stats to get ratings
+                const [matchData, events, lineups, stats, h2h, predictions, playerStats] = await Promise.all([
                     API.fetch(`fixtures?id=${id}`),
                     API.fetch(`fixtures/events?fixture=${id}`),
                     API.fetch(`fixtures/lineups?fixture=${id}`),
                     API.fetch(`fixtures/statistics?fixture=${id}`),
                     API.fetch(`fixtures/headtohead?h2h=${id}`),
-                    API.fetch(`predictions?fixture=${id}`) // Fetch predictions
+                    API.fetch(`predictions?fixture=${id}`),
+                    API.fetch(`fixtures/players?fixture=${id}`) 
                 ]);
 
                 if (!matchData || matchData.length === 0) throw new Error("Match not found");
@@ -352,7 +354,6 @@
 
                 tabs = tabs.filter(t => t.show);
 
-                // Determine active tab. If NS and hasPred, it's 'pred', otherwise default to 'ev' or whatever is first available non-action tab.
                 let activeTabId = tabs.find(t => !t.isAction)?.id;
                 if (isNotStarted && hasPred) activeTabId = 'pred';
                 else if (events && events.length > 0) activeTabId = 'ev'; // Default fallback
@@ -390,7 +391,7 @@
                         <div class="tabs">${tabsHtml}</div>
                         <div id="pred" class="tab-content ${activeTabId === 'pred' ? 'active' : ''}">${hasPred ? Components.renderPredictions(predictions[0]) : ''}</div>
                         <div id="ev" class="tab-content ${activeTabId === 'ev' ? 'active' : ''}">${Components.renderEvents(events, teams.home.id)}</div>
-                        <div id="ln" class="tab-content ${activeTabId === 'ln' ? 'active' : ''}">${Components.renderLineups(lineups)}</div>
+                        <div id="ln" class="tab-content ${activeTabId === 'ln' ? 'active' : ''}">${Components.renderLineups(lineups, playerStats)}</div>
                         <div id="st" class="tab-content ${activeTabId === 'st' ? 'active' : ''}">${Components.renderStats(stats)}</div>
                         <div id="h2h" class="tab-content ${activeTabId === 'h2h' ? 'active' : ''}">${Components.renderH2H(h2hData, teams.home, teams.away)}</div>
                     </div>
@@ -490,33 +491,54 @@
                 ${penIndicator}
             </div>`;
         },
+        
+        // NEW: Centralized Bar Renderer for Stats & Predictions
+        renderStatBar: (label, homeValRaw, awayValRaw, isPercent = false) => {
+             const cleanVal = (v) => {
+                 if (typeof v === 'string') return parseFloat(v.replace('%','')) || 0;
+                 return parseFloat(v) || 0;
+             };
+
+             const hNum = cleanVal(homeValRaw);
+             const aNum = cleanVal(awayValRaw);
+             const total = hNum + aNum;
+             
+             // Calculate percentages for bar widths
+             let hPct, aPct;
+             if (isPercent) {
+                 hPct = hNum;
+                 aPct = aNum;
+             } else {
+                 if (total === 0) { hPct = 0; aPct = 0; }
+                 else {
+                     hPct = (hNum / total) * 100;
+                     aPct = (aNum / total) * 100;
+                 }
+             }
+
+             // Visual Logic: If one side dominates, ensure bar shows at least a sliver
+             if(hPct > 0 && hPct < 10) hPct = 10;
+             if(aPct > 0 && aPct < 10) aPct = 10;
+             
+             return `
+             <div class="stat-row">
+                <div class="stat-val home">${homeValRaw}</div>
+                <div class="stat-bar-wrapper">
+                    <div class="stat-bar-home" style="width:${hPct}%"></div>
+                    <div class="stat-bar-away" style="width:${aPct}%"></div>
+                    <div class="stat-label-overlay">${label}</div>
+                </div>
+                <div class="stat-val away">${awayValRaw}</div>
+             </div>
+             `;
+        },
+
         renderPredictions: (data) => {
             if (!data) return '<div class="scrollable-content focusable" tabindex="0">No predictions available.</div>';
             
-            const { predictions, comparison, league, teams } = data;
-            const home = teams.home;
-            const away = teams.away;
-
-            const renderPercentBar = (label, homeVal, awayVal) => {
-                const h = parseInt(homeVal.replace('%','')) || 0;
-                const a = parseInt(awayVal.replace('%','')) || 0;
-                const total = h + a;
-                const hPct = total === 0 ? 50 : (h / total) * 100;
-                
-                return `
-                <div class="pred-row">
-                    <div class="pred-label">${label}</div>
-                    <div class="pred-bar-container">
-                        <div class="pred-bar-home" style="width:${hPct}%"></div>
-                        <div class="pred-values">
-                            <span>${homeVal}</span>
-                            <span>${awayVal}</span>
-                        </div>
-                    </div>
-                </div>`;
-            };
-
-            // Clean up advice text: remove "Combo Double chance : " prefix to save space
+            const { predictions, comparison } = data;
+            
+            // Clean up advice text
             let advice = predictions.advice || 'No advice available.';
             advice = advice.replace(/Combo Double chance : /i, ''); 
             
@@ -526,7 +548,6 @@
             
             let html = `<div class="scrollable-content focusable" tabindex="0" style="padding: 1rem 2rem 3rem;">`;
             
-            // Odds / Winner Block - Removed Title "Match Prediction"
             html += `
                 <div style="background:#222; padding:1rem; border-radius:8px; border:1px solid #333; margin-bottom:1.5rem; text-align:center;">
                     <div style="font-size:1.3em; font-weight:bold; margin-bottom:0.5rem; color:var(--bg-focus);">${advice}</div>
@@ -547,21 +568,21 @@
                 </div>
             `;
 
-            // Comparison Bars
             if (comparison) {
                 html += `<h3 style="margin-bottom:1rem; text-align:center;">Head-to-Head Comparison</h3>`;
                 html += `<div style="max-width:800px; margin:0 auto;">`;
-                html += renderPercentBar('Form', comparison.form.home, comparison.form.away);
-                html += renderPercentBar('Attacking', comparison.att.home, comparison.att.away);
-                html += renderPercentBar('Defending', comparison.def.home, comparison.def.away);
-                html += renderPercentBar('H2H', comparison.h2h.home, comparison.h2h.away);
-                html += renderPercentBar('Poisson Dist.', comparison.poisson_distribution.home, comparison.poisson_distribution.away);
+                html += Components.renderStatBar('Form', comparison.form.home, comparison.form.away, true);
+                html += Components.renderStatBar('Attacking', comparison.att.home, comparison.att.away, true);
+                html += Components.renderStatBar('Defending', comparison.def.home, comparison.def.away, true);
+                html += Components.renderStatBar('H2H', comparison.h2h.home, comparison.h2h.away, true);
+                html += Components.renderStatBar('Poisson Dist.', comparison.poisson_distribution.home, comparison.poisson_distribution.away, true);
                 html += `</div>`;
             }
 
             html += `</div>`;
             return html;
         },
+        
         renderEvents: (events, homeId) => {
             if(!events || !events.length) return '<div class="scrollable-content focusable" tabindex="0">No events available.</div>';
             return `<div class="scrollable-content focusable" tabindex="0"><div class="events-list">${events.map(e => {
@@ -570,10 +591,29 @@
                 return `<div style="display:flex; padding:0.8rem; border-bottom:1px solid #333; ${isHome?'':'flex-direction:row-reverse; text-align:right;'}"><div style="font-weight:bold; width:40px;">${e.time.elapsed}'</div><div style="flex-grow:1;">${icon} ${e.player.name} <small style="color:#888">${e.detail||''}</small></div></div>`;
             }).join('')}</div></div>`;
         },
-        renderLineups: (l) => {
+        
+        // UPDATED: Now accepts playerStats to show ratings
+        renderLineups: (l, playerStats) => {
             if(!l || l.length < 2) return '<div class="scrollable-content focusable" tabindex="0">No Lineups.</div>';
             
-            // Helper to create a player dot
+            // Map ratings if available
+            // playerStats structure: [ { team: {id}, players: [ { player: {id}, statistics: [{games:{rating}}] } ] } ]
+            const ratingsMap = {};
+            if (playerStats && playerStats.length) {
+                playerStats.forEach(teamGroup => {
+                    if(teamGroup.players) {
+                        teamGroup.players.forEach(p => {
+                            // rating is string "7.5"
+                            if(p.statistics && p.statistics[0] && p.statistics[0].games.rating) {
+                                ratingsMap[p.player.id] = p.statistics[0].games.rating;
+                            }
+                        });
+                    }
+                });
+            }
+
+            const getRating = (playerId) => ratingsMap[playerId] || null;
+
             const createDot = (player, isHome) => {
                 const teamData = isHome ? l[0].team : l[1].team;
                 const colors = player.pos === 'G' ? teamData.colors.goalkeeper : teamData.colors.player;
@@ -584,21 +624,18 @@
                 return {
                     name: player.name,
                     number: player.number,
+                    id: player.id,
                     grid: player.grid,
                     bg: bgColor,
                     fg: numColor,
-                    br: borderColor
+                    br: borderColor,
+                    rating: getRating(player.id)
                 };
             };
             
-            // Process grid positions for HORIZONTAL pitch
-            // API Grid is "Row:Col" (e.g., 4:1). 
-            // Row 1 is Goalkeeper.
             const processTeam = (teamIndex) => {
                 const xi = l[teamIndex].startXI.map(x => x.player);
                 const isHome = teamIndex === 0;
-
-                // Group by Row to calculate vertical spacing (which was horizontal in vertical view)
                 const rows = {};
                 xi.forEach(p => {
                     if(!p.grid) return;
@@ -607,7 +644,6 @@
                     rows[r].push(p);
                 });
                 
-                // Sort players in each row by Col index
                 Object.keys(rows).forEach(r => {
                     rows[r].sort((a,b) => parseInt(a.grid.split(':')[1]) - parseInt(b.grid.split(':')[1]));
                 });
@@ -617,43 +653,19 @@
                     let style = '';
                     if (p.grid) {
                         const parts = p.grid.split(':');
-                        const r = parseInt(parts[0]); // Row (Distance from Goal)
+                        const r = parseInt(parts[0]);
                         const rowPlayers = rows[r];
                         const idx = rowPlayers.indexOf(p);
                         const count = rowPlayers.length;
-                        
-                        // Vertical Axis (Top to Bottom): Distribute evenly based on col index
-                        // count=1 -> 50%
-                        // count=2 -> 33%, 66%
                         const seg = 100 / (count + 1);
                         const topPct = seg * (idx + 1);
                         
-                        // Horizontal Axis (Left to Right)
-                        // Home: Left (GK) -> Center. Row 1 is 5% left. Row 5 is 45% left.
-                        // Away: Right (GK) -> Center. Row 1 is 95% left. Row 5 is 55% left.
                         let leftPct;
-                        
-                        // Scale row spacing. Assume max 5 rows.
-                        // We want 10% (GK) to 45% (FW) for Home
-                        // We want 90% (GK) to 55% (FW) for Away
-                        
                         if (isHome) {
-                            // Home is on Left (0-50%)
-                            // Row 1 is GK. 
                             leftPct = 5 + ((r-1) * 10); 
-                            //leftPct = leftPct * 1.2; // Spread out Home team
                         } else {
-                            // Away is on Right (50-100%)
-                            // Row 1 is GK (Rightmost).
-                            // Calculate distance from right edge (100%)
-                            /*
-                            let distanceFromRight = 5 + ((r-1) * 10);
-                            distanceFromRight = distanceFromRight * 1.2;
-                            leftPct = 100 - distanceFromRight;
-                            */
                             leftPct = 95 - ((r-1) * 10);
                         }
-                        
                         style = `left:${leftPct}%; top:${topPct}%;`;
                     }
                     return { ...data, style };
@@ -663,18 +675,31 @@
             const homePlayers = processTeam(0);
             const awayPlayers = processTeam(1);
             
+            const renderRatingBadge = (rating) => {
+                if(!rating) return '';
+                const rVal = parseFloat(rating);
+                const colorClass = rVal >= 7.0 ? 'high' : (rVal < 6.0 ? 'low' : 'mid');
+                return `<div class="player-rating-badge ${colorClass}">${rating}</div>`;
+            };
+
             const renderDot = (p) => `
                 <div class="pitch-player" style="${p.style}">
                     <div class="player-dot" style="background:${p.bg}; color:${p.fg}; border-color:${p.br}">${p.number}</div>
+                    ${renderRatingBadge(p.rating)}
                     <div class="player-name">${p.name.split(' ').pop()}</div>
                 </div>`;
 
-            const renderSubs = (teamIdx) => l[teamIdx].substitutes.map(s => `
+            const renderSubs = (teamIdx) => l[teamIdx].substitutes.map(s => {
+                const rating = getRating(s.player.id);
+                const rHtml = rating ? `<span class="sub-rating ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
+                return `
                 <div class="sub-row">
                     <span class="sub-num">${s.player.number}</span>
-                    <span>${s.player.name}</span>
+                    <span style="flex-grow:1; text-align:left; padding-left:1rem;">${s.player.name}</span>
+                    ${rHtml}
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             return `
                 <div class="scrollable-content focusable" tabindex="0">
@@ -701,21 +726,43 @@
                 </div>
             `;
         },
-        renderStats: (s) => (!s||s.length<2)?'<div class="scrollable-content focusable" tabindex="0">No Stats.</div>':`<div class="scrollable-content focusable" tabindex="0"><div style="max-width:600px; margin:0 auto;">${s[0].statistics.map((stat,i) => `<div style="display:flex; justify-content:space-between; padding:0.5rem; border-bottom:1px solid #333;"><span style="font-weight:bold">${stat.value??0}</span><span style="color:#aaa">${stat.type}</span><span style="font-weight:bold">${s[1].statistics[i].value??0}</span></div>`).join('')}</div></div>`,
+
+        // UPDATED: Now uses the centralized bar renderer
+        renderStats: (s) => {
+            if(!s||s.length<2) return '<div class="scrollable-content focusable" tabindex="0">No Stats.</div>';
+            
+            // s[0] is home, s[1] is away
+            const homeStats = s[0].statistics;
+            const awayStats = s[1].statistics;
+            
+            let html = `<div class="scrollable-content focusable" tabindex="0" style="padding: 1rem 2rem 3rem;">
+                <div style="max-width:800px; margin:0 auto;">`;
+            
+            homeStats.forEach((stat, i) => {
+                // Find matching stat in away array (usually same index, but safer to match type)
+                // Note: API-Football usually guarantees order, but raw index is risky if filtered.
+                // Assuming standard array alignment for simplicity as per original code.
+                const hVal = stat.value ?? 0;
+                const aVal = awayStats[i].value ?? 0;
+                const type = stat.type;
+                
+                html += Components.renderStatBar(type, hVal, aVal);
+            });
+
+            html += `</div></div>`;
+            return html;
+        },
         
         renderH2H: (h, teamHome, teamAway) => {
             if(!h||h.length===0) return '<div class="scrollable-content focusable" tabindex="0">No Data.</div>';
             
-            // Logic to count Wins/Draws relative to current view
             let homeWins = 0;
             let awayWins = 0;
             let draws = 0;
             
             h.forEach(m => {
-                // Determine winner of this match
                 const hGoal = m.goals.home ?? 0;
                 const aGoal = m.goals.away ?? 0;
-                
                 if (hGoal === aGoal) {
                     draws++;
                 } else {
@@ -781,11 +828,8 @@
     function setupDelegatedEvents(container) {
         container.addEventListener('click', async (e) => {
             const target = e.target;
-
-            // ... existing sortHeader logic ...
             const sortHeader = target.closest('.sort-header');
             if (sortHeader) {
-                // ... sorting implementation ...
                 const table = sortHeader.closest('table');
                 const type = table.dataset.type;
                 const sortKey = sortHeader.dataset.sort;
@@ -811,7 +855,6 @@
             const tabBtn = target.closest('.tab-button');
             if (tabBtn) {
                 if (tabBtn.id === 'btn-track-toggle') {
-                     // ... existing track logic ...
                      const mid = Number(tabBtn.dataset.mid);
                      if (monitoredMatches.has(mid)) monitoredMatches.delete(mid); else monitoredMatches.add(mid);
                      saveTrackedMatches();
@@ -819,7 +862,6 @@
                 } else {
                     const parent = tabBtn.closest('.page-container');
                     if (parent) {
-                        // Standard Tab Switch
                         parent.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
                         parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                         tabBtn.classList.add('active');
@@ -827,33 +869,23 @@
                         const content = parent.querySelector('#'+contentId);
                         if(content) {
                             content.classList.add('active');
-                            
-                            // --- NEW: Full Screen Logic for Lineups ---
                             if (contentId === 'ln' && currentTab==='ln') {
-                                // 1. Enter Full Screen Mode
                                 content.classList.add('full-screen-mode');
-                                
-                                // 2. Add Close Button if not exists
                                 if (!content.querySelector('.fs-close-btn')) {
                                     const closeBtn = document.createElement('button');
                                     closeBtn.className = 'fs-close-btn focusable';
                                     closeBtn.innerText = 'Close Full Screen';
                                     closeBtn.tabIndex = 0;
                                     closeBtn.onclick = (e) => {
-                                        e.stopPropagation(); // Prevent re-triggering stuff
+                                        e.stopPropagation(); 
                                         content.classList.remove('full-screen-mode');
                                         closeBtn.remove();
-                                        // Refocus the tab button
                                         Navigation.focus(tabBtn);
                                     };
                                     content.prepend(closeBtn);
-                                    
-                                    // Focus the close button immediately so user knows how to exit
-                                    // setTimeout to allow render
                                     setTimeout(() => Navigation.focus(closeBtn), 50);
                                 }
                             } else {
-                                // Remove FS from any other tabs just in case (though logic separates them)
                                 parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('full-screen-mode'));
                                 const existingBtn = parent.querySelector('.fs-close-btn');
                                 if(existingBtn) existingBtn.remove();
@@ -865,7 +897,6 @@
                 return;
             }
             
-            // ... rest of the function ...
             const card = target.closest('.match-card');
             if (card) {
                 const action = card.dataset.action; const id = card.dataset.id;
@@ -882,7 +913,6 @@
 
             const favBtn = target.closest('.fav-toggle');
             if (favBtn) {
-                // ... existing fav logic ...
                 e.preventDefault(); e.stopPropagation();
                 if (!State.currentUser) {
                      const m = document.getElementById('auth-modal');
@@ -903,7 +933,6 @@
                 State.appConfig = cfg; await Storage.saveUserConfig(State.currentUser.uid, cfg);
                 return;
             }
-            //get from clicked button data-tab
         });
     }
 
@@ -987,10 +1016,8 @@
         });
 
         document.addEventListener('keydown', (e) => {
-        // ... existing keydown ...
         const key = Navigation.normalizeKey(e);
         
-        // --- NEW: Handle Back/Return to exit Full Screen ---
         if (key === 'Return' || key === 'Escape') {
             const fsContent = document.querySelector('.tab-content.full-screen-mode');
             if (fsContent) {
@@ -1000,7 +1027,6 @@
                 const btn = fsContent.querySelector('.fs-close-btn');
                 if(btn) btn.remove();
                 
-                // Try to find the Lineup tab button to restore focus
                 const lnTab = document.querySelector('.tab-button[data-tab="ln"]');
                 if (lnTab) Navigation.focus(lnTab);
                 return;
