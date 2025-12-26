@@ -357,14 +357,28 @@ body {
 .details-hero-content {
     display: flex;
     align-items: center;
-    gap: 3rem;
+    /* justify-content: space-between;  CHANGED: to space-between for 3 columns */
+    gap: 1rem; 
     padding-left: 1rem; 
+    width: 100%; /* Ensure full width */
 }
-.details-team { text-align: center; }
+.details-team { 
+    text-align: center; 
+    /* CHANGED: Flex 1 ensures equal width for both teams, centering the score */
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0; /* Prevent overflow issues */
+}
 .details-team img { height: 5em; width: 5em; object-fit: contain; display: block; margin: 0 auto 0.5rem; }
-.details-team h2 { font-size: 2em; margin: 0; }
+.details-team h2 { font-size: 2em; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-.details-score-box { text-align: center; }
+.details-score-box { 
+    text-align: center; 
+    /* Fixed or auto width, it stays center because siblings are flex:1 */
+    min-width: 150px; 
+}
 .details-score { font-size: 5em; font-weight: 300; line-height: 1; color: var(--text-main); }
 .details-status { font-size: 1.5em; color: var(--text-muted); margin-top: 0.5rem; }
 
@@ -460,7 +474,8 @@ body {
     width: 90%;
     max-width: none;
     aspect-ratio: 105 / 68; /* width / height */
-    background: #2e7d32;
+    /*background: #2e7d32;*/
+    background-color: #bb000042;
     margin: 1rem auto;
     border: 3px solid #fff;
     border-radius: 4px;
@@ -511,7 +526,7 @@ body {
     color: #000;
     font-weight: bold; font-size: 1.5em;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    box-shadow: 0 4px 8px rgba(109, 109, 109, 0.6);
 }
 
 .player-name {
@@ -615,12 +630,22 @@ body {
     border-radius: 4px;
     border: 1px solid #555;
     z-index: 6;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.5); */
 }
-.player-rating-badge.high { background: var(--live-color); border-color: var(--live-color); color: #000; }
-.player-rating-badge.low { background: #f55; border-color: #f55; color: #fff; }
-.player-rating-badge.mid { background: #e6b800; border-color: #e6b800; color: #000; }
+.player-rating-badge.super { background: #0f25ff; border-color: #fff; color: #fff; }
+.player-rating-badge.high { background: #0098ff; border-color: #fff; color: #000; }
+.player-rating-badge.good { background: var(--live-color); border-color: #fff; color: #000; }
+.player-rating-badge.low { background: #f55; border-color: #fff; color: #fff; }
+.player-rating-badge.mid { background: #e6b800; border-color: #fff; color: #000; }
 
+.player-rating-badge use{
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.7));
+    position: absolute;
+    top: 0; 
+    right: -40px;
+    bottom: 0px;
+
+}
 .sub-rating {
     font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;
     margin-left: 0.5rem;
@@ -830,10 +855,88 @@ body {
     font-weight: bold;
     position: absolute;
     top: 5px;
+    color: #fda2a2;
 }
 .pitch-fomation.home{
     left: 25%;
 }
 .pitch-fomation.away{
     right: 25%;
+}
+
+/* --- KNOCKOUT STAGE (BRACKET) --- */
+.bracket-container {
+    display: flex;
+    flex-direction: row;
+    padding: 2rem 1rem;
+    gap: 2rem;
+    overflow-x: auto;
+    min-width: 100%;
+}
+
+.bracket-round {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 300px;
+    align-items: center;
+}
+
+.bracket-round-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--bg-focus);
+    margin-bottom: 1rem;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5rem;
+    width: 100%;
+}
+
+.bracket-match {
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 100%;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.bracket-match:hover, .bracket-match.focused {
+    background: #252525;
+    transform: scale(1.03);
+    border-color: var(--bg-focus);
+}
+
+.bracket-match-date {
+    font-size: 0.8em;
+    color: #777;
+    margin-bottom: 0.5rem;
+    text-align: right;
+}
+
+.bracket-team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    font-size: 1.1em;
+}
+
+.bracket-team-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+.bracket-team-info img {
+    width: 1.5em;
+    height: 1.5em;
+    object-fit: contain;
+}
+.bracket-score {
+    font-weight: bold;
+}
+.bracket-winner {
+    color: var(--live-color);
 }

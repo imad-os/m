@@ -63,7 +63,11 @@
             else if (this.current.name === 'league') Views.renderLeaguePage(container, this.current.params);
         }
     };
-
+    function formTimeString(status) {
+        const extra = status.extra ? `+${status.extra}` : '';
+        return `${status.elapsed}${extra}'`;
+        
+    }
     function updateClock(){
         const now = new Date();
         const clock = document.getElementById('clock');
@@ -103,7 +107,18 @@
             } catch (e) { console.error("Error registering keys:", e); }
         }
     }
-
+    function removeTrackedMatch(mid,cards=null) {
+        if (monitoredMatches.has(mid)) {
+            monitoredMatches.delete(mid);
+            saveTrackedMatches();
+            const _cards = cards || document.querySelectorAll(`#match-card-${mid}`);
+            if(_cards && _cards.length) {
+                for (const card of cards) {
+                    const dot = card.querySelector('.track-indicator'); if(dot) dot.remove(); 
+                }
+            }
+        }
+    }
     function showAlert(title, desc, matchData, type, isSilent = false) {
         if (!isSilent) playSound(type);
         if (document.hidden) return; 
@@ -115,7 +130,7 @@
         const awayScore = matchData.goals.away ?? 0;
         
         alertEl.innerHTML = `
-            <div class="alert-header"><span class="alert-event-type">${title}</span><span class="alert-time">${matchData.fixture.status.elapsed}'</span></div>
+            <div class="alert-header"><span class="alert-event-type">${title}</span><span class="alert-time">${formTimeString(matchData.fixture.status)}'</span></div>
             <div class="alert-teams">
                 <div class="alert-team"><img src="${matchData.teams.home.logo}"><span>${matchData.teams.home.name}</span></div>
                 <div class="alert-score-board">${homeScore} - ${awayScore}</div>
@@ -152,29 +167,33 @@
                 const isAllowed = allowedIds.has(m.league.id);
                 const isCurrentMatch = (currentMatchId === mid);
 
-                if (!isTracked && !isFav && !isAllowed && !isCurrentMatch) continue;
 
                 const oldState = matchStates[mid];
                 const newScore = `${m.goals.home}-${m.goals.away}`;
                 const newStatusShort = m.fixture.status.short;
-                const card = document.getElementById(`match-card-${mid}`);
+                const cards = document.querySelectorAll(`#match-card-${mid}`);
 
-                if (card) {
-                    const statusEl = card.querySelector('.match-status');
-                    const scoreEls = card.querySelectorAll('.card-score');
-                    if (scoreEls.length === 2) {
-                        const h = m.goals.home ?? 0; const a = m.goals.away ?? 0;
-                        if (scoreEls[0].textContent != h) scoreEls[0].textContent = h;
-                        if (scoreEls[1].textContent != a) scoreEls[1].textContent = a;
-                    }
-                    if (statusEl) {
-                        let statusText = m.fixture.status.long;
-                        if (['1H','HT','2H','ET','P','BT'].includes(newStatusShort)) {
-                            const time = newStatusShort === 'HT' ? 'HT' : (m.fixture.status.elapsed ? `<span class="live-time">${m.fixture.status.elapsed}'</span>` : 'LIVE');
-                            if (statusEl.innerHTML !== time) statusEl.innerHTML = time;
-                        } else if (statusEl.textContent !== statusText) statusEl.textContent = statusText;
+                if (cards.length) {
+                    for (const card of cards) {
+                        const statusEl = card.querySelector('.match-status');
+                        const scoreEls = card.querySelectorAll('.card-score');
+                        if (scoreEls.length === 2) {
+                            const h = m.goals.home ?? 0; const a = m.goals.away ?? 0;
+                            if (scoreEls[0].textContent != h) scoreEls[0].textContent = h;
+                            if (scoreEls[1].textContent != a) scoreEls[1].textContent = a;
+                        }
+                        if (statusEl) {
+                            let statusText = m.fixture.status.long;
+                            if (['1H','HT','2H','ET','P','BT'].includes(newStatusShort)) {
+                                const time = newStatusShort === 'HT' ? 'HT' : (m.fixture.status.elapsed ? `<span class="live-time">${formTimeString(m.fixture.status)}</span>` : 'LIVE');
+                                if (statusEl.innerHTML !== time) statusEl.innerHTML = time;
+                            } else if (statusEl.textContent !== statusText) statusEl.textContent = statusText;
+                        }
                     }
                 }
+
+                if (!isTracked && !isFav && !isAllowed && !isCurrentMatch) continue;
+
                 if(isCurrentMatch) {
                     const scoreEl = document.querySelector('.details-score-box .details-score');
                     const statusEl = document.querySelector('.details-score-box .details-status');
@@ -186,7 +205,7 @@
                     if (statusEl) {
                         let statusText = m.fixture.status.long;
                         if (['1H','HT','2H','ET','P','BT'].includes(newStatusShort)) {
-                            const time = newStatusShort === 'HT' ? 'HT' : (m.fixture.status.elapsed ? `<span class="live-time">${m.fixture.status.elapsed}'</span>` : 'LIVE');
+                            const time = newStatusShort === 'HT' ? 'HT' : (m.fixture.status.elapsed ? `<span class="live-time">${formTimeString(m.fixture.status)}</span>` : 'LIVE');
                             if (statusEl.innerHTML !== time) statusEl.innerHTML = time;
                         } else if (statusEl.textContent !== statusText) statusEl.textContent = statusText;
                     }
@@ -214,9 +233,7 @@
                         const desc = `Finished: ${newScore}`;
                         showAlert('Full Time', desc, m, 'ft', !isTracked);
                         if(isTracked) {
-                            monitoredMatches.delete(mid);
-                            saveTrackedMatches();
-                            if(card) { const dot = card.querySelector('.track-indicator'); if(dot) dot.remove(); }
+                            removeTrackedMatch(mid, cards);
                         }
                     }
                 }
@@ -386,7 +403,7 @@
 
                 let statusDisplay = fixture.status.long;
                 if (['1H','HT','2H','ET','P','BT'].includes(fixture.status.short)) {
-                    const time = fixture.status.short === 'HT' ? 'HT' : (fixture.status.elapsed ? `${fixture.status.elapsed}'` : 'LIVE');
+                    const time = fixture.status.short === 'HT' ? 'HT' : (fixture.status.elapsed ? `${formTimeString(m.fixture.status)}` : 'LIVE');
                     statusDisplay = `<span class="live-time">${time}</span>`;
                 }
 
@@ -444,8 +461,18 @@
                 
                 currentLeagueStats = { scorers: scorers || [], assists: assists || [] };
                 const standings = standingsData[0]?.league?.standings || [];
+                
+                // Identify Knockout Matches from Fixtures
+                // We look for round names that indicate knockouts
+                const knockoutKeywords = ['Round of 16', '8th Finals', 'Quarter-finals', 'Semi-finals', 'Final'];
+                const knockoutMatches = fixtures ? fixtures.filter(f => {
+                    const r = f.league.round || '';
+                    return knockoutKeywords.some(k => r.includes(k));
+                }) : [];
+
                 const tabs = [
                     { id: 'l-std', label: 'Standings', show: standings && standings.length > 0 },
+                    { id: 'l-ko', label: 'Knockout Stage', show: knockoutMatches.length > 0 }, // NEW BUTTON
                     { id: 'l-mat', label: 'Matches', show: fixtures && fixtures.length > 0 },
                     { id: 'l-scr', label: 'Top Scorers', show: scorers && scorers.length > 0 },
                     { id: 'l-ast', label: 'Top Assists', show: assists && assists.length > 0 }
@@ -465,6 +492,7 @@
                         </div>
                         <div class="tabs">${tabsHtml}</div>
                         <div id="l-std" class="tab-content ${activeTabId === 'l-std' ? 'active' : ''}">${Components.renderStandings(standings)}</div>
+                        <div id="l-ko" class="tab-content ${activeTabId === 'l-ko' ? 'active' : ''}">${Components.renderKnockout(knockoutMatches)}</div>
                         <div id="l-mat" class="tab-content ${activeTabId === 'l-mat' ? 'active' : ''}">
                              <div class="scrollable-content focusable" tabindex="0">
                                 <div class="matches-container" style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center;">
@@ -494,7 +522,7 @@
 
             if (isActuallyLive) {
                 if (m.fixture.status.short === 'HT') statusText = 'HT';
-                else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${m.fixture.status.elapsed}'</span>`;
+                else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${formTimeString(m.fixture.status)}</span>`;
                 else statusText = 'LIVE';
             } else if (m.fixture.status.short === 'NS') {
                 statusText = isToday ? timeStr : `${matchDate.getMonth()+1}/${matchDate.getDate()} ${timeStr}`;
@@ -521,6 +549,68 @@
                 </div>
                 ${penIndicator}
             </div>`;
+        },
+
+        // NEW: Knockout Bracket Renderer
+        renderKnockout: (matches) => {
+            if (!matches || matches.length === 0) return '<div class="scrollable-content focusable" tabindex="0">No Knockout Stage available.</div>';
+
+            // Group by Round
+            const groups = {};
+            matches.forEach(m => {
+                const r = m.league.round;
+                if (!groups[r]) groups[r] = [];
+                groups[r].push(m);
+            });
+
+            // Order: Round of 16 -> Quarter -> Semi -> Final
+            const roundOrder = ['Round of 16', '8th Finals', 'Quarter-finals', 'Semi-finals', 'Final'];
+            
+            // Sort keys based on known order
+            const sortedKeys = Object.keys(groups).sort((a, b) => {
+                const idxA = roundOrder.findIndex(key => a.includes(key));
+                const idxB = roundOrder.findIndex(key => b.includes(key));
+                // If not found, put at end
+                const va = idxA === -1 ? 99 : idxA;
+                const vb = idxB === -1 ? 99 : idxB;
+                return va - vb;
+            });
+
+            let html = `<div class="scrollable-content focusable" tabindex="0" style="display:flex; flex-direction:column;">
+                          <div class="bracket-container">`;
+
+            sortedKeys.forEach(roundName => {
+                // Filter matches in this round that are actual matches (avoid dupes if any)
+                const roundsMatches = groups[roundName];
+                
+                html += `<div class="bracket-round">
+                            <div class="bracket-round-title">${roundName.replace('Regular Season - ', '')}</div>`;
+                
+                roundsMatches.forEach(m => {
+                   const hScore = m.goals.home ?? '-';
+                   const aScore = m.goals.away ?? '-';
+                   const date = new Date(m.fixture.date).toLocaleDateString();
+                   const hClass = (m.goals.home > m.goals.away) ? 'bracket-winner' : '';
+                   const aClass = (m.goals.away > m.goals.home) ? 'bracket-winner' : '';
+
+                   html += `<div class="bracket-match focusable" tabindex="0" data-action="open-match" data-id="${m.fixture.id}">
+                                <div class="bracket-match-date">${date}</div>
+                                <div class="bracket-team">
+                                    <div class="bracket-team-info"><img src="${m.teams.home.logo}"><span>${m.teams.home.name}</span></div>
+                                    <span class="bracket-score ${hClass}">${hScore}</span>
+                                </div>
+                                <div class="bracket-team">
+                                    <div class="bracket-team-info"><img src="${m.teams.away.logo}"><span>${m.teams.away.name}</span></div>
+                                    <span class="bracket-score ${aClass}">${aScore}</span>
+                                </div>
+                            </div>`; 
+                });
+
+                html += `</div>`; // Close column
+            });
+
+            html += `</div></div>`;
+            return html;
         },
         
         // NEW: Centralized Bar Renderer for Stats & Predictions
@@ -683,7 +773,7 @@
         // UPDATED: Now resilient to missing Grid info
         renderLineups: (l, playerStats) => {
             if(!l || l.length < 2) return '<div class="scrollable-content focusable" tabindex="0">No Lineups.</div>';
-            
+            let BestPlayer = null;
             // Map ratings if available
             const ratingsMap = {};
             if (playerStats && playerStats.length) {
@@ -692,6 +782,7 @@
                         teamGroup.players.forEach(p => {
                             if(p.statistics && p.statistics[0] && p.statistics[0].games.rating) {
                                 ratingsMap[p.player.id] = p.statistics[0].games.rating;
+                                BestPlayer = !BestPlayer || parseFloat(p.statistics[0].games.rating) > parseFloat(ratingsMap[BestPlayer]) ? p.player.id : BestPlayer;
                             }
                         });
                     }
@@ -791,12 +882,29 @@
 
                 const homePlayers = processTeam(0);
                 const awayPlayers = processTeam(1);
-                
-                const renderRatingBadge = (rating) => {
-                    if(!rating) return '';
-                    const rVal = parseFloat(rating);
-                    const colorClass = rVal >= 7.0 ? 'high' : (rVal < 6.0 ? 'low' : 'mid');
-                    return `<div class="player-rating-badge ${colorClass}">${rating}</div>`;
+                const bestPlayerStar = '<use href="#icon-star" xlink:href="#icon-star"></use></div>';
+                const renderRatingBadge = (p) => {
+                    if(!p?.rating) return '';
+                    const rVal = parseFloat(p.rating);
+                    let colorClass = 'low';
+                    switch (true) {
+                        case (rVal >= 9.0):
+                            colorClass = 'super';
+                            break;
+                        case (rVal >= 8.0):
+                            colorClass = 'high';
+                            break;
+                        case (rVal >= 7.0):
+                            colorClass = 'good';
+                            break;
+                        case (rVal >= 6.0):
+                            colorClass = 'mid';
+                            break;
+                        default:
+                            colorClass = 'low';
+                    }
+                    //return `<div class="player-rating-badge ${colorClass}">${p.rating} ${p.id===BestPlayer?bestPlayerStar:''}`;
+                    return `<div class="player-rating-badge ${colorClass}">${p.rating}</div>`;
                 };
 
                 const renderDot = (p) => {
@@ -804,7 +912,7 @@
                     return `
                     <div class="pitch-player" style="${p.style}">
                         <div class="player-dot" style="background:${p.bg}; color:${p.fg}; border-color:${p.br}">${p.number}</div>
-                        ${renderRatingBadge(p.rating)}
+                        ${renderRatingBadge(p)}
                         <div class="player-name">${p.name.split(' ').pop()}</div>
                     </div>`;
                 };
@@ -948,7 +1056,7 @@
                     <thead><tr><th>#</th><th style="text-align:left">Player</th><th class="focusable clickable sort-header" tabindex="0" data-sort="pos">Pos</th><th class="focusable clickable sort-header" tabindex="0" data-sort="app">App</th><th class="focusable clickable sort-header" tabindex="0" data-sort="rating">Rate</th><th class="focusable clickable sort-header" tabindex="0" data-sort="shots">Shots (On)</th><th class="focusable clickable sort-header" tabindex="0" data-sort="main">${mainStat}</th></tr></thead>
                     <tbody>${data.map((item, index) => {
                         const p = item?.player; const s = item.statistics[0];
-                        const pos = posMap[s.games.position] || s.games.position.substring(0,3);
+                        const pos = posMap[s?.games?.position] || s?.games?.position?.substring(0,3);
                         const rating = s.games.rating ? parseFloat(s.games.rating).toFixed(1) : '-';
                         const shots = s.shots.total === null ? '-' : `${s.shots.on}/${s.shots.total}`;
                         const mainVal = type === 'goals' ? (s.goals.total||0) : (s.goals.assists||0);
@@ -1035,7 +1143,8 @@
                 return;
             }
             
-            const card = target.closest('.match-card');
+            // Handle both match-card and bracket-match
+            const card = target.closest('.match-card, .bracket-match');
             if (card) {
                 const action = card.dataset.action; const id = card.dataset.id;
                 if (action === 'open-match' && id) Router.go('match', id);

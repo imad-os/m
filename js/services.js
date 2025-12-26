@@ -58,13 +58,29 @@ const Storage = {
     getCollection: () => {
         return db.collection('usersSettings');
     },
+    saveUserConfigLocally: (config) => {
+        try {
+            localStorage.setItem('appConfig', JSON.stringify(config || State.appConfig));
+        } catch (e) { console.error("Local Save Error:", e); }
+    },
 
+    loadUserConfigLocally: () => {
+        try {
+            const configStr = localStorage.getItem('appConfig');
+            return configStr ? JSON.parse(configStr) : null;
+        } catch (e) { 
+            console.error("Local Load Error:", e);
+            return null; 
+        }
+    },
     loadUserConfig: async (uid) => {
         if (!uid) return null;
         try {
             // Path: usersSettings/{uid}
             const doc = await Storage.getCollection().doc(uid).get();
-            return doc.exists ? doc.data() : null;
+            const config = doc.exists ? doc.data() : null;
+            Storage.saveUserConfigLocally(config);
+            return config;
         } catch (e) { 
             console.error("Load Config Error:", e);
             return null; 
@@ -77,6 +93,7 @@ const Storage = {
             // Path: usersSettings/{uid}
             await Storage.getCollection().doc(uid).set(config, { merge: true });
             State.appConfig = config;
+            Storage.saveUserConfigLocally(config);
             console.log("Config saved successfully.");
         } catch (e) { console.error("Save Config Error:", e); }
     },
@@ -114,4 +131,5 @@ const Helpers = {
     }
 };
 
+State.appConfig = Storage.loadUserConfigLocally();
 window.AppServices = { db, auth, State, API, Storage, Helpers };
