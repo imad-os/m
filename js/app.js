@@ -57,6 +57,7 @@
         render: function() {
             console.log("Router render:", this.current);
             currentMatchId = null;
+            currentTab=null;
             const container = document.getElementById('content-container');
             if (this.current.name === 'home') Views.renderHome(container);
             else if (this.current.name === 'match') Views.renderDetails(container, this.current.params);
@@ -250,6 +251,7 @@
         renderHome: async (container) => {
             console.log("Rendering Home View");
             currentMatchId = null;
+            currentTab = null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'flex';
 
@@ -360,6 +362,7 @@
 
         renderDetails: async (container, id) => {
             currentMatchId = parseInt(id) || null;
+            currentTab = null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'none';
 
@@ -417,7 +420,6 @@
                 if (!isNotStarted && hasPred) {
                     tabs.push({ id: 'pred', label: 'Predictions', show: true });
                 }
-
                 tabs = tabs.filter(t => t.show);
 
                 let activeTabId = tabs.find(t => !t.isAction)?.id;
@@ -441,7 +443,7 @@
                 container.innerHTML = `
                     <div class="page-container">
                         <div class="details-hero" style="align-items:center; text-align:center;">
-                            <div class="details-hero-league" style="position:absolute; top:1rem; left:4rem; right:auto; margin:0;">
+                            <div class="details-hero-league">
                                 <img src="${league.logo}"> <span>${league.name}</span>
                             </div>
                             <div class="details-hero-content" style="justify-content:center; padding:0;">
@@ -509,13 +511,17 @@
                     const r = f.league.round || '';
                     return knockoutKeywords.some(k => r.includes(k));
                 }) : [];
-
+                const favBtn= `
+                <span class="fav-toggle focusable ${Helpers.isFav('league', league.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${league.id}" data-name="${league.name}">
+                    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                </span>`;
                 const tabs = [
                     { id: 'l-std', label: 'Standings', show: standings && standings.length > 0 },
                     { id: 'l-ko', label: 'Knockout Stage', show: knockoutMatches.length > 0 }, // NEW BUTTON
                     { id: 'l-mat', label: 'Matches', show: fixtures && fixtures.length > 0 },
                     { id: 'l-scr', label: 'Top Scorers', show: scorers && scorers.length > 0 },
-                    { id: 'l-ast', label: 'Top Assists', show: assists && assists.length > 0 }
+                    { id: 'l-ast', label: 'Top Assists', show: assists && assists.length > 0 },
+
                 ].filter(t => t.show);
                 
                 const activeTabId = tabs.length > 0 ? tabs[0].id : null;
@@ -526,11 +532,8 @@
                         <div class="details-hero" style="align-items:center; justify-content:center;">
                             <img src="${league.logo}" style="height:100px; margin-bottom:1rem;">
                             <h1 style="margin:0; font-size:2.5em;">${league.name}</h1>
-                            <span class="fav-toggle focusable ${Helpers.isFav('league', league.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${league.id}" data-name="${league.name}" style="margin-top:1rem;">
-                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-                            </span>
                         </div>
-                        <div class="tabs">${tabsHtml}</div>
+                        <div class="tabs">${tabsHtml} ${favBtn}</div>
                         <div id="l-std" class="tab-content ${activeTabId === 'l-std' ? 'active' : ''}">${Components.renderStandings(standings)}</div>
                         <div id="l-ko" class="tab-content ${activeTabId === 'l-ko' ? 'active' : ''}">${Components.renderKnockout(knockoutMatches)}</div>
                         <div id="l-mat" class="tab-content ${activeTabId === 'l-mat' ? 'active' : ''}">
@@ -835,12 +838,12 @@
             // We check if at least 7 players in starting XI have grid data.
             const countGrid = (xi) => xi.filter(x => x.player && x.player.grid).length;
             const usePitch = countGrid(l[0].startXI) > 7 && countGrid(l[1].startXI) > 7;
-
+            const getClassBestPlayer = (pid) => pid === BestPlayer ? ' best-player' : '';
             // HELPER: Render a single row for List View (XI fallback or Subs)
             const renderListRow = (p) => {
                 if (!p) return '';
                 const rating = getRating(p.id);
-                const rHtml = rating ? `<span class="sub-rating ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
+                const rHtml = rating ? `<span class="sub-rating ${getClassBestPlayer(p?.id)} ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
                 return `
                 <div class="sub-row">
                     <span class="sub-num">${p.number || '-'}</span>
@@ -848,7 +851,7 @@
                     ${rHtml}
                 </div>`;
             };
-
+            console.log("BestPlayer ID:", BestPlayer);
             let mainContent = '';
 
             if (usePitch) {
@@ -944,7 +947,7 @@
                             colorClass = 'low';
                     }
                     //return `<div class="player-rating-badge ${colorClass}">${p.rating} ${p.id===BestPlayer?bestPlayerStar:''}`;
-                    return `<div class="player-rating-badge ${colorClass}">${p.rating}</div>`;
+                    return `<div class="player-rating-badge ${getClassBestPlayer(p?.id)} ${colorClass}">${p?.rating}</div>`;
                 };
 
                 const renderDot = (p) => {
