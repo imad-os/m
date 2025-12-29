@@ -57,6 +57,7 @@
         render: function() {
             console.log("Router render:", this.current);
             currentMatchId = null;
+            currentTab=null;
             const container = document.getElementById('content-container');
             if (this.current.name === 'home') Views.renderHome(container);
             else if (this.current.name === 'match') Views.renderDetails(container, this.current.params);
@@ -155,6 +156,10 @@
     async function checkLiveMatches() {
         try {
             const liveData = await API.fetch('fixtures?live=all');
+            
+            // ERROR CHECK: If API handled error and returned null
+            if (liveData === null) return;
+
             const allowedLeagues = State.globalSettings.allowed_leagues || [];
             const allowedIds = new Set(allowedLeagues.map(l => l.id));
             const favTeams = new Set((State.appConfig.favourit_teams || []).map(t => t.id));
@@ -246,6 +251,7 @@
         renderHome: async (container) => {
             console.log("Rendering Home View");
             currentMatchId = null;
+            currentTab = null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'flex';
 
@@ -263,9 +269,21 @@
                     const settingsPromise = !State.hasLoadedSettings ? initialSettingsPromise : Promise.resolve(State.globalSettings);
                     const matchesPromise = API.fetch(endpoint);
                     const [settings, fetchedMatches] = await Promise.all([settingsPromise, matchesPromise]);
+                    
+                    // --- ERROR HANDLING START ---
+                    // Check if fetchedMatches is null (meaning API.fetch handled an error display)
+                    console.log("Fetched Matches:", fetchedMatches);
+                    if (fetchedMatches === null) {
+                        return; // Stop rendering; page error is already visible
+                    }
+                    // --- ERROR HANDLING END ---
+
                     if (!State.hasLoadedSettings) { State.globalSettings = settings; State.hasLoadedSettings = true; }
                     matches = fetchedMatches; matchesCache = matches; lastEndpoint = endpoint;
-                } catch (e) { container.innerHTML = "Error loading matches."; console.error(e); return; }
+                } catch (e) { 
+                    // Fallback catch if Promise.all itself fails strangely
+                    container.innerHTML = "Error loading matches."; console.error(e); return; 
+                }
             }
 
             try {
@@ -344,13 +362,15 @@
 
         renderDetails: async (container, id) => {
             currentMatchId = parseInt(id) || null;
+            currentTab = null;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'none';
 
             container.innerHTML = `<div class="page-container"><div class="skeleton-detail-header"><div class="shimmer"></div></div><div class="skeleton-detail-tabs"><div class="shimmer"></div></div><div class="skeleton-detail-list"><div class="shimmer"></div></div></div>`;
             try {
                 // ADDED: Fetch player stats to get ratings
-                const [matchData, events, lineups, stats, predictions, playerStats] = await Promise.all([
+                // Note: If one of these fails, API.fetch catches it and returns null.
+                const results = await Promise.all([
                     API.fetch(`fixtures?id=${id}`),
                     API.fetch(`fixtures/events?fixture=${id}`),
                     API.fetch(`fixtures/lineups?fixture=${id}`),
@@ -359,9 +379,20 @@
                     API.fetch(`fixtures/players?fixture=${id}`) 
                 ]);
 
+                // --- ERROR HANDLING ---
+                // If any critical fetch failed (e.g. matchData), it returned null.
+                // We check results[0] (matchData) as the critical path.
+                if (results[0] === null) return; 
+
+                const [matchData, events, lineups, stats, predictions, playerStats] = results;
+
                 if (!matchData || matchData.length === 0) throw new Error("Match not found");
                 const { fixture, teams, goals, league, score } = matchData[0];
+                
+                // H2H Fetch (nested because it depends on team IDs)
                 const h2hData = await API.fetch(`fixtures/headtohead?h2h=${teams.home.id}-${teams.away.id}`);
+                // H2H is non-critical, so we can tolerate failure, but if API.fetch triggered page error, we stop?
+                // Actually h2hData will be null if error. That's fine for the H2H tab content.
 
                 const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.status.short);
                 const isNotStarted = ['NS', 'TBD'].includes(fixture.status.short);
@@ -389,7 +420,6 @@
                 if (!isNotStarted && hasPred) {
                     tabs.push({ id: 'pred', label: 'Predictions', show: true });
                 }
-
                 tabs = tabs.filter(t => t.show);
 
                 let activeTabId = tabs.find(t => !t.isAction)?.id;
@@ -413,7 +443,7 @@
                 container.innerHTML = `
                     <div class="page-container">
                         <div class="details-hero" style="align-items:center; text-align:center;">
-                            <div class="details-hero-league" style="position:absolute; top:1rem; left:4rem; right:auto; margin:0;">
+                            <div class="details-hero-league">
                                 <img src="${league.logo}"> <span>${league.name}</span>
                             </div>
                             <div class="details-hero-content" style="justify-content:center; padding:0;">
@@ -437,6 +467,7 @@
                 `;
                 Navigation.scan();
             } catch(e) { 
+                // Fallback for non-fetch errors
                 container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
                 console.error(e);
             }
@@ -449,18 +480,29 @@
             container.innerHTML = `<div class="page-container"><div class="skeleton-detail-header"><div class="shimmer"></div></div><div class="skeleton-detail-tabs"><div class="shimmer"></div></div><div class="skeleton-detail-list"><div class="shimmer"></div></div></div>`;
             try {
                 const season = Helpers.getCurrentSeason();
-                const [standingsData, fixtures, scorers, assists] = await Promise.all([
+                const results = await Promise.all([
                     API.fetch(`standings?league=${id}&season=${season}`),
                     API.fetch(`fixtures?league=${id}&season=${season}`),
                     API.fetch(`players/topscorers?league=${id}&season=${season}`),
                     API.fetch(`players/topassists?league=${id}&season=${season}`)
                 ]);
                 
-                const league = standingsData[0]?.league || fixtures[0]?.league || scorers[0]?.statistics[0]?.league;
+                // --- ERROR HANDLING ---
+                // If the primary data (standings or fixtures) is null, abort.
+                // It's possible for scorers to fail while standings work, but API.fetch shows a toast and returns null.
+                // If it was a critical page load, it likely triggered the Page Error.
+                // We check if results contain any nulls, which might break destructuring if we aren't careful?
+                // Actually destructuring works on arrays of nulls.
+                // But we should check if *all* are null or if critical ones are.
+                if (results[0] === null && results[1] === null) return; 
+
+                const [standingsData, fixtures, scorers, assists] = results;
+                
+                const league = standingsData?.[0]?.league || fixtures?.[0]?.league || scorers?.[0]?.statistics?.[0]?.league;
                 if(!league) throw new Error("League unavailable");
                 
                 currentLeagueStats = { scorers: scorers || [], assists: assists || [] };
-                const standings = standingsData[0]?.league?.standings || [];
+                const standings = standingsData?.[0]?.league?.standings || [];
                 
                 // Identify Knockout Matches from Fixtures
                 // We look for round names that indicate knockouts
@@ -469,13 +511,17 @@
                     const r = f.league.round || '';
                     return knockoutKeywords.some(k => r.includes(k));
                 }) : [];
-
+                const favBtn= `
+                <span class="fav-toggle focusable ${Helpers.isFav('league', league.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${league.id}" data-name="${league.name}">
+                    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                </span>`;
                 const tabs = [
                     { id: 'l-std', label: 'Standings', show: standings && standings.length > 0 },
                     { id: 'l-ko', label: 'Knockout Stage', show: knockoutMatches.length > 0 }, // NEW BUTTON
                     { id: 'l-mat', label: 'Matches', show: fixtures && fixtures.length > 0 },
                     { id: 'l-scr', label: 'Top Scorers', show: scorers && scorers.length > 0 },
-                    { id: 'l-ast', label: 'Top Assists', show: assists && assists.length > 0 }
+                    { id: 'l-ast', label: 'Top Assists', show: assists && assists.length > 0 },
+
                 ].filter(t => t.show);
                 
                 const activeTabId = tabs.length > 0 ? tabs[0].id : null;
@@ -486,17 +532,14 @@
                         <div class="details-hero" style="align-items:center; justify-content:center;">
                             <img src="${league.logo}" style="height:100px; margin-bottom:1rem;">
                             <h1 style="margin:0; font-size:2.5em;">${league.name}</h1>
-                            <span class="fav-toggle focusable ${Helpers.isFav('league', league.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${league.id}" data-name="${league.name}" style="margin-top:1rem;">
-                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-                            </span>
                         </div>
-                        <div class="tabs">${tabsHtml}</div>
+                        <div class="tabs">${tabsHtml} ${favBtn}</div>
                         <div id="l-std" class="tab-content ${activeTabId === 'l-std' ? 'active' : ''}">${Components.renderStandings(standings)}</div>
                         <div id="l-ko" class="tab-content ${activeTabId === 'l-ko' ? 'active' : ''}">${Components.renderKnockout(knockoutMatches)}</div>
                         <div id="l-mat" class="tab-content ${activeTabId === 'l-mat' ? 'active' : ''}">
                              <div class="scrollable-content focusable" tabindex="0">
                                 <div class="matches-container" style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center;">
-                                    ${fixtures.slice(0, 50).map(f => Components.card(f)).join('')}
+                                    ${fixtures ? fixtures.slice(0, 50).map(f => Components.card(f)).join('') : 'No Matches'}
                                 </div>
                              </div>
                         </div>
@@ -795,12 +838,12 @@
             // We check if at least 7 players in starting XI have grid data.
             const countGrid = (xi) => xi.filter(x => x.player && x.player.grid).length;
             const usePitch = countGrid(l[0].startXI) > 7 && countGrid(l[1].startXI) > 7;
-
+            const getClassBestPlayer = (pid) => pid === BestPlayer ? ' best-player' : '';
             // HELPER: Render a single row for List View (XI fallback or Subs)
             const renderListRow = (p) => {
                 if (!p) return '';
                 const rating = getRating(p.id);
-                const rHtml = rating ? `<span class="sub-rating ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
+                const rHtml = rating ? `<span class="sub-rating ${getClassBestPlayer(p?.id)} ${parseFloat(rating)>=7?'high':'mid'}">${rating}</span>` : '';
                 return `
                 <div class="sub-row">
                     <span class="sub-num">${p.number || '-'}</span>
@@ -808,7 +851,7 @@
                     ${rHtml}
                 </div>`;
             };
-
+            console.log("BestPlayer ID:", BestPlayer);
             let mainContent = '';
 
             if (usePitch) {
@@ -904,7 +947,7 @@
                             colorClass = 'low';
                     }
                     //return `<div class="player-rating-badge ${colorClass}">${p.rating} ${p.id===BestPlayer?bestPlayerStar:''}`;
-                    return `<div class="player-rating-badge ${colorClass}">${p.rating}</div>`;
+                    return `<div class="player-rating-badge ${getClassBestPlayer(p?.id)} ${colorClass}">${p?.rating}</div>`;
                 };
 
                 const renderDot = (p) => {
