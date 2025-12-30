@@ -177,7 +177,13 @@ let Router = null;
                 const newScore = `${m.goals.home}-${m.goals.away}`;
                 const newStatusShort = m.fixture.status.short;
                 const cards = document.querySelectorAll(`#match-card-${mid}`);
-
+                //be must update the matchesCache as well so if we are in another view and go back to home the scores are updated
+                matchesCache = matchesCache?.map(mc => {
+                    if(mc.fixture.id === mid) {
+                        return m;
+                    }
+                    return mc;
+                }) || null;
                 if (cards.length) {
                     for (const card of cards) {
                         const statusEl = card.querySelector('.match-status');
