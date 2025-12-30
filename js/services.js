@@ -85,7 +85,7 @@ const Helpers = {
                 <i class="ph ph-warning-octagon"></i>
                 <h2>Oops! Something went wrong.</h2>
                 <p>${message}</p>
-                <button class="styled-button focusable" onclick="window.location.reload()">Reload App</button>
+                <button class="styled-button focusable" onclick="Router.go('home')">Reload App</button>
             </div>
         `;
         // Try to focus the reload button for TV remote accessibility
@@ -116,27 +116,34 @@ const API = {
             
             // Optional: Check API specific error fields if necessary
             if (data.errors && Object.keys(data.errors).length > 0) {
-                 // API-Football sometimes sends 200 OK with errors in body
-                 // We can log this, but depending on the error we might want to throw
-                 console.warn("API returned logical errors:", data.errors);
-                 Helpers.showPageError("Some data may be missing due to API errors.", 'alert');
+                let errorMessages = "Some data may be missing due to API errors.";
+                if(State.currentUser && State.currentUser.email === "imad@gmail.com"){
+                    errorMessages = " Details: " + JSON.stringify(data.errors);
+                }
+                console.warn("API returned logical errors:", data.errors);
+                console.error("errorMessages:", errorMessages , State.currentUser && State.currentUser.email === "imad@gmail.com");
+                 Helpers.showPageError(errorMessages, 'alert');
                  return null;
             }
 
             return data.response || [];
         } catch (error) {
-            console.error("API Error detected in fetch:", error);
+            console.error("API Error detected in fetch:", error, data);
             
             // Detect if we are in a 'Loading' state to decide where to show the error
             const container = document.getElementById('content-container');
             const isLoading = container && (container.querySelector('.skeleton-row') || container.querySelector('.skeleton-detail-header'));
 
+            let errorMessages = error.message || "Failed to load data.";
+            if(State.currentUser && State.currentUser.email === "imad@gmail.com"){
+                errorMessages = data && data.errors ? " Details: " + JSON.stringify(data.errors) : errorMessages;
+            }
             if (isLoading) {
                 // If loading skeletons are visible, we are likely initializing a page -> Show Page Error
-                Helpers.showPageError(error.message || "Failed to load data.");
+                Helpers.showPageError(errorMessages );
             } else {
                 // Otherwise (e.g. background refresh, live update) -> Show Toast
-                Helpers.showToast(error.message || "Connection lost. Retrying...", 'error');
+                Helpers.showToast(errorMessages, 'error');
             }
 
             // Return null to signal the app that the error was handled

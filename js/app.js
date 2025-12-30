@@ -1,5 +1,5 @@
 "use strict";
-
+let Router = null;
 (function() {
     if (!window.AppServices) { console.error("AppServices not loaded!"); return; }
 
@@ -30,7 +30,7 @@
         ft: document.getElementById('snd-whistle')
     };
 
-    const Router = {
+    Router = {
         stack: [],
         current: { name: 'home', params: null },
 
