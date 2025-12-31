@@ -436,8 +436,8 @@ body {
 
 .events-list { max-width: 800px; margin: 0 auto; }
 
-.standings-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1em; }
-.standings-table th, .standings-table td { padding: 1rem; border-bottom: 1px solid #333; }
+.standings-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.2em; }
+.standings-table th, .standings-table td { padding: 0.2rem 1rem 0.2rem 1rem; border-bottom: 1px solid #333; }
 .standings-table th { background: #222; }
 
 /* Alert Toast (Existing - reused for goal tracking) */
@@ -748,6 +748,13 @@ body {
 .sub-rating.mid { color: #e6b800; border: 1px solid #e6b800; }
 .sub-rating.low { color: #f55; border: 1px solid #f55; }
 
+.sub-rating.super { color: #0f25ff; border: 1px solid #0f25ff; }
+.sub-rating.high { color: #0098ff; border: 1px solid #0098ff; }
+.sub-rating.good { color: var(--live-color); border: 1px solid var(--live-color); }
+.sub-rating.low { color: #f55; border: 1px solid #f55; }
+.sub-rating.mid { color: #e6b800; border: 1px solid #e6b800; }
+
+
 
 /* --- Full Screen Mode for Tab Content --- */
 .tab-content.full-screen-mode {
@@ -1044,4 +1051,16 @@ body {
 }
 .best-player::before {
     content: "⭐";
+}
+.player-info-cell{
+    text-align:left; display:flex; align-items:center; gap:10px;
+}
+.player-info-avatar{
+    position:relative; width:80px; height:60px; margin-right:10px;
+}
+.player-avatar-team-logo-small{
+    position:absolute; left:0; bottom:0; width:30px; height:30px; object-fit:contain; z-index:2; background:#111; border-radius:50%;
+}
+.player-avatar-photo-small{
+    position:absolute; right:0; top:0; width:60px; height:60px; object-fit:cover; border-radius:50%;
 }

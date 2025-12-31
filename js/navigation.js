@@ -4,6 +4,7 @@ const Navigation = (function() {
     let focusableSelector = '.focusable';
     let currentFocus = null;
     let activeScope = null; 
+    let scrollThrottle = null; // New throttle variable
 
     // Centralized Key Mapping configuration
     const KEYS_MAP = [
@@ -87,6 +88,7 @@ const Navigation = (function() {
         currentFocus.focus({ preventScroll: true });
         
         if (scroll) {
+            // Ensure smooth behavior for focus jumps (not manual scrolls)
             element.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
         }
     }
@@ -298,11 +300,21 @@ const Navigation = (function() {
             e.preventDefault();
             e.stopImmediatePropagation();
             
+            // 1. Throttle: Prevent flooding the engine with key repeat events
+            if (scrollThrottle) return;
+            scrollThrottle = setTimeout(() => { scrollThrottle = null; }, 20); // ~50fps max
+
+            // 2. Performance: Force 'auto' scroll behavior to bypass CSS 'smooth'
+            // This prevents the "sticky/slow" feel when holding down keys
+            if (current.style.scrollBehavior !== 'auto') {
+                current.style.scrollBehavior = 'auto';
+            }
+            
             const step = 80; // Scroll speed
 
             if (key === 'Down') {
                 current.scrollTop += step;
-                return; // Strictly return, do not call move()
+                return; // Strictly return
             }
             
             if (key === 'Up') {
@@ -310,7 +322,7 @@ const Navigation = (function() {
                     current.scrollTop -= step;
                     return; // Strictly return
                 }
-                // Only allow escape if at the very top
+                // Only allow escape if at the very top (allow fall-through to move())
             }
         }
 
