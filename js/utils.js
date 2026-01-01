@@ -61,6 +61,21 @@ window.Utils = (function() {
         saveTrackedMatches();
         return t;
     }
+    function isRefreshNeeeded(){
+        const now = Date.now() + 5 * 60 * 1000;
+
+        const finishedStatus = new Set([['FT', 'AET', 'PEN']]);
+        const filteredMatches = window.AppState.renderedMatches.filter(m => {
+            const matchTime = new Date(m.fixture.date).getTime();
+          
+            return (
+              matchTime <= now &&
+              !finishedStatus.has(m.fixture.status.short)
+            );
+        });
+        console.log("[isRefreshNeeeded] : ", filteredMatches.length > 0)
+        return filteredMatches.length > 0;
+    }
     return {
         playSound,
         formTimeString,
@@ -69,6 +84,7 @@ window.Utils = (function() {
         isTracked,
         removeTracked,
         addTracked,
-        saveTrackedMatches
+        saveTrackedMatches,
+        isRefreshNeeeded,
     };
 })();

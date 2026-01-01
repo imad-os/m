@@ -19,24 +19,23 @@
         currentTab: null,
         currentMatchId: null,
         monitoredMatches: new Set(),
-        matchStates: {}
+        matchStates: {},
+        renderedMatches:[],
     };
-
+    const MS_lLiveCheck = 30000;
+    var MS_left = MS_lLiveCheck;
     // Load tracked matches
     try {
         const saved = localStorage.getItem('tracked_matches');
         if (saved) window.AppState.monitoredMatches = new Set(JSON.parse(saved));
     } catch(e) { console.error("Error loading tracked matches", e); }
 
-    // --- WORKER SETUP ---
-    const workerBlob = new Blob([`
-        self.onmessage = function(e) {
-            if (e.data === 'start') { setInterval(() => postMessage('tick'), 30000); }
-        };
-    `], { type: 'application/javascript' });
-    const timerWorker = new Worker(URL.createObjectURL(workerBlob));
-    timerWorker.onmessage = () => { checkLiveMatches(); };
-    timerWorker.postMessage('start');
+    setInterval(() => { MS_left = MS_lLiveCheck;checkLiveMatches(); }, MS_lLiveCheck);
+    setInterval(() => {
+        MS_left=MS_left>=1000 ? MS_left-1000 : 0;
+        const percent = parseInt( (MS_left/MS_lLiveCheck)*100 );
+        document.querySelector("#refreshTimer .progress-fill").style.width = `${percent}%`;
+    }, 1000);
 
     function registerTizenKeys() {
         if (typeof tizen !== 'undefined' && tizen.tvinputdevice) {
@@ -94,6 +93,9 @@
 
     async function checkLiveMatches() {
         try {
+            if (!Utils.isRefreshNeeeded()){
+                return ;
+            }
             const liveData = await API.fetch('fixtures?live=all');
             if (liveData === null) return;
 
@@ -114,10 +116,18 @@
                 const newStatusShort = m.fixture.status.short;
                 const cards = document.querySelectorAll(`#match-card-${mid}`);
                 
+                if (!isTracked && !isFav && !isAllowed && !isCurrentMatch && !cards.length) continue;
+
+                window.AppState.renderedMatches = window.AppState.renderedMatches?.map(mc => {
+                    if(mc.fixture.id === mid) return m;
+                    return mc;
+                }) || null;
+
                 window.AppState.matchesCache = window.AppState.matchesCache?.map(mc => {
                     if(mc.fixture.id === mid) return m;
                     return mc;
                 }) || null;
+
 
                 if (cards.length) {
                     for (const card of cards) {
@@ -137,8 +147,6 @@
                         }
                     }
                 }
-
-                if (!isTracked && !isFav && !isAllowed && !isCurrentMatch) continue;
 
                 if(isCurrentMatch) {
                     const scoreEl = document.querySelector('.details-score-box .details-score');

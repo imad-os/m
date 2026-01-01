@@ -18,7 +18,7 @@
             document.getElementById('date-header').textContent = displayDate;
 
             const endpoint = window.AppState.isLiveMode ? 'fixtures?live=all' : `fixtures?date=${dateStr}&season=${Helpers.getCurrentSeason()}`;
-            
+            window.AppState.renderedMatches = [];
             let matches = null;
             if (window.AppState.matchesCache && window.AppState.lastEndpoint === endpoint) matches = window.AppState.matchesCache;
             else {
@@ -102,7 +102,10 @@
                                <div class="fav-toggle focusable ${Helpers.isFav('league', row.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${row.id}" data-name="${row.title}">
                                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                                </div>`;
-                        const cardsHtml = row.matches.map(m => Components.card(m, row.isMixed)).join('');
+                        const cardsHtml = row.matches.map(m => {
+                            window.AppState.renderedMatches.push(m);
+                            return Components.card(m, row.isMixed);
+                        }).join('');
                         htmlParts.push(`<div class="row-section" data-row-index="${index}"><div class="row-header" style="padding-left:0.5rem;">${headerHtml}</div><div class="rail">${cardsHtml}</div></div>`);
                     });
                     if (!hasRestrictions && !window.AppState.homePageLoadAllState && sortedKeys.length > 5) htmlParts.push(`<div style="text-align:center; padding: 2rem; margin-bottom: 2rem;"><button id="btn-load-all" class="styled-button focusable" tabindex="0">Load All Leagues</button></div>`);

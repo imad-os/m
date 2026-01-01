@@ -141,9 +141,12 @@ body {
 }
 .row-header-content { 
     display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 2px solid transparent; 
+    padding-left: 20px;
+    padding-right: 20px;
 }
 .row-header-content.focused {
-    background: var(--text-main); color: #000; border-color: var(--bg-focus);
+    background: linear-gradient(93deg, var(--text-main), #f7f7f763);
+    color: #000; border-color: var(--bg-focus);
 }
 
 .clickable { cursor: pointer; }
@@ -1063,4 +1066,21 @@ body {
 }
 .player-avatar-photo-small{
     position:absolute; right:0; top:0; width:60px; height:60px; object-fit:cover; border-radius:50%;
+}
+.card-league-badge span{
+    text-overflow: ellipsis;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.progress {
+    width: 95%;
+    height: 8px;
+    background: var(--bg-card);
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--bg-focus);
+    transition: width 0.9s linear;
 }
