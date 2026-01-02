@@ -12,7 +12,8 @@ window.AppComponents = (function() {
         const matchDate = new Date(m.fixture.date);
         const isToday = matchDate.toDateString() === new Date().toDateString();
         const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
+        const homeFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.home.id).length? "favorite" :"";
+        const awayFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.away.id).length? "favorite" :"";
         if (isActuallyLive) {
             if (m.fixture.status.short === 'HT') statusText = 'HT';
             else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${Utils.formTimeString(m.fixture.status)}</span>`;
@@ -38,8 +39,8 @@ window.AppComponents = (function() {
             ${badgeHtml}
             <div class="match-status">${statusText}</div>
             <div class="card-teams">
-                <div class="card-team"><div class="card-team-info"><img src="${m.teams.home.logo}"><span>${m.teams.home.name}</span></div><span class="card-score">${homeScore}</span></div>
-                <div class="card-team"><div class="card-team-info"><img src="${m.teams.away.logo}"><span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>
+                <div class="card-team ${homeFav}"><div class="card-team-info"><img src="${m.teams.home.logo}"><span>${m.teams.home.name}</span></div><span class="card-score">${homeScore}</span></div>
+                <div class="card-team ${awayFav}"><div class="card-team-info"><img src="${m.teams.away.logo}"><span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>
             </div>
             ${penIndicator}
         </div>`;
