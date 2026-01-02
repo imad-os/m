@@ -57,7 +57,8 @@ body {
 
 /* NEW: User Avatar Badge */
 .user-avatar-badge {
-    width: 45px; height: 45px;
+    width: 50%;
+    aspect-ratio: 1;
     background: var(--bg-focus);
     color: #fff;
     border-radius: 50%;
@@ -85,7 +86,7 @@ body {
     width: 100%;
 }
 .menu-item i { font-size: 1.5rem; min-width: 1.5rem; text-align: center; }
-.menu-item span { display: none; opacity: 0; white-space: nowrap; transition: opacity 0.2s; font-size: 1.8rem; }
+.menu-item span { display: none; opacity: 0; white-space: nowrap; transition: opacity 0.2s; font-size: 1.5rem; }
 
 .menu-item.active { color: var(--text-main); font-weight: bold; }
 .menu-item.focused {
@@ -222,7 +223,7 @@ body {
 .card-teams { display: flex; flex-direction: column; gap: 0.8rem; }
 .card-team { display: flex; align-items: center; justify-content: space-between; }
 .card-team-info { display: flex; align-items: center; gap: 0.8rem; }
-.card-team img { width: 1.8em; height: 1.8em; object-fit: contain; }
+.card-team img { width: 2.8em; height: 2.8em; object-fit: contain; }
 .card-team span { font-weight: 600; font-size: 1.23em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12vw;}
 .card-score { font-weight: bold; font-size: 1.2em; }
 
@@ -1083,4 +1084,12 @@ body {
     height: 100%;
     background: var(--bg-focus);
     transition: width 0.9s linear;
+}
+.error{
+    font-size: 1.3rem;
+    color : var(--toast-error);
+}
+
+.disabled{
+    background-color: #616161 !important;
 }

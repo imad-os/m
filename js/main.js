@@ -313,7 +313,9 @@
         
         const authEmail = document.getElementById('auth-email');
         const authPass = document.getElementById('auth-password');
-        if(authEmail) authEmail.value = "imad@gmail.com";
+        const btnSignUp = document.getElementById('btn-signup-submit');
+        const btnSignIn = document.getElementById('btn-signin-submit');
+        if(authEmail) authEmail.value = "imad";
         if(authPass) authPass.value = "198922";
         
         document.addEventListener('nav-back', () => { window.AppRouter.back(); });
@@ -348,22 +350,30 @@
         document.querySelectorAll('.modal-close').forEach(b => b.onclick = closeModal);
 
         const authErr = document.getElementById('auth-error');
-        let isLogin = true;
 
-        document.getElementById('btn-toggle-mode').onclick = () => {
-            isLogin = !isLogin;
-            document.getElementById('auth-title').textContent = isLogin ? "Sign In" : "Register";
-            document.getElementById('btn-auth-submit').textContent = isLogin ? "Sign In" : "Sign Up";
-            document.getElementById('btn-toggle-mode').textContent = isLogin ? "Create Account" : "Back to Login";
-        };
-
-        document.getElementById('btn-auth-submit').onclick = async () => {
+        btnSignUp.onclick = btnSignIn.onclick = async (e) => {
             authErr.textContent = "";
+            const isLogin = e.target.id=="btn-signin-submit";
             try {
-                if(isLogin) await auth.signInWithEmailAndPassword(authEmail.value, authPass.value);
-                else await auth.createUserWithEmailAndPassword(authEmail.value, authPass.value);
+                [authEmail,authPass,btnSignUp,btnSignIn].map(e=>{
+                    e.setAttribute("disabled",true);
+                    e.classList.add("disabled");
+                });
+                let username = authEmail.value;
+                if(!username.includes("@")){
+                    username=`${username}@user.com`;
+                }
+                if(isLogin){
+                    await auth.signInWithEmailAndPassword(username, authPass.value);
+                }else{
+                    await auth.createUserWithEmailAndPassword(username, authPass.value);
+                }
                 closeModal();
             } catch(e) { authErr.textContent = e.message; }
+            [authEmail,authPass,btnSignUp,btnSignIn].map(e=>{
+                e.removeAttribute("disabled");
+                e.classList.remove("disabled");
+            });
         };
 
         document.getElementById('btn-logout').onclick = () => { auth.signOut(); closeModal(); };
@@ -375,7 +385,13 @@
             let avatar = document.getElementById('user-avatar-badge');
             
             if (user && user.email) {
-                if (!avatar) { avatar = document.createElement('div'); avatar.id = 'user-avatar-badge'; avatar.className = 'user-avatar-badge'; if (logo) logo.parentNode.insertBefore(avatar, logo.nextSibling); else sidebar.prepend(avatar); }
+                if (!avatar) { 
+                    avatar = document.createElement('div'); 
+                    avatar.id = 'user-avatar-badge'; 
+                    avatar.className = 'user-avatar-badge'; 
+                    if (logo) logo.parentNode.insertBefore(avatar, logo.nextSibling); 
+                    else sidebar.prepend(avatar); 
+                }
                 avatar.textContent = user.email.charAt(0).toUpperCase();
             } else { if (avatar) avatar.remove(); }
 
