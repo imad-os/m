@@ -29,7 +29,7 @@ const State = {
 };
 
 const Helpers = {
-    formatDate: (date) => date.toISOString().split('T')[0],
+    formatDate: (date) => date.toLocaleDateString("en-CA"),
     getCurrentSeason: () => {
         const today = new Date();
         return (today.getMonth() < 6) ? today.getFullYear() - 1 : today.getFullYear();
