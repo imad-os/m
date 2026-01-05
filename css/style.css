@@ -1051,7 +1051,7 @@ body {
     border-radius: 60px 60px 0px 0px;
 }
 .sub-row:has(.best-player){
-    background-color: #1110ff82;
+    background-color: #1010ffa6;
 }
 .best-player::before {
     content: "⭐";
@@ -1060,10 +1060,10 @@ body {
     text-align:left; display:flex; align-items:center; gap:10px;
 }
 .player-info-avatar{
-    position:relative; width:110px; height:100px; margin-right:10px;
+    position:relative; width:140px; height:100px; margin-right:10px;
 }
 .player-avatar-team-logo-small{
-    position:absolute; left:0; bottom:0; width:30px; height:30px; object-fit:contain; z-index:2; background:#111; border-radius:50%;
+    position:absolute; left:0; bottom:0; width:50px; height:50px; object-fit:contain; z-index:2; background:#111; border-radius:50%;
 }
 .player-avatar-photo-small{
     position:absolute; right:0; top:0; height:97%; object-fit:cover; border-radius:50%;
