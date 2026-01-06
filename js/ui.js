@@ -73,23 +73,7 @@ window.AppComponents = (function() {
                         <div class="bracket-round-title">${roundName.replace('Regular Season - ', '')}</div>`;
             
             roundsMatches.forEach(m => {
-               const hScore = m.goals.home ?? '-';
-               const aScore = m.goals.away ?? '-';
-               const date = new Date(m.fixture.date).toLocaleDateString();
-               const hClass = (m.goals.home > m.goals.away) ? 'bracket-winner' : '';
-               const aClass = (m.goals.away > m.goals.home) ? 'bracket-winner' : '';
-
-               html += `<div class="bracket-match focusable" tabindex="0" data-action="open-match" data-id="${m.fixture.id}">
-                            <div class="bracket-match-date">${date}</div>
-                            <div class="bracket-team">
-                                <div class="bracket-team-info"><img src="${m.teams.home.logo}"><span>${m.teams.home.name}</span></div>
-                                <span class="bracket-score ${hClass}">${hScore}</span>
-                            </div>
-                            <div class="bracket-team">
-                                <div class="bracket-team-info"><img src="${m.teams.away.logo}"><span>${m.teams.away.name}</span></div>
-                                <span class="bracket-score ${aClass}">${aScore}</span>
-                            </div>
-                        </div>`; 
+                html+=card(m);
             });
             html += `</div>`; 
         });

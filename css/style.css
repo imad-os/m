@@ -980,10 +980,10 @@ body {
 }
 
 .bracket-round {
-    display: flex;
+    /*display: flex;*/
     flex-direction: column;
     gap: 1.5rem;
-    min-width: 300px;
+    min-width: 400px;
     align-items: center;
 }
 
@@ -996,6 +996,10 @@ body {
     border-bottom: 2px solid #333;
     padding-bottom: 0.5rem;
     width: 100%;
+}
+
+.bracket-round .match-card{
+    margin-bottom: 10px;
 }
 
 .bracket-match {
