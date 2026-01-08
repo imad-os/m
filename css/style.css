@@ -391,6 +391,7 @@ body {
 }
 .details-score { font-size: 5em; font-weight: 300; line-height: 1; color: var(--text-main); }
 .details-status { font-size: 1.5em; color: var(--text-muted); margin-top: 0.5rem; }
+.details-date { font-size: 1.2em; color: var(--text-muted); margin-top: 0.5rem; }
 
 .tabs { display: flex; gap: 2rem; border-bottom: 1px solid #333; margin-bottom: .5rem; justify-content: center; } 
 .tab-button { padding: 1rem 0; background: none; border: none; color: #888; font-size: 1.3em; cursor: pointer; border-bottom: 3px solid transparent; }

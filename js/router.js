@@ -159,13 +159,14 @@
                 let activeTabId = tabs.find(t => !t.isAction)?.id;
                 if (isNotStarted && hasPred) activeTabId = 'pred';
                 else if (events && events.length > 0) activeTabId = 'ev';
-
+                
                 const tabsHtml = tabs.map(t => {
                     if (t.isAction) return `<button class="tab-button focusable ${Utils.isTracked(fixture.id) ? 'track-active' : ''}" id="btn-track-toggle" tabindex="0" data-mid="${fixture.id}">Track</button>`;
                     return `<button class="tab-button ${t.id === activeTabId ? 'active' : ''} focusable" data-tab="${t.id}" tabindex="0">${t.label}</button>`;
                 }).join('');
 
                 let statusDisplay = fixture.status.long;
+                let datestr = Utils.fullDate(fixture.date);
                 if (['1H','HT','2H','ET','P','BT'].includes(fixture.status.short)) {
                     const time = fixture.status.short === 'HT' ? 'HT' : (fixture.status.elapsed ? `${Utils.formTimeString(fixture.status)}` : 'LIVE');
                     statusDisplay = `<span class="live-time">${time}</span>`;
@@ -184,6 +185,7 @@
                                     <div class="details-score">${goals.home?? "-"} - ${goals.away?? "-"}</div>
                                     ${penaltyDisplay}
                                     <div class="details-status">${statusDisplay}</div>
+                                    <div class="details-date">${datestr}</div>
                                 </div>
                                 <div class="details-team"><img src="${teams.away.logo}"><h2>${teams.away.name}</h2></div>
                             </div>

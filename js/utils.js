@@ -33,7 +33,10 @@ window.Utils = (function() {
         const extra = status.extra ? `+${status.extra}` : '';
         return `${status.elapsed}${extra}'`;
     }
-
+    function fullDate(date){
+        const matchDate = new Date(date);
+        return `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()}`;
+    }
     function getRatingClass(rating) {
         const rVal = parseFloat(rating);
         if (rVal >= 9.0) return 'super';
@@ -86,5 +89,6 @@ window.Utils = (function() {
         addTracked,
         saveTrackedMatches,
         isRefreshNeeeded,
+        fullDate
     };
 })();
