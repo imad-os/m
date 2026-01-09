@@ -93,10 +93,11 @@ const Helpers = {
         if (btn && Navigation) Navigation.focus(container.querySelector('button'));
     }
 };
-
+var API_BACKEND = "local";//"google_functions"
 const API = {
     fetch: async (endpointUrl) => {
         const [path, queryString] = endpointUrl.split('?');
+        let data = null;
         const params = {};
         if (queryString) {
             new URLSearchParams(queryString).forEach((value, key) => {
@@ -104,15 +105,21 @@ const API = {
             });
         }
         try {
-            const response = await fetch(CLOUD_FUNCTION_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ endpoint: path, params: params })
-            });
-            if (!response.ok) {
-                 throw new Error(`Server returned status: ${response.status}`);
+            if (API_BACKEND=="google_functions"){
+                const response = await fetch(CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: path, params: params })
+                });
+                if (!response.ok) {
+                    throw new Error(`Server returned status: ${response.status}`);
+               }
+               data = await response.json();
+   
+            }else if (API_BACKEND=="local"){
+                data = await FootballClient.fetchData(path, params);
             }
-            const data = await response.json();
+
             
             // Optional: Check API specific error fields if necessary
             if (data.errors && Object.keys(data.errors).length > 0) {

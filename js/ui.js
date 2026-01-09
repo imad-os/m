@@ -30,12 +30,14 @@ window.AppComponents = (function() {
         const badgeHtml = showBadge ? `<div class="card-league-badge"><img src="${m.league.logo}"><span>${m.league.name}</span></div>` : '';
         
         const trackIndicator = Utils.isTracked(m.fixture.id) ? `<div class="track-indicator"></div>` : '';
+        const soonIndicator = Utils.isSoon(m) ? `<div class="starting-soon"><svg class="hourglass-pulse"><use href="#icon-hourglass"></use></svg></div>` : '';
         let penIndicator = '';
         if (m.score.penalty.home !== null && m.score.penalty.away !== null) penIndicator = `<div style="font-size:0.8em; color:#aaa;">(P: ${m.score.penalty.home}-${m.score.penalty.away})</div>`;
 
         return `
         <div id="match-card-${m.fixture.id}" class="match-card focusable ${isActuallyLive?'is-live':''}" tabindex="0" data-action="open-match" data-id="${m.fixture.id}">
             ${trackIndicator}
+            ${soonIndicator}
             ${badgeHtml}
             <div class="match-status">${statusText}</div>
             <div class="card-teams">

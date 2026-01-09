@@ -64,10 +64,21 @@ window.Utils = (function() {
         saveTrackedMatches();
         return t;
     }
+    function isSoon(m){
+        
+        const matchTime = new Date(m.fixture.date).getTime();
+        const hour1 = Date.now() + 1*60*60*1000;
+        const matcheStatus = new Set(['NS']);
+
+        return (
+            matchTime <= hour1 &&
+            matcheStatus.has(m.fixture.status.short)
+          );
+    }
     function isRefreshNeeeded(){
         const now = Date.now() + 5 * 60 * 1000;
 
-        const finishedStatus = new Set([['FT', 'AET', 'PEN']]);
+        const finishedStatus = new Set(['FT', 'AET', 'PEN']);
         const filteredMatches = window.AppState.renderedMatches.filter(m => {
             const matchTime = new Date(m.fixture.date).getTime();
           
@@ -89,6 +100,7 @@ window.Utils = (function() {
         addTracked,
         saveTrackedMatches,
         isRefreshNeeeded,
-        fullDate
+        fullDate,
+        isSoon,
     };
 })();
