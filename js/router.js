@@ -143,7 +143,7 @@
                 const h2hData = await API.fetch(`fixtures/headtohead?h2h=${teams.home.id}-${teams.away.id}`);
                 const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.status.short);
                 const isNotStarted = ['NS', 'TBD'].includes(fixture.status.short);
-
+                const isActuallyLive = ['1H','HT','2H','ET','P','BT'].includes(fixture.status.short);
                 let tabs = [];
                 if (!isFinished) tabs.push({ id: 'track', label: 'Track', show: true, isAction: true });
 
@@ -177,7 +177,7 @@
                 const venue = fixture.venue.city ? `${fixture.venue.city}, ${fixture.venue.name}` : fixture?.venue?.name;
                 container.innerHTML = `
                     <div class="page-container">
-                        <div class="details-hero" style="align-items:center; text-align:center;">
+                        <div class="details-hero ${isActuallyLive?'is-live':''}" style="align-items:center; text-align:center;">
                             <div class="details-hero-league"><img src="${league.logo}"> <span>${league.name}</span></div>
                             <div class="details-hero-content" style="justify-content:center; padding:0;">
                                 <div class="details-team"><img src="${teams.home.logo}"><h2>${teams.home.name}</h2></div>

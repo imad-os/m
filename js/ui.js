@@ -2,7 +2,42 @@
 
 window.AppComponents = (function() {
     const Utils = window.Utils;
-
+    const STAT_ORDER = [
+"Total",
+"Ball Possession",
+"H2H",
+"Attacking",
+"Defending",
+"expected_goals",
+"goals_prevented",
+"Fouls",
+"Corner Kicks",
+"Form",
+"Goals",
+"Poisson Dist.",
+"Shots on Goal",
+"Shots off Goal",
+"Total Shots",
+"Blocked Shots",
+"Shots insidebox",
+"Shots outsidebox",
+"Offsides",
+"Yellow Cards",
+"Red Cards",
+"Goalkeeper Saves",
+"Total passes",
+"Passes accurate",
+"Passes %",
+    ];
+    const STAT_GROUPS = {
+        "General": ["Ball Possession", "Fouls", "Corner Kicks", "Offsides"],
+        "Expected Performance": ["expected_goals", "goals_prevented"],
+        "Shooting": ["Total Shots", "Shots on Goal", "Shots off Goal", "Blocked Shots", "Shots insidebox", "Shots outsidebox"],
+        "Discipline": ["Yellow Cards", "Red Cards"],
+        "Defense": ["Goalkeeper Saves"],
+        "Passing": ["Total passes", "Passes accurate", "Passes %"],
+        "Advanced Analytics": ["Total", "H2H", "Attacking", "Defending", "Form", "Poisson Dist."]
+    };
     // Helper to check if a match is tracked in the global state
 
     function card(m, showBadge = false) {
@@ -15,7 +50,7 @@ window.AppComponents = (function() {
         const homeFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.home.id).length? "favorite" :"";
         const awayFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.away.id).length? "favorite" :"";
         if (isActuallyLive) {
-            if (m.fixture.status.short === 'HT') statusText = 'HT';
+            if (m.fixture.status.short === 'HT') statusText = `<span class="live-time">Half Time</span>`;
             else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${Utils.formTimeString(m.fixture.status)}</span>`;
             else statusText = 'LIVE';
         } else if (m.fixture.status.short === 'NS') {
@@ -317,21 +352,41 @@ window.AppComponents = (function() {
         const renderSubsList = (teamIdx) => l[teamIdx].substitutes.map(s => renderListRow(s.player)).join('');
         return `<div class="scrollable-content focusable" tabindex="0">${mainContent}<div class="subs-container"><div class="subs-team"><h4>${l[0].team.name} Subs</h4>${renderSubsList(0)}</div><div class="subs-team"><h4>${l[1].team.name} Subs</h4>${renderSubsList(1)}</div></div></div>`;
     }
-
     function renderStats(s) {
-        if(!s||s.length<2) return '<div class="scrollable-content focusable" tabindex="0">No Stats.</div>';
+        if(!s || s.length < 2) return '<div class="scrollable-content focusable" tabindex="0">No Stats.</div>';
+    
         const homeStats = s[0].statistics;
         const awayStats = s[1].statistics;
+    
         let html = `<div class="scrollable-content focusable" tabindex="0" style="padding: 1rem 2rem 3rem;"><div style="max-width:800px; margin:0 auto;">`;
-        homeStats.forEach((stat, i) => {
-            const hVal = stat.value ?? 0;
-            const aVal = awayStats[i].value ?? 0;
-            html += renderStatBar(stat.type, hVal, aVal);
-        });
+    
+        // Loop through Categories
+        for (const [groupName, statsList] of Object.entries(STAT_GROUPS)) {
+            
+            // Check if at least one stat in this group exists in the data
+            const hasData = statsList.some(type => homeStats.find(st => st.type === type));
+            
+            if (hasData) {
+                // Add a Group Header
+                html += `<h3 class="stats-tite">${groupName}</h3>`;
+    
+                // Loop through the stats in this group
+                statsList.forEach(type => {
+                    const hStat = homeStats.find(st => st.type === type);
+                    const aStat = awayStats.find(st => st.type === type);
+    
+                    if (hStat && aStat) {
+                        const hVal = hStat.value ?? 0;
+                        const aVal = aStat.value ?? 0;
+                        html += renderStatBar(type, hVal, aVal);
+                    }
+                });
+            }
+        }
+    
         html += `</div></div>`;
         return html;
     }
-
     function renderH2H(h, teamHome, teamAway) {
         if(!h||h.length===0) return '<div class="scrollable-content focusable" tabindex="0">No Data.</div>';
         let homeWins = 0; let awayWins = 0; let draws = 0;

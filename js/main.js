@@ -89,6 +89,9 @@
         };
         alertEl.onclick = () => { window.AppRouter.go('match', matchData.fixture.id); closeAlert(); };
         setTimeout(closeAlert, 10000);
+        if(window.AppState.currentMatchId===matchData.fixture.id){
+            window.AppRouter.go('match', matchData.fixture.id);
+        }
     }
 
     async function checkLiveMatches() {
@@ -187,6 +190,13 @@
                         const desc = `Finished: ${newScore}`;
                         showAlert('Full Time', desc, m, 'ft', !isTracked);
                         if(isTracked) removeTrackedMatch(mid, cards);
+                    }
+                    const isActuallyLive = ['1H','HT','2H','ET','P','BT'].includes(newStatusShort);
+                    const detailsHero = document.querySelector(".details-hero");
+                    if(isActuallyLive && !detailsHero.classList.has("is-live")){
+                        detailsHero.classList.add("is-live")
+                    }else{
+                        detailsHero.classList.remove("is-live")
                     }
                 }
                 window.AppState.matchStates[mid] = { score: newScore, status: newStatusShort };
