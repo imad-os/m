@@ -255,7 +255,7 @@ window.AppComponents = (function() {
         }
 
         const getRating = (playerId) => ratingsMap[playerId] || null;
-        const countGrid = (xi) => xi.filter(x => x.player && x.player.grid).length;
+        const countGrid = (xi) => xi && xi.filter ? xi.filter(x => x.player && x.player.grid).length : 0;
         const usePitch = countGrid(l[0].startXI) > 7 && countGrid(l[1].startXI) > 7;
         const getClassBestPlayer = (pid) => pid === BestPlayer ? ' best-player' : '';
 
@@ -342,15 +342,35 @@ window.AppComponents = (function() {
                     ${awayPlayers.map(renderDot).join('')}
                 </div>`;
         } else {
+            const home_xi = l[0]?.startXI?.map ? l[0]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
+            const away_xi = l[1]?.startXI?.map ? l[1]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
             mainContent = `
                 <div class="subs-container" style="border-top:none; margin-top:0; padding-top:0;">
-                    <div class="subs-team"><h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[0].team.name} XI</h4>${l[0].startXI.map(s => renderListRow(s.player)).join('')}</div>
-                    <div class="subs-team"><h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[1].team.name} XI</h4>${l[1].startXI.map(s => renderListRow(s.player)).join('')}</div>
+                    <div class="subs-team"><h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[0].team.name} XI</h4>
+                        ${home_xi || "-"}
+                    </div>
+                    <div class="subs-team"><h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[1].team.name} XI</h4>
+                        ${away_xi || "-"}
+                    </div>
                 </div>`;
         }
 
-        const renderSubsList = (teamIdx) => l[teamIdx].substitutes.map(s => renderListRow(s.player)).join('');
-        return `<div class="scrollable-content focusable" tabindex="0">${mainContent}<div class="subs-container"><div class="subs-team"><h4>${l[0].team.name} Subs</h4>${renderSubsList(0)}</div><div class="subs-team"><h4>${l[1].team.name} Subs</h4>${renderSubsList(1)}</div></div></div>`;
+        const renderSubsList = (teamIdx) => l[teamIdx]?.substitutes?.map(s => renderListRow(s.player)).join('');
+        const home_subs= renderSubsList(0);
+        const away_subs= renderSubsList(1);
+        return `
+        <div class="scrollable-content focusable" tabindex="0">${mainContent}
+            <div class="subs-container">
+                <div class="subs-team">
+                    <h4>${l[0].team.name} Subs</h4>
+                    ${ home_subs || "-" }
+                </div>
+                <div class="subs-team">
+                    <h4>${l[1].team.name} Subs</h4>
+                    ${ away_subs || "-"}
+                </div>
+            </div>
+        </div>`;
     }
     function renderStats(s) {
         if(!s || s.length < 2) return '<div class="scrollable-content focusable" tabindex="0">No Stats.</div>';
@@ -414,8 +434,9 @@ window.AppComponents = (function() {
     function renderStandings(s) {
         if (!s || !s.length) return '<div class="scrollable-content focusable" tabindex="0">No Standings Available.</div>';
         let html = '<div class="scrollable-content focusable" tabindex="0" style="padding-bottom: 2rem;">';
+        const teamsFav = State.appConfig.favourit_teams.map(t=>t.id) ;
         s.forEach(group => {
-            const group_html =group.map(t => `<tr><td>${t.rank}</td><td style="text-align:left; display:flex; align-items:center; gap:0.5rem;"><img src="${t.team.logo}" style="width:50px; height:50px; object-fit:contain;">${t.team.name}</td><td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td><td>${t.goalsDiff}</td><td><b>${t.points}</b></td></tr>`).join('');
+            const group_html =group.map(t => `<tr class="${teamsFav.includes(t.team.id)?"favorite":""}"><td>${t.rank}</td><td style="text-align:left; display:flex; align-items:center; gap:0.5rem;"><img src="${t.team.logo}" style="width:50px; height:50px; object-fit:contain;">${t.team.name}</td><td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td><td>${t.goalsDiff}</td><td><b>${t.points}</b></td></tr>`).join('');
             if (s.length > 1) html += `<h3 style="margin-top: 1rem; color: var(--bg-focus); padding-left: 0.5rem;">${group[0].group}</h3>`;
             html += `<table class="standings-table"><thead><tr><th style="width:10%">#</th><th style="text-align:left">Team</th><th style="width:10%">P</th><th style="width:10%">W</th><th style="width:10%">D</th><th style="width:10%">L</th><th style="width:10%">GD</th><th style="width:10%">Pts</th></tr></thead><tbody>${group_html}</tbody></table>`;
         });
