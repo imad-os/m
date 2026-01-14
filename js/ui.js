@@ -2,33 +2,6 @@
 
 window.AppComponents = (function() {
     const Utils = window.Utils;
-    const STAT_ORDER = [
-"Total",
-"Ball Possession",
-"H2H",
-"Attacking",
-"Defending",
-"expected_goals",
-"goals_prevented",
-"Fouls",
-"Corner Kicks",
-"Form",
-"Goals",
-"Poisson Dist.",
-"Shots on Goal",
-"Shots off Goal",
-"Total Shots",
-"Blocked Shots",
-"Shots insidebox",
-"Shots outsidebox",
-"Offsides",
-"Yellow Cards",
-"Red Cards",
-"Goalkeeper Saves",
-"Total passes",
-"Passes accurate",
-"Passes %",
-    ];
     const STAT_GROUPS = {
         "General": ["Ball Possession", "Fouls", "Corner Kicks", "Offsides"],
         "Expected Performance": ["expected_goals", "goals_prevented"],
@@ -47,8 +20,8 @@ window.AppComponents = (function() {
         const matchDate = new Date(m.fixture.date);
         const isToday = matchDate.toDateString() === new Date().toDateString();
         const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const homeFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.home.id).length? "favorite" :"";
-        const awayFav = State.appConfig.favourit_teams.filter(t=>t.id==m.teams.away.id).length? "favorite" :"";
+        const homeFav = State.appConfig.favorite_teams.filter(t=>t.id==m.teams.home.id).length? "favorite" :"";
+        const awayFav = State.appConfig.favorite_teams.filter(t=>t.id==m.teams.away.id).length? "favorite" :"";
         if (isActuallyLive) {
             if (m.fixture.status.short === 'HT') statusText = `<span class="live-time">Half Time</span>`;
             else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${Utils.formTimeString(m.fixture.status)}</span>`;
@@ -258,13 +231,13 @@ window.AppComponents = (function() {
         const countGrid = (xi) => xi && xi.filter ? xi.filter(x => x.player && x.player.grid).length : 0;
         const usePitch = countGrid(l[0].startXI) > 7 && countGrid(l[1].startXI) > 7;
         const getClassBestPlayer = (pid) => pid === BestPlayer ? ' best-player' : '';
-
+        const playersFav = State.appConfig.favorite_players.map(t=>t.id) ;
         const renderListRow = (p) => {
             if (!p) return '';
             const rating = getRating(p.id);
             const ratingClass = Utils.getRatingClass(rating);
             const rHtml = rating ? `<span class="sub-rating ${getClassBestPlayer(p?.id)} ${ratingClass}">${rating}</span>` : '';
-            return `<div class="sub-row"><span class="sub-num">${p.number || '-'}</span><span style="flex-grow:1; text-align:left; padding-left:1rem;">${p.name}</span>${rHtml}</div>`;
+            return `<div class="sub-row ${playersFav.includes(p.id)?"favorite":""}"><span class="sub-num">${p.number || '-'}</span><span style="flex-grow:1; text-align:left; padding-left:1rem;">${p.name}</span>${rHtml}</div>`;
         };
 
         let mainContent = '';
@@ -342,8 +315,21 @@ window.AppComponents = (function() {
                     ${awayPlayers.map(renderDot).join('')}
                 </div>`;
         } else {
-            const home_xi = l[0]?.startXI?.map ? l[0]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
-            const away_xi = l[1]?.startXI?.map ? l[1]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
+            let home_xi = l[1]?.startXI?.map ? l[0]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
+            let away_xi = l[0]?.startXI?.map ? l[1]?.startXI?.map(s => renderListRow(s.player)).join('') : 0;
+            /*
+            l[0].team.name
+            const teamsNames = document.getElementsByClassName("details-team");
+            console.log("teamsNames==", teamsNames[0])
+            if(teamsNames && teamsNames.length){
+                if(teamsNames[0].innerText === l[1].team.name){
+                    const home_xi_ori =  home_xi;
+                    home_xi = away_xi;
+                    away_xi = home_xi_ori;
+                }
+            }
+            */
+            
             mainContent = `
                 <div class="subs-container" style="border-top:none; margin-top:0; padding-top:0;">
                     <div class="subs-team"><h4 style="margin-bottom:0.5rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem;">${l[0].team.name} XI</h4>
@@ -434,7 +420,7 @@ window.AppComponents = (function() {
     function renderStandings(s) {
         if (!s || !s.length) return '<div class="scrollable-content focusable" tabindex="0">No Standings Available.</div>';
         let html = '<div class="scrollable-content focusable" tabindex="0" style="padding-bottom: 2rem;">';
-        const teamsFav = State.appConfig.favourit_teams.map(t=>t.id) ;
+        const teamsFav = State.appConfig.favorite_teams.map(t=>t.id) ;
         s.forEach(group => {
             const group_html =group.map(t => `<tr class="${teamsFav.includes(t.team.id)?"favorite":""}"><td>${t.rank}</td><td style="text-align:left; display:flex; align-items:center; gap:0.5rem;"><img src="${t.team.logo}" style="width:50px; height:50px; object-fit:contain;">${t.team.name}</td><td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td><td>${t.goalsDiff}</td><td><b>${t.points}</b></td></tr>`).join('');
             if (s.length > 1) html += `<h3 style="margin-top: 1rem; color: var(--bg-focus); padding-left: 0.5rem;">${group[0].group}</h3>`;
@@ -447,6 +433,7 @@ window.AppComponents = (function() {
         if (!data || !data.length) return '<div class="scrollable-content focusable" tabindex="0">No Player Stats Available.</div>';
         const posMap = { "Goalkeeper": "GK", "Defender": "DF", "Midfielder": "MF", "Attacker": "FW" };
         const mainStat = type === 'goals' ? 'Goals' : 'Assists';
+        const playersFav = State.appConfig.favorite_players.map(t=>t.id) ;
         return `<div class="scrollable-content focusable" tabindex="0" style="padding-bottom: 2rem;">
             <table class="standings-table player-stats-table" data-type="${type}">
                 <thead><tr><th>#</th><th style="text-align:left">Player</th><th class="focusable clickable sort-header" tabindex="0" data-sort="pos">Pos</th><th class="focusable clickable sort-header" tabindex="0" data-sort="app">App</th><th class="focusable clickable sort-header" tabindex="0" data-sort="rating">Rate</th><th class="focusable clickable sort-header" tabindex="0" data-sort="shots">Shots (On)</th><th class="focusable clickable sort-header" tabindex="0" data-sort="main">${mainStat}</th></tr></thead>
@@ -458,7 +445,7 @@ window.AppComponents = (function() {
                     const mainVal = type === 'goals' ? (s.goals.total||0) : (s.goals.assists||0);
                     const natStr = p.nationality ? p.nationality.substring(0,3).toUpperCase() : '';
                     const ratingClass=Utils.getRatingClass(rating);
-                    return `<tr><td>${index + 1}</td><td class="player-info-cell"><div class="player-info-avatar"><img src="${s.team.logo}" class="player-avatar-team-logo-small"><img src="${p.photo}" class="player-avatar-photo-small"></div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name} | [${natStr}]</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td> <span  class="sub-rating ${ratingClass}">${rating}</span></td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
+                    return `<tr class="${playersFav.includes(p.id)?"favorite":""}" ><td>${index + 1}</td><td class="player-info-cell"><div class="player-info-avatar"><img src="${s.team.logo}" class="player-avatar-team-logo-small"><img src="${p.photo}" class="player-avatar-photo-small"></div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name} | [${natStr}]</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td> <span  class="sub-rating ${ratingClass}">${rating}</span></td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
                 }).join('')}</tbody>
             </table></div>`;
     }

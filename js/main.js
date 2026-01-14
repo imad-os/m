@@ -104,8 +104,8 @@
 
             const allowedLeagues = State.globalSettings.allowed_leagues || [];
             const allowedIds = new Set(allowedLeagues.map(l => l.id));
-            const favTeams = new Set((State.appConfig.favourit_teams || []).map(t => t.id));
-            const favLeagues = new Set((State.appConfig.favourite_leagues || []).map(l => l.id));
+            const favTeams = new Set((State.appConfig.favorite_teams || []).map(t => t.id));
+            const favLeagues = new Set((State.appConfig.favorite_leagues || []).map(l => l.id));
 
             for (const m of liveData) {
                 const mid = m.fixture.id;
@@ -289,37 +289,159 @@
                 return;
             }
 
+            // Account / Favorites management (pages)
+            const removeBtn = target.closest('.fav-remove-btn');
+            if (removeBtn) {
+                e.preventDefault(); e.stopPropagation();
+                if (!State.currentUser) { if (window.AppUI && window.AppUI.showModal) window.AppUI.showModal('auth-modal'); return; }
+                const type = removeBtn.dataset.type;
+                const id = Number(removeBtn.dataset.id);
+                const cfg = State.appConfig || {};
+                cfg.favorite_teams = cfg.favorite_teams || [];
+                cfg.favorite_leagues = cfg.favorite_leagues || [];
+                cfg.favorite_players = cfg.favorite_players || [];
+
+                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
+                const key = map[type] || 'favorite_teams';
+                cfg[key] = (cfg[key] || []).filter(x => Number(x.id) !== id);
+
+                State.appConfig = cfg;
+                await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                Helpers.showToast('Removed from favorites', 'success');
+
+                if (window.AppRouter.current && window.AppRouter.current.name === 'account') {
+                    window.AppViews.renderAccountPage(document.getElementById('content-container'));
+                }
+                return;
+            }
+
+            const playerBtn = target.closest('.fav-player-btn');
+            if (playerBtn) {
+                e.preventDefault(); e.stopPropagation();
+                const teamId = playerBtn.dataset.teamId ? Number(playerBtn.dataset.teamId) : null;
+                const leagueId = playerBtn.dataset.leagueId ? Number(playerBtn.dataset.leagueId) : null;
+                const scopeName = playerBtn.dataset.teamName || playerBtn.dataset.leagueName || '';
+                if (!teamId && !leagueId) { Helpers.showToast('Select a team/league to add players', 'error'); return; }
+                window.AppRouter.go('fav-add', { type: 'player', teamId, leagueId, scopeName });
+                return;
+            }
+
+            const addBtn = target.closest('.add-fav-btn');
+            if (addBtn) {
+                e.preventDefault(); e.stopPropagation();
+                const type = addBtn.dataset.type || 'team';
+                window.AppRouter.go('fav-add', { type });
+                return;
+            }
+
+            const addCard = target.closest('.fav-add-card');
+            if (addCard) {
+                e.preventDefault(); e.stopPropagation();
+                if (!State.currentUser) { if (window.AppUI && window.AppUI.showModal) window.AppUI.showModal('auth-modal'); return; }
+
+                const type = addCard.dataset.type || 'team';
+                const id = Number(addCard.dataset.id);
+                const name = addCard.dataset.name || 'Unknown';
+                const logo = addCard.dataset.logo || '';
+                const extra = addCard.dataset.extra || '';
+                const cfg = State.appConfig || {};
+                cfg.favorite_teams = cfg.favorite_teams || [];
+                cfg.favorite_leagues = cfg.favorite_leagues || [];
+                cfg.favorite_players = cfg.favorite_players || [];
+
+                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
+                const key = map[type] || 'favorite_teams';
+                const arr = cfg[key] || [];
+                if (!arr.some(x => Number(x.id) === id)) {
+                    const obj = { id, name };
+                    if (type === 'player') { obj.photo = logo; if (extra) obj.team = extra; }
+                    else { obj.logo = logo; if (extra) obj.country = extra; }
+                    arr.push(obj);
+                    cfg[key] = arr;
+                    State.appConfig = cfg;
+                    await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                    Helpers.showToast('Added to favorites', 'success');
+                } else {
+                    Helpers.showToast('Already in favorites', 'info');
+                }
+
+                window.AppRouter.go('account');
+                return;
+            }
+
             const favBtn = target.closest('.fav-toggle');
             if (favBtn) {
                 e.preventDefault(); e.stopPropagation();
-                if (!State.currentUser) {
-                     const m = document.getElementById('auth-modal');
-                     document.getElementById('modal-overlay').classList.add('visible');
-                     document.querySelectorAll('.modal-content').forEach(d => d.style.display='none');
-                     m.style.display='block';
-                     Navigation.setScope(m);
-                     return;
-                }
-                const type = favBtn.dataset.type; const id = Number(favBtn.dataset.id); 
+                if (!State.currentUser) { if (window.AppUI && window.AppUI.showModal) window.AppUI.showModal('auth-modal'); return; }
+
+                const type = favBtn.dataset.type;
+                const id = Number(favBtn.dataset.id);
                 const name = favBtn.dataset.name || 'Unknown';
-                const cfg = State.appConfig;
-                const arr = type === 'team' ? (cfg.favourit_teams || []) : (cfg.favourite_leagues || []);
-                if (!cfg.favourit_teams) cfg.favourit_teams = []; if (!cfg.favourite_leagues) cfg.favourite_leagues = [];
-                const idx = arr.findIndex(x => x.id === id);
-                if(idx > -1) { arr.splice(idx, 1); favBtn.classList.remove('active'); } else { arr.push({id, name: name}); favBtn.classList.add('active'); }
-                if (type === 'team') cfg.favourit_teams = arr; else cfg.favourite_leagues = arr;
-                State.appConfig = cfg; await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                const cfg = State.appConfig || {};
+                cfg.favorite_teams = cfg.favorite_teams || [];
+                cfg.favorite_leagues = cfg.favorite_leagues || [];
+                cfg.favorite_players = cfg.favorite_players || [];
+
+                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
+                const key = map[type] || 'favorite_teams';
+                const arr = cfg[key] || [];
+
+                const idx = arr.findIndex(x => Number(x.id) === id);
+                if (idx > -1) { arr.splice(idx, 1); favBtn.classList.remove('active'); Helpers.showToast('Removed from favorites', 'success'); }
+                else { arr.push({ id, name }); favBtn.classList.add('active'); Helpers.showToast('Added to favorites', 'success'); }
+
+                cfg[key] = arr;
+                State.appConfig = cfg;
+                await Storage.saveUserConfig(State.currentUser.uid, cfg);
                 return;
             }
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
         registerTizenKeys();
         Navigation.init();
         
         const container = document.getElementById('content-container');
         setupDelegatedEvents(container);
+
+        // Long-press ENTER actions (dispatched by Navigation.js)
+        // NOTE: 'longpress' is emitted from navigation.js on long-hold Enter.
+        container.addEventListener('longpress', async (e) => {
+            const target = e.target;
+
+            // Long-press on star toggle => REMOVE only (never add via long-press)
+            const favBtn = target.closest('.fav-toggle');
+            if (favBtn) {
+                e.preventDefault(); e.stopPropagation();
+                if (!State.currentUser) { if (window.AppUI && window.AppUI.showModal) window.AppUI.showModal('auth-modal'); return; }
+
+                if (!favBtn.classList.contains('active')) { Helpers.showToast('Not in favorites', 'info'); return; }
+
+                const type = favBtn.dataset.type;
+                const id = Number(favBtn.dataset.id);
+                const cfg = State.appConfig || {};
+                cfg.favorite_teams = cfg.favorite_teams || [];
+                cfg.favorite_leagues = cfg.favorite_leagues || [];
+                cfg.favorite_players = cfg.favorite_players || [];
+
+                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
+                const key = map[type] || 'favorite_teams';
+                cfg[key] = (cfg[key] || []).filter(x => Number(x.id) !== id);
+
+                State.appConfig = cfg;
+                await Storage.saveUserConfig(State.currentUser.uid, cfg);
+
+                favBtn.classList.remove('active');
+                Helpers.showToast('Removed from favorites', 'success');
+                return;
+            }
+
+            // Long-press on remove button (Account page) => click remove
+            const removeBtn = target.closest('.fav-remove-btn');
+            if (removeBtn) removeBtn.click();
+        });
+
         
         const authEmail = document.getElementById('auth-email');
         const authPass = document.getElementById('auth-password');
@@ -346,8 +468,12 @@
              if(activeNav) Navigation.focus(activeNav);
         };
 
+        // Expose modal helpers for page views (Account page uses this)
+        window.AppUI = { showModal, closeModal };
+
+
         document.getElementById('nav-calendar').onclick = () => showModal('date-modal');
-        document.getElementById('nav-auth').onclick = () => showModal('auth-modal');
+        document.getElementById('nav-auth').onclick = () => { window.AppRouter.go('account'); };
         document.getElementById('nav-home').onclick = () => { 
             if (window.AppRouter.current.name === 'home') { const content = document.querySelector('#content-container .focusable'); if(content) Navigation.focus(content); } 
             else window.AppRouter.go('home'); 
@@ -450,10 +576,19 @@
             const current = document.activeElement;
             const sidebar = current.closest('#sidebar');
             if (sidebar && (key === 'Right' || key === 'Enter')) {
-                 if (key === 'Enter' && current.id !== 'nav-home') return; 
-                 e.preventDefault(); e.stopImmediatePropagation();
-                 const t = document.querySelector('#content-container .focusable');
-                 if(t) Navigation.focus(t);
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                if (key === 'Enter') {
+                    // Activate selected sidebar item (Home, Calendar, Account)
+                    current.click();
+                    return;
+                }
+
+                // Right => move focus into content
+                const t = document.querySelector('#content-container .focusable');
+                if (t) Navigation.focus(t);
+                return;
             }
         }, true);
 

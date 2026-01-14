@@ -1186,3 +1186,96 @@ body {
     border-bottom: 1px solid #333;
     padding-bottom: 5px;
 }
+
+/* --- Account Page --- */
+.account-page { padding: 2rem; }
+.account-hero { display:flex; align-items:center; justify-content:space-between; margin-bottom: 2rem; }
+.account-hero h1 { font-size: 2.8em; margin: 0; }
+.account-subline { margin-top: 0.2rem; color: var(--text-muted); font-size: 1.2em; }
+
+.account-section { margin-bottom: 3rem; }
+.account-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 1.5rem; }
+.account-section-title { font-size: 1.8em; font-weight: bold; }
+.add-fav-btn { display:inline-flex; align-items:center; gap:0.6rem; padding: 0.8rem 1.4rem; border-radius: 8px; border: 1px solid #333; background: var(--bg-card); color:#fff; cursor:pointer; }
+.add-fav-btn.focused { background: var(--bg-focus); border-color: var(--bg-focus); transform: scale(1.05); }
+
+.fav-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2.2rem; }
+.fav-card { background: var(--bg-card); border: 2px solid transparent; border-radius: 14px; padding: 1.5rem; text-align:center; position:relative; }
+.fav-card-media { height: 110px; display:flex; align-items:center; justify-content:center; margin-bottom: 0.8rem; }
+.fav-card img { max-height: 100%; max-width: 100%; object-fit: contain; }
+.fav-placeholder { width: 88px; height: 88px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 2em; font-weight:bold; background: #333; color:#fff; }
+.fav-name { font-size: 1.25em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-sub { margin-top: 0.3rem; color: var(--text-muted); font-size: 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-empty { color: var(--text-muted); padding: 2rem; font-size: 1.2em; }
+
+.fav-actions { display:flex; align-items:center; justify-content:center; gap: 1.2rem; margin-top: 1.2rem; }
+
+.fav-icon-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
+    transition: transform 0.15s ease-out, background 0.15s ease-out, border-color 0.15s ease-out;
+}
+.fav-icon-btn i { font-size: 2em; }
+
+.fav-icon-btn.focused { transform: scale(1.12); border-color: #fff; background: #2a2a2a; }
+.fav-icon-btn.fav-remove-btn.focused { background: var(--bg-focus); border-color: var(--bg-focus); }
+.fav-icon-btn.fav-player-btn.focused { background: #fff; color: #000; border-color: #fff; }
+
+/* Make the section Add button icon-only on TV */
+.add-fav-btn {
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    justify-content: center;
+}
+.add-fav-btn i { font-size: 1.8em; }
+
+.account-login-page { padding: 4rem; text-align:center; }
+.account-login-sub { color: var(--text-muted); font-size: 1.2em; margin: 1rem 0 2rem; }
+
+/* --- Favorite Add Page --- */
+.fav-add-page { padding: 2rem; }
+.fav-add-hero { display:flex; align-items:center; gap:1rem; margin-bottom: 1.5rem; }
+.fav-add-title { display:flex; flex-direction:column; }
+.fav-add-h1 { font-size: 2.2em; font-weight: bold; }
+.fav-add-h2 { color: var(--text-muted); font-size: 1.1em; margin-top: 0.2rem; }
+
+.fav-add-search { display:flex; gap: 1rem; align-items:center; margin: 1.5rem 0 2rem; }
+#fav-search-input { flex: 1; padding: 1rem 1.2rem; background: #111; border: 2px solid #333; color:#fff; border-radius: 10px; font-size: 1.1em; }
+#fav-search-input.focused { border-color: var(--bg-focus); }
+
+.fav-add-results { min-height: 50vh; }
+.fav-add-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem; }
+.fav-add-card { display:flex; gap:1rem; align-items:center; background: var(--bg-card); border: 2px solid transparent; border-radius: 14px; padding: 1rem 1.2rem; cursor:pointer; }
+.fav-add-card-media { width: 64px; height: 64px; display:flex; align-items:center; justify-content:center; }
+.fav-add-card-media img { width: 64px; height: 64px; object-fit: contain; border-radius: 50%; }
+.fav-add-card-info { flex: 1; min-width: 0; }
+.fav-add-card-name { font-size: 1.25em; font-weight: 700; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.fav-add-card-sub { margin-top: 0.2rem; color: var(--text-muted); font-size: 1em; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.fav-add-card-action { font-size: 2em; color: var(--text-muted); }
+.fav-add-card.focused { border-color: #fff; background: #252525; transform: scale(1.03); }
+.fav-add-card.focused .fav-add-card-action { color: var(--bg-focus); }
+
+/* --- Focus ring animation for favorite toggle (⭐/heart) --- */
+.fav-toggle { position: relative; }
+.fav-toggle.focused::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-radius: 999px;
+    animation: favRing 0.9s ease-in-out infinite;
+}
+@keyframes favRing {
+    0% { transform: scale(0.98); opacity: 0.5; }
+    50% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(0.98); opacity: 0.5; }
+}

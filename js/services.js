@@ -23,7 +23,7 @@ const CLOUD_FUNCTION_URL = `https://f.geekspro.us/footballRequest/`;
 // Global State
 const State = {
     currentUser: null,
-    appConfig: { favourit_teams: [], favourite_leagues: [], theme: 'dark-bleu' },
+    appConfig: { favorite_teams: [], favorite_leagues: [], favorite_players: [], theme: 'dark-bleu' },
     globalSettings: { allowed_leagues: [] },
     hasLoadedSettings: false
 };
@@ -38,10 +38,13 @@ const Helpers = {
         const idNum = Number(id);
         const { appConfig } = State;
         if (type === 'team') {
-            return appConfig.favourit_teams && appConfig.favourit_teams.some(team => team.id === idNum);
+            return appConfig.favorite_teams && appConfig.favorite_teams.some(team => team.id === idNum);
         }
         if (type === 'league') {
-            return appConfig.favourite_leagues && appConfig.favourite_leagues.some(league => league.id === idNum);
+            return appConfig.favorite_leagues && appConfig.favorite_leagues.some(league => league.id === idNum);
+        }
+        if (type === 'player') {
+            return appConfig.favorite_players && appConfig.favorite_players.some(p => p.id === idNum);
         }
         return false;
     },
@@ -85,7 +88,7 @@ const Helpers = {
                 <i class="ph ph-warning-octagon"></i>
                 <h2>Oops! Something went wrong.</h2>
                 <p>${message}</p>
-                <button class="styled-button focusable" onclick="Router.go('home')">Reload App</button>
+                <button class="styled-button focusable" onclick="window.AppRouter.go('home')">Reload App</button>
             </div>
         `;
         // Try to focus the reload button for TV remote accessibility
@@ -218,5 +221,9 @@ const Storage = {
     }
 };
 
-State.appConfig = Storage.loadUserConfigLocally();
+State.appConfig = Storage.loadUserConfigLocally() || State.appConfig;
+// Normalize config keys for backward compatibility
+State.appConfig.favorite_teams = State.appConfig.favorite_teams || [];
+State.appConfig.favorite_leagues = State.appConfig.favorite_leagues || [];
+State.appConfig.favorite_players = State.appConfig.favorite_players || [];
 window.AppServices = { db, auth, State, API, Storage, Helpers };

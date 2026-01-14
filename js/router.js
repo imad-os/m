@@ -40,8 +40,8 @@
             }
 
             try {
-                const favTeams = new Set((State.appConfig.favourit_teams || []).map(t => t.id));
-                const favLeagues = new Set((State.appConfig.favourite_leagues || []).map(l => l.id));
+                const favTeams = new Set((State.appConfig.favorite_teams || []).map(t => t.id));
+                const favLeagues = new Set((State.appConfig.favorite_leagues || []).map(l => l.id));
                 const allowedLeagues = State.globalSettings.allowed_leagues || [];
                 const allowedIds = new Set(allowedLeagues.map(l => l.id));
                 const hasRestrictions = allowedIds.size > 0;
@@ -272,6 +272,264 @@
                 console.error(e);
             }
         }
+        ,
+
+        renderAccountPage: async (container) => {
+            window.AppState.currentMatchId = null;
+            window.AppState.currentTab = null;
+            const dateHeader = document.getElementById('date-header-wrapper');
+            if (dateHeader) dateHeader.style.display = 'none';
+
+            if (!State.currentUser) {
+                container.innerHTML = `
+                    <div class="account-login-page">
+                        <h1>Account</h1>
+                        <p class="account-login-sub">Sign in to manage favorites.</p>
+                        <button id="btn-open-auth" class="styled-button focusable" tabindex="0">Sign In</button>
+                    </div>
+                `;
+                const btn = document.getElementById('btn-open-auth');
+                if (btn) btn.onclick = () => window.AppUI && window.AppUI.showModal ? window.AppUI.showModal('auth-modal') : null;
+                Navigation.scan();
+                return;
+            }
+
+            const cfg = State.appConfig || {};
+            const favTeams = cfg.favorite_teams || [];
+            const favLeagues = cfg.favorite_leagues || [];
+            const favPlayers = cfg.favorite_players || [];
+
+                        const section = (title, type, items) => {
+                const cards = (items || []).map(it => {
+                    const img = it.logo || it.photo || '';
+                    const sub = it.country || it.team || '';
+                    const safeName = (it.name || 'Unknown').replace(/"/g,'&quot;');
+
+                    if (type === 'team' || type === 'league') {
+                        const scopeAttr = type === 'team'
+                            ? `data-team-id="${it.id}" data-team-name="${safeName}"`
+                            : `data-league-id="${it.id}" data-league-name="${safeName}"`;
+
+                        return `
+                            <div class="fav-card">
+                                <div class="fav-card-media">
+                                    ${img ? `<img src="${img}" alt="">` : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
+                                </div>
+                                <div class="fav-name">${it.name || 'Unknown'}</div>
+                                ${sub ? `<div class="fav-sub">${sub}</div>` : ``}
+
+                                <div class="fav-actions">
+                                    <button class="fav-icon-btn fav-player-btn focusable" tabindex="0" ${scopeAttr} title="Add Player Favorite">
+                                        <i class="ph ph-user"></i>
+                                    </button>
+                                    <button class="fav-icon-btn fav-remove-btn focusable" tabindex="0" data-type="${type}" data-id="${it.id}" title="Remove Favorite">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div class="fav-card">
+                            <div class="fav-card-media">
+                                ${img ? `<img src="${img}" alt="">` : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
+                            </div>
+                            <div class="fav-name">${it.name || 'Unknown'}</div>
+                            ${sub ? `<div class="fav-sub">${sub}</div>` : ``}
+
+                            <div class="fav-actions">
+                                <button class="fav-icon-btn fav-remove-btn focusable" tabindex="0" data-type="${type}" data-id="${it.id}" title="Remove Favorite">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const showAdd = (type !== 'player');
+
+                return `
+                    <section class="account-section">
+                        <div class="account-section-header">
+                            <div class="account-section-title">${title}</div>
+                            ${showAdd ? `
+                                <button class="add-fav-btn focusable" tabindex="0" data-type="${type}" title="Add Favorite">
+                                    <i class="ph ph-plus"></i>
+                                </button>
+                            ` : ``}
+                        </div>
+                        <div class="fav-grid">
+                            ${cards || `<div class="fav-empty">No favorites yet.</div>`}
+                        </div>
+                    </section>
+                `;
+            };
+
+            container.innerHTML = `
+                <div class="account-page">
+                    <div class="account-hero">
+                        <div>
+                            <h1>Account</h1>
+                            <div class="account-subline">Manage favorites (Teams, Leagues, Players)</div>
+                        </div>
+                        <button id="btn-account-logout" class="icon-button focusable" tabindex="0" title="Logout">
+                            <i class="ph ph-sign-out"></i>
+                        </button>
+                    </div>
+
+                    ${section('Favorite Teams', 'team', favTeams)}
+                    ${section('Favorite Leagues', 'league', favLeagues)}
+                    ${section('Favorite Players', 'player', favPlayers)}
+                </div>
+            `;
+
+            const logoutBtn = document.getElementById('btn-account-logout');
+            if (logoutBtn) logoutBtn.onclick = () => window.AppServices.auth.signOut();
+
+            Navigation.scan();
+        },
+
+        renderFavAddPage: async (container, params) => {
+            window.AppState.currentMatchId = null;
+            window.AppState.currentTab = null;
+            const dateHeader = document.getElementById('date-header-wrapper');
+            if (dateHeader) dateHeader.style.display = 'none';
+
+            const type = (params && params.type) ? params.type : 'team';
+            const label = type === 'league' ? 'League' : (type === 'player' ? 'Player' : 'Team');
+
+            // Player search in API-Football requires a scope: league or team (with season)
+            const scopeTeamId = params && params.teamId ? Number(params.teamId) : null;
+            const scopeLeagueId = params && params.leagueId ? Number(params.leagueId) : null;
+            const scopeName = params && params.scopeName ? String(params.scopeName) : (params && (params.teamName || params.leagueName) ? String(params.teamName || params.leagueName) : '');
+
+            if (!State.currentUser) {
+                container.innerHTML = `
+                    <div class="account-login-page">
+                        <h1>Add Favorite</h1>
+                        <p class="account-login-sub">Sign in to add favorites.</p>
+                        <button id="btn-open-auth" class="styled-button focusable" tabindex="0">Sign In</button>
+                    </div>
+                `;
+                const btn = document.getElementById('btn-open-auth');
+                if (btn) btn.onclick = () => window.AppUI && window.AppUI.showModal ? window.AppUI.showModal('auth-modal') : null;
+                Navigation.scan();
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="fav-add-page">
+                    <div class="fav-add-hero">
+                        <button class="icon-button focusable" tabindex="0" id="btn-back-fav">
+                            <i class="ph ph-arrow-left"></i>
+                        </button>
+                        <div class="fav-add-title">
+                            <div class="fav-add-h1">Add Favorite ${label}</div>
+                            <div class="fav-add-h2">${type === 'player' ? (scopeTeamId ? `Searching within Team: ${scopeName || scopeTeamId}` : (scopeLeagueId ? `Searching within League: ${scopeName || scopeLeagueId}` : 'Select a Team or League to search players.')) : 'Use the search box. Press Enter on a result to add.'}</div>
+                        </div>
+                    </div>
+
+                    <div class="fav-add-search">
+                        <input id="fav-search-input" class="focusable" tabindex="0" type="text"
+                               placeholder="Search ${label}..." autocomplete="off">
+                        <button id="fav-search-btn" class="styled-button focusable" tabindex="0">Search</button>
+                    </div>
+
+                    <div id="fav-add-results" class="fav-add-results">
+                        <div class="fav-empty">Start typing to search.</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('btn-back-fav').onclick = () => window.AppRouter.back();
+
+            const input = document.getElementById('fav-search-input');
+            const btn = document.getElementById('fav-search-btn');
+            const resultsEl = document.getElementById('fav-add-results');
+
+            let debounce = null;
+
+            async function doSearch(q) {
+                const query = (q || '').trim();
+                if (!query) {
+                    resultsEl.innerHTML = `<div class="fav-empty">Start typing to search.</div>`;
+                    Navigation.scan();
+                    return;
+                }
+
+                resultsEl.innerHTML = `<div class="loader">Searching...</div>`;
+                const season = Helpers.getCurrentSeason();
+                let endpoint = '';
+
+                if (type === 'league') {
+                    endpoint = `leagues?search=${encodeURIComponent(query)}`;
+                } else if (type === 'player') {
+                    if (scopeTeamId) endpoint = `players?search=${encodeURIComponent(query)}&team=${scopeTeamId}&season=${season}`;
+                    else if (scopeLeagueId) endpoint = `players?search=${encodeURIComponent(query)}&league=${scopeLeagueId}&season=${season}`;
+                    else {
+                        resultsEl.innerHTML = `<div class="fav-empty">Select a Team or League to search players.</div>`;
+                        Navigation.scan();
+                        return;
+                    }
+                } else {
+                    endpoint = `teams?search=${encodeURIComponent(query)}`;
+                }
+
+                const resp = await API.fetch(endpoint);
+                if (resp === null) return;
+
+                const items = (resp || []).slice(0, 36).map(r => {
+                    if (type === 'league') {
+                        return { id: r.league.id, name: r.league.name, logo: r.league.logo, extra: (r.country && r.country.name) ? r.country.name : '' };
+                    }
+                    if (type === 'player') {
+                        const p = r.player || {};
+                        const st = (r.statistics && r.statistics[0]) ? r.statistics[0] : {};
+                        const team = st.team && st.team.name ? st.team.name : '';
+                        return { id: p.id, name: p.name, logo: p.photo, extra: team };
+                    }
+                    return { id: r.team.id, name: r.team.name, logo: r.team.logo, extra: r.team.country || '' };
+                });
+
+                if (!items.length) {
+                    resultsEl.innerHTML = `<div class="fav-empty">No results.</div>`;
+                    Navigation.scan();
+                    return;
+                }
+
+                const cards = items.map(it => `
+                    <div class="fav-add-card focusable" tabindex="0"
+                         data-type="${type}"
+                         data-id="${it.id}"
+                         data-name="${(it.name||'').replace(/"/g,'&quot;')}"
+                         data-logo="${(it.logo||'').replace(/"/g,'&quot;')}"
+                         data-extra="${(it.extra||'').replace(/"/g,'&quot;')}">
+                        <div class="fav-add-card-media">
+                            ${it.logo ? `<img src="${it.logo}" alt="">` : `<div class="fav-placeholder">${(it.name||'?').slice(0,1).toUpperCase()}</div>`}
+                        </div>
+                        <div class="fav-add-card-info">
+                            <div class="fav-add-card-name">${it.name || 'Unknown'}</div>
+                            ${it.extra ? `<div class="fav-add-card-sub">${it.extra}</div>` : ``}
+                        </div>
+                        <div class="fav-add-card-action"><i class="ph ph-plus-circle"></i></div>
+                    </div>
+                `).join('');
+
+                resultsEl.innerHTML = `<div class="fav-add-grid">${cards}</div>`;
+                Navigation.scan();
+            }
+
+            input.addEventListener('input', () => {
+                const q = input.value;
+                if (debounce) clearTimeout(debounce);
+                debounce = setTimeout(() => doSearch(q), 350);
+            });
+            btn.onclick = () => doSearch(input.value);
+
+            setTimeout(() => Navigation.focus(input), 60);
+        }
+
     };
 
     window.AppRouter = {
@@ -306,6 +564,8 @@
             if (this.current.name === 'home') window.AppViews.renderHome(container);
             else if (this.current.name === 'match') window.AppViews.renderDetails(container, this.current.params);
             else if (this.current.name === 'league') window.AppViews.renderLeaguePage(container, this.current.params);
+            else if (this.current.name === 'account') window.AppViews.renderAccountPage(container);
+            else if (this.current.name === 'fav-add') window.AppViews.renderFavAddPage(container, this.current.params);
         }
     };
 })();
