@@ -93,6 +93,122 @@ window.AppComponents = (function() {
         return html;
     }
 
+    function _parseStageAndSub(roundStr) {
+        const raw = (roundStr || '').trim();
+        if (!raw) return { stage: 'Matches', sub: '' };
+
+        // Common API-Football round formats:
+        // - "Regular Season - 12"
+        // - "Group Stage - Group A - 3"
+        // - "Semi-finals" / "Final" / "Match for 3rd place"
+        const parts = raw.split(' - ').map(s => (s || '').trim()).filter(Boolean);
+        const stage = parts[0] || 'Matches';
+        const tail = parts.slice(1);
+
+        if (!tail.length) return { stage, sub: '' };
+
+        // Heuristics for nicer sub labels
+        const lowerStage = stage.toLowerCase();
+        if (lowerStage.includes('regular season') && tail.length === 1 && /^\d+$/.test(tail[0])) {
+            return { stage, sub: `Matchday ${tail[0]}` };
+        }
+
+        if (lowerStage.includes('group stage')) {
+            // e.g. "Group Stage - Group A - 2" => "Group A" (optionally with "Match 2")
+            const group = tail.find(x => /^group\s+/i.test(x));
+            const num = tail.find(x => /^\d+$/.test(x));
+            if (group && num) return { stage, sub: `${group} · Match ${num}` };
+            if (group) return { stage, sub: group };
+        }
+
+        return { stage, sub: tail.join(' - ') };
+    }
+
+    function renderMatchesByStage(fixtures, opts = {}) {
+        const limit = Number.isFinite(opts.limit) ? opts.limit : 200;
+        if (!fixtures || !fixtures.length) {
+            return '<div class="scrollable-content focusable" tabindex="0">No matches available.</div>';
+        }
+
+        // Sort by most recent first for performance and relevance.
+        const sorted = fixtures
+            .slice()
+            .sort((a, b) => (b.fixture?.timestamp || 0) - (a.fixture?.timestamp || 0));
+
+        const total = sorted.length;
+        const trimmed = sorted.slice(0, Math.max(10, limit));
+
+        // Group by stage -> sub
+        const stageMap = new Map();
+        for (const m of trimmed) {
+            const { stage, sub } = _parseStageAndSub(m?.league?.round);
+            if (!stageMap.has(stage)) stageMap.set(stage, new Map());
+            const subMap = stageMap.get(stage);
+            const subKey = sub || '__nosub__';
+            if (!subMap.has(subKey)) subMap.set(subKey, []);
+            subMap.get(subKey).push(m);
+        }
+
+        // Stable stage ordering: prefer knockout-ish names first when they exist, otherwise keep insertion order.
+        const stageOrder = [
+            'Final',
+            '3rd place',
+            'Semi-finals',
+            'Quarter-finals',
+            'Round of 16',
+            '8th Finals',
+            'Group Stage',
+            'Regular Season',
+            'Play-offs',
+            'Relegation',
+        ];
+        const stages = Array.from(stageMap.keys());
+        stages.sort((a, b) => {
+            const ia = stageOrder.findIndex(x => a.toLowerCase() === x.toLowerCase());
+            const ib = stageOrder.findIndex(x => b.toLowerCase() === x.toLowerCase());
+            const va = ia === -1 ? 999 : ia;
+            const vb = ib === -1 ? 999 : ib;
+            if (va !== vb) return va - vb;
+            return a.localeCompare(b);
+        });
+
+        let html = '<div class="scrollable-content focusable" tabindex="0" style="padding-bottom:2rem;">';
+        if (total > trimmed.length) {
+            html += `<div class="matches-limit-note">Showing latest ${trimmed.length} of ${total} matches.</div>`;
+        }
+
+        for (const stage of stages) {
+            const subMap = stageMap.get(stage);
+            html += `<div class="stage-block">`;
+            html += `<div class="stage-title">${stage}</div>`;
+
+            const subKeys = Array.from(subMap.keys());
+            // Put no-sub first, then natural sort.
+            subKeys.sort((a, b) => {
+                if (a === '__nosub__') return -1;
+                if (b === '__nosub__') return 1;
+                return !a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            for (const subKey of subKeys) {
+                const list = subMap.get(subKey) || [];
+                // Within each group, sort by time descending (recent first)
+                list.sort((a, b) => (b.fixture?.timestamp || 0) - (a.fixture?.timestamp || 0));
+
+                if (subKey !== '__nosub__') {
+                    html += `<div class="stage-subtitle">${subKey}</div>`;
+                }
+
+                html += `<div class="matches-container stage-matches">${list.map(m => card(m)).join('')}</div>`;
+            }
+
+            html += `</div>`;
+        }
+
+        html += '</div>';
+        return html;
+    }
+
     function renderStatBar(label, homeValRaw, awayValRaw, isPercent = false) {
          const cleanVal = (v) => {
              if (typeof v === 'string') return parseFloat(v.replace('%','')) || 0;
@@ -454,6 +570,7 @@ window.AppComponents = (function() {
     return {
         card,
         renderKnockout,
+        renderMatchesByStage,
         renderStatBar,
         renderPredictions,
         renderEvents,

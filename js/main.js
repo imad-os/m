@@ -204,9 +204,75 @@
         } catch(e) { console.warn("Monitor check failed", e); }
     }
 
+    
+    async function handleQuickAction(action) {
+        try {
+            if (action === 'back') window.AppRouter.back();
+            else if (action === 'home') window.AppRouter.go('home');
+            else if (action === 'account') window.AppRouter.go('account');
+            else if (action === 'refresh') {
+                if (window.AppRouter && window.AppRouter.current) {
+                    // Force a refetch for Home
+                    if (window.AppRouter.current.name === 'home') window.AppState.matchesCache = null;
+                    window.AppRouter.go(window.AppRouter.current.name, window.AppRouter.current.params || window.AppRouter.current.id);
+                }
+            }
+            else if (action === 'prev-day') { window.AppState.currentDate = Utils.shiftDate(window.AppState.currentDate, -1); window.AppState.matchesCache = null; window.AppRouter.go('home'); }
+            else if (action === 'next-day') { window.AppState.currentDate = Utils.shiftDate(window.AppState.currentDate, +1); window.AppState.matchesCache = null; window.AppRouter.go('home'); }
+            else if (action === 'toggle-live') { window.AppState.liveOnly = !window.AppState.liveOnly; window.AppState.matchesCache = null; window.AppRouter.go('home'); }
+            else if (action === 'toggle-track') {
+                const mid = window.AppState.currentMatchId;
+                if (!mid) return;
+                if (Utils.isTracked(mid)) { Utils.removeTracked(mid); Helpers.showToast('Stopped tracking', 'info'); }
+                else { Utils.addTracked(mid); Helpers.showToast('Tracking enabled', 'info'); }
+                // keep label updated
+                if (window.AppRouter.current && window.AppRouter.current.name === 'match') window.AppRouter.go('match', window.AppRouter.current.params);
+            }
+            else if (action === 'toggle-fav-team') {
+                const tid = window.AppState.currentTeamId;
+                if (!tid || !window.AppState.currentTeamObj) return;
+                const obj = window.AppState.currentTeamObj;
+                const nowFav = FavoritesService.toggle('team', obj);
+                Helpers.showToast(nowFav ? 'Added to favorites' : 'Removed from favorites', 'info');
+                if (window.AppRouter.current && window.AppRouter.current.name === 'team') window.AppRouter.go('team', window.AppRouter.current.params);
+            }
+            else if (action === 'toggle-fav-league') {
+                const lid = window.AppState.currentLeagueId;
+                if (!lid || !window.AppState.currentLeagueObj) return;
+                const obj = window.AppState.currentLeagueObj;
+                const nowFav = FavoritesService.toggle('league', obj);
+                Helpers.showToast(nowFav ? 'Added to favorites' : 'Removed from favorites', 'info');
+                if (window.AppRouter.current && window.AppRouter.current.name === 'league') window.AppRouter.go('league', window.AppRouter.current.params);
+            }
+        } catch (err) {
+            console.warn('Quick action failed', err);
+        }
+    }
+
+    function setupQuickActionsGlobalEvents() {
+        // Quick Actions bar lives outside the main container; bind globally.
+        document.addEventListener('click', (e) => {
+            const qaBtn = e.target && e.target.closest ? e.target.closest('.qa-btn') : null;
+            if (!qaBtn) return;
+            e.preventDefault(); e.stopPropagation();
+            const action = qaBtn.dataset.qa;
+            handleQuickAction(action);
+        }, true);
+    }
+
     function setupDelegatedEvents(container) {
         container.addEventListener('click', async (e) => {
             const target = e.target;
+
+            // Quick Actions Bar
+            const qaBtn = target.closest && target.closest('.qa-btn');
+            if (qaBtn) {
+                e.preventDefault(); e.stopPropagation();
+                const action = qaBtn.dataset.qa;
+                await handleQuickAction(action);
+                return;
+            }
+
             const sortHeader = target.closest('.sort-header');
             if (sortHeader) {
                 const table = sortHeader.closest('table');
@@ -423,25 +489,8 @@ document.addEventListener('DOMContentLoaded', () => {
              if(activeNav) Navigation.focus(activeNav);
         };
 
-        const setQuickActions_old = (actions, label = 'Quick actions') => {
-            const bar = document.getElementById('quick-actions-bar');
-            if (!bar) return;
-            if (!actions || !actions.length) { bar.innerHTML = ''; return; }
-
-            const btnHtml = actions.map(a => {
-                const icon = a.icon ? `<i class="ph ${a.icon}"></i>` : '';
-                const hint = a.hint ? `<span class="qa-hint">${a.hint}</span>` : '';
-                const text = a.label || '';
-                return `<button class="qa-btn focusable" tabindex="0" data-qa="${a.action}">${icon}<span>${text}</span>${hint}</button>`;
-            }).join('');
-
-            bar.innerHTML = `<div class="qa-label">${label}</div>${btnHtml}`;
-            // Include quick actions in focus graph.
-            Navigation.scan();
-        };
-
-        // Expose modal + quick action helpers for page views
-        window.AppUI = { showModal, closeModal, setQuickActions:undefined };
+        // Expose modal helpers for page views
+        window.AppUI = { showModal, closeModal };
 
 
         document.getElementById('nav-calendar').onclick = () => showModal('date-modal');

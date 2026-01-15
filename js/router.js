@@ -57,10 +57,8 @@
                 });
 
                 const rows = [];
-                // Favorites rail: always show when user is signed in, even if empty.
-                if (State.currentUser) {
-                    rows.push({ title: "Favorites", matches: teamFavorites, isSpecial: true, emptyKind: (teamFavorites.length ? null : 'favorites') });
-                } else if (teamFavorites.length > 0) {
+                // Favorites rail: show only when there are favorite matches to display.
+                if (teamFavorites.length > 0) {
                     rows.push({ title: "Favorites", matches: teamFavorites, isSpecial: true });
                 }
                 
@@ -99,9 +97,6 @@
                 } else {
                     const htmlParts = [];
                     rows.forEach((row, index) => {
-                        if(row.matches.length===0){
-                            return true;
-                        }
                         const headerHtml = row.isSpecial 
                             ? `<div class="row-header-content focusable" tabindex="0"><span>${row.title}</span></div>`
                             : `<div class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}">
@@ -115,29 +110,18 @@
                                 window.AppState.renderedMatches.push(m);
                                 return Components.card(m, row.isMixed);
                               }).join('')
-                            : (row.emptyKind === 'favorites'
-                               ? ``
-                               : ``);
+                            : `<div class="rail-empty">
+                                    <div class="rail-empty-title">No matches</div>
+                                    <div class="rail-empty-sub">Try another date or disable Live Only.</div>
+                               </div>`;
                         htmlParts.push(`<div class="row-section" data-row-index="${index}"><div class="row-header" style="padding-left:0.5rem;">${headerHtml}</div><div class="rail">${cardsHtml}</div></div>`);
                     });
                     if (!hasRestrictions && !window.AppState.homePageLoadAllState && sortedKeys.length > 5) htmlParts.push(`<div style="text-align:center; padding: 2rem; margin-bottom: 2rem;"><button id="btn-load-all" class="styled-button focusable" tabindex="0">Load All Leagues</button></div>`);
                     container.innerHTML = htmlParts.join('');
                 }
-                const emptyFavBtn = document.getElementById('btn-empty-favs');
-                if (emptyFavBtn) emptyFavBtn.onclick = () => window.AppRouter.go('account');
                 if(document.getElementById('btn-load-all')) document.getElementById('btn-load-all').onclick = () => { window.AppState.matchesCache = null; window.AppState.homePageLoadAllState = true; window.AppViews.renderHome(container); };
                 Navigation.scan();
                 Utils.ImageLoader.scan(container);
-
-                if (window.AppUI && window.AppUI.setQuickActions) {
-                    window.AppUI.setQuickActions([
-                        { action: 'prev-day', label: 'Prev', icon: 'ph-caret-left', hint: 'CH-' },
-                        { action: 'next-day', label: 'Next', icon: 'ph-caret-right', hint: 'CH+' },
-                        { action: 'toggle-live', label: window.AppState.isLiveMode ? 'Exit Live' : 'Live', icon: 'ph-broadcast' },
-                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
-                        { action: 'account', label: 'Account', icon: 'ph-user' }
-                    ], 'Home');
-                }
             } catch (e) { container.innerHTML = "Error processing matches."; console.error(e); }
         },
 
@@ -225,15 +209,6 @@
                     </div>`;
                 Navigation.scan();
                 Utils.ImageLoader.scan(container);
-                // Quick actions for Match page
-                if (window.AppUI && window.AppUI.setQuickActions) {
-                    window.AppUI.setQuickActions([
-                        { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
-                        { action: 'toggle-track', label: Utils.isTracked(window.AppState.currentMatchId) ? 'Untrack' : 'Track', icon: 'ph-bell-ringing', hint: 'GUIDE' },
-                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
-                        { action: 'home', label: 'Home', icon: 'ph-house' }
-                    ], 'Match');
-                }
             } catch(e) { 
                 container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
                 console.error(e);
@@ -262,7 +237,8 @@
                 window.AppState.currentLeagueStats = { scorers: scorers || [], assists: assists || [] };
                 const standings = standingsData?.[0]?.league?.standings || [];
                 
-                const knockoutKeywords = ['Round of 16', '8th Finals', 'Quarter-finals', 'Semi-finals', 'Final'];
+                // Knockout tab: detect strictly from fixture rounds (do NOT rely on league.type).
+                const knockoutKeywords = ['Round of 16', '8th Finals', 'Quarter-finals', 'Semi-finals', 'Final', 'Match for 3rd place'];
                 const knockoutMatches = fixtures ? fixtures.filter(f => {
                     const r = f.league.round || '';
                     return knockoutKeywords.some(k => r.includes(k));
@@ -296,26 +272,13 @@
                         <div id="l-std" class="tab-content ${activeTabId === 'l-std' ? 'active' : ''}">${Components.renderStandings(standings)}</div>
                         <div id="l-ko" class="tab-content ${activeTabId === 'l-ko' ? 'active' : ''}">${Components.renderKnockout(knockoutMatches)}</div>
                         <div id="l-mat" class="tab-content ${activeTabId === 'l-mat' ? 'active' : ''}">
-                             <div class="scrollable-content focusable" tabindex="0">
-                                <div class="matches-container" style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center;">
-                                    ${fixtures ? fixtures.slice(0, 50).map(f => Components.card(f)).join('') : 'No Matches'}
-                                </div>
-                             </div>
+                            ${Components.renderMatchesByStage(fixtures, { limit: 220 })}
                         </div>
                         <div id="l-scr" class="tab-content ${activeTabId === 'l-scr' ? 'active' : ''}">${Components.renderPlayerStats(scorers, 'goals')}</div>
                         <div id="l-ast" class="tab-content ${activeTabId === 'l-ast' ? 'active' : ''}">${Components.renderPlayerStats(assists, 'assists')}</div>
                     </div>`;
                 Navigation.scan();
                 Utils.ImageLoader.scan(container);
-
-                if (window.AppUI && window.AppUI.setQuickActions) {
-                    window.AppUI.setQuickActions([
-                        { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
-                        { action: 'toggle-fav-league', label: Helpers.isFav('league', id) ? 'Unfavorite' : 'Favorite', icon: 'ph-heart' },
-                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
-                        { action: 'home', label: 'Home', icon: 'ph-house' }
-                    ], 'League');
-                }
             } catch(e) { 
                 container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
                 console.error(e);
@@ -438,14 +401,6 @@
 
             Navigation.scan();
             Utils.ImageLoader.scan(container);
-
-            if (window.AppUI && window.AppUI.setQuickActions) {
-                window.AppUI.setQuickActions([
-                    { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
-                    { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
-                    { action: 'home', label: 'Home', icon: 'ph-house' }
-                ], 'Account');
-            }
         },
 
         renderFavAddPage: async (container, params) => {
@@ -593,13 +548,6 @@
             btn.onclick = () => doSearch(input.value);
 
             Navigation.scan();
-            if (window.AppUI && window.AppUI.setQuickActions) {
-                window.AppUI.setQuickActions([
-                    { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
-                    { action: 'account', label: 'Account', icon: 'ph-user' },
-                    { action: 'home', label: 'Home', icon: 'ph-house' }
-                ], 'Add Favorite');
-            }
 
             setTimeout(() => Navigation.focus(input), 60);
         }

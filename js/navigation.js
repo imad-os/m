@@ -5,6 +5,7 @@ const Navigation = (function() {
     let currentFocus = null;
     let activeScope = null; 
     let scrollThrottle = null;
+    let scrollHold = { active: false, el: null, dir: 0, raf: 0, lastTs: 0 };
 
     const KEYS_MAP = [
         { name: 'Up', keys: ['ArrowUp', 'Up', 38] },
@@ -30,12 +31,72 @@ const Navigation = (function() {
 
     function init() {
         document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
         document.addEventListener('mouseover', (e) => {
             const target = e.target.closest(focusableSelector);
             if (target && target !== currentFocus) {
                 focus(target, false);
             }
         });
+    }
+
+    function stopScrollHold() {
+        scrollHold.active = false;
+        scrollHold.el = null;
+        scrollHold.dir = 0;
+        scrollHold.lastTs = 0;
+        if (scrollHold.raf) {
+            cancelAnimationFrame(scrollHold.raf);
+            scrollHold.raf = 0;
+        }
+    }
+
+    function startScrollHold(el, dir) {
+        if (!el) return;
+        // Ensure immediate/fast scroll on TVs (avoid CSS smooth)
+        if (el.style.scrollBehavior !== 'auto') el.style.scrollBehavior = 'auto';
+
+        scrollHold.el = el;
+        scrollHold.dir = dir;
+        if (scrollHold.active) return;
+        scrollHold.active = true;
+        scrollHold.lastTs = 0;
+
+        const ratePxPerMs = 0.65; // ~650px/s
+        const tick = (ts) => {
+            if (!scrollHold.active || !scrollHold.el) return;
+            if (!scrollHold.lastTs) scrollHold.lastTs = ts;
+            const dt = Math.min(32, ts - scrollHold.lastTs);
+            scrollHold.lastTs = ts;
+
+            const step = dt * ratePxPerMs * scrollHold.dir;
+            const maxScroll = scrollHold.el.scrollHeight - scrollHold.el.clientHeight;
+
+            if (maxScroll <= 0) {
+                stopScrollHold();
+                return;
+            }
+
+            const next = Math.max(0, Math.min(maxScroll, scrollHold.el.scrollTop + step));
+            scrollHold.el.scrollTop = next;
+
+            // Stop at bounds to avoid "sticky" key-hold feeling
+            if ((scrollHold.dir < 0 && next <= 0) || (scrollHold.dir > 0 && next >= maxScroll)) {
+                stopScrollHold();
+                return;
+            }
+
+            scrollHold.raf = requestAnimationFrame(tick);
+        };
+
+        scrollHold.raf = requestAnimationFrame(tick);
+    }
+
+    function handleKeyUp(e) {
+        const key = normalizeKey(e);
+        if (key === 'Up' || key === 'Down') {
+            stopScrollHold();
+        }
     }
 
     function setScope(element) {
@@ -327,19 +388,25 @@ const Navigation = (function() {
         const key = normalizeKey(e);
         const current = document.activeElement;
 
+        // Scrollable containers: keep Up/Down as scroll (and smooth on hold)
         if (current.classList.contains('scrollable-content') && (key === 'Up' || key === 'Down')) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
+            const maxScroll = current.scrollHeight - current.clientHeight;
 
-            if (scrollThrottle) return;
-            scrollThrottle = setTimeout(() => { scrollThrottle = null; }, 20);
+            // If we're at a hard boundary, allow navigation to escape (fall-through)
+            if (key === 'Up' && current.scrollTop <= 0) {
+                stopScrollHold();
+            } else if (key === 'Down' && maxScroll > 0 && current.scrollTop >= maxScroll - 1) {
+                stopScrollHold();
+            } else {
+                e.preventDefault();
+                e.stopImmediatePropagation();
 
-            if (current.style.scrollBehavior !== 'auto') current.style.scrollBehavior = 'auto';
+                // Minimal debounce for noisy repeat events; actual movement handled by rAF.
+                if (scrollThrottle) return;
+                scrollThrottle = setTimeout(() => { scrollThrottle = null; }, 25);
 
-            const step = 80;
-            if (key === 'Down') { current.scrollTop += step; return; }
-            if (key === 'Up') {
-                if (current.scrollTop > 0) { current.scrollTop -= step; return; }
+                startScrollHold(current, key === 'Down' ? 1 : -1);
+                return;
             }
         }
 
