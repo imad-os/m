@@ -3,7 +3,7 @@
 (function() {
     if (!window.AppServices) { console.error("AppServices not loaded!"); return; }
 
-    const { State, API, Storage, Helpers, auth } = window.AppServices;
+    const { State, API, Storage, Helpers, auth, FavoritesService } = window.AppServices;
     const Components = window.AppComponents;
     const Utils = window.Utils;
     // Router is now on window.AppRouter
@@ -296,17 +296,7 @@
                 if (!State.currentUser) { if (window.AppUI && window.AppUI.showModal) window.AppUI.showModal('auth-modal'); return; }
                 const type = removeBtn.dataset.type;
                 const id = Number(removeBtn.dataset.id);
-                const cfg = State.appConfig || {};
-                cfg.favorite_teams = cfg.favorite_teams || [];
-                cfg.favorite_leagues = cfg.favorite_leagues || [];
-                cfg.favorite_players = cfg.favorite_players || [];
-
-                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
-                const key = map[type] || 'favorite_teams';
-                cfg[key] = (cfg[key] || []).filter(x => Number(x.id) !== id);
-
-                State.appConfig = cfg;
-                await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                await window.AppServices.FavoritesService.remove(type, id);
                 Helpers.showToast('Removed from favorites', 'success');
 
                 if (window.AppRouter.current && window.AppRouter.current.name === 'account') {
@@ -344,25 +334,14 @@
                 const name = addCard.dataset.name || 'Unknown';
                 const logo = addCard.dataset.logo || '';
                 const extra = addCard.dataset.extra || '';
-                const cfg = State.appConfig || {};
-                cfg.favorite_teams = cfg.favorite_teams || [];
-                cfg.favorite_leagues = cfg.favorite_leagues || [];
-                cfg.favorite_players = cfg.favorite_players || [];
-
-                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
-                const key = map[type] || 'favorite_teams';
-                const arr = cfg[key] || [];
-                if (!arr.some(x => Number(x.id) === id)) {
+                if (window.AppServices.FavoritesService.isFavorite(type, id)) {
+                    Helpers.showToast('Already in favorites', 'info');
+                } else {
                     const obj = { id, name };
                     if (type === 'player') { obj.photo = logo; if (extra) obj.team = extra; }
                     else { obj.logo = logo; if (extra) obj.country = extra; }
-                    arr.push(obj);
-                    cfg[key] = arr;
-                    State.appConfig = cfg;
-                    await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                    await window.AppServices.FavoritesService.add(type, obj);
                     Helpers.showToast('Added to favorites', 'success');
-                } else {
-                    Helpers.showToast('Already in favorites', 'info');
                 }
 
                 window.AppRouter.go('account');
@@ -377,22 +356,9 @@
                 const type = favBtn.dataset.type;
                 const id = Number(favBtn.dataset.id);
                 const name = favBtn.dataset.name || 'Unknown';
-                const cfg = State.appConfig || {};
-                cfg.favorite_teams = cfg.favorite_teams || [];
-                cfg.favorite_leagues = cfg.favorite_leagues || [];
-                cfg.favorite_players = cfg.favorite_players || [];
-
-                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
-                const key = map[type] || 'favorite_teams';
-                const arr = cfg[key] || [];
-
-                const idx = arr.findIndex(x => Number(x.id) === id);
-                if (idx > -1) { arr.splice(idx, 1); favBtn.classList.remove('active'); Helpers.showToast('Removed from favorites', 'success'); }
-                else { arr.push({ id, name }); favBtn.classList.add('active'); Helpers.showToast('Added to favorites', 'success'); }
-
-                cfg[key] = arr;
-                State.appConfig = cfg;
-                await Storage.saveUserConfig(State.currentUser.uid, cfg);
+                const res = await window.AppServices.FavoritesService.toggle(type, { id, name });
+                favBtn.classList.toggle('active', res && res.isFav);
+                Helpers.showToast(res && res.added ? 'Added to favorites' : 'Removed from favorites', res && res.added ? 'success' : 'info');
                 return;
             }
         });
@@ -420,18 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const type = favBtn.dataset.type;
                 const id = Number(favBtn.dataset.id);
-                const cfg = State.appConfig || {};
-                cfg.favorite_teams = cfg.favorite_teams || [];
-                cfg.favorite_leagues = cfg.favorite_leagues || [];
-                cfg.favorite_players = cfg.favorite_players || [];
-
-                const map = { team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' };
-                const key = map[type] || 'favorite_teams';
-                cfg[key] = (cfg[key] || []).filter(x => Number(x.id) !== id);
-
-                State.appConfig = cfg;
-                await Storage.saveUserConfig(State.currentUser.uid, cfg);
-
+                await window.AppServices.FavoritesService.remove(type, id);
                 favBtn.classList.remove('active');
                 Helpers.showToast('Removed from favorites', 'success');
                 return;
@@ -468,8 +423,25 @@ document.addEventListener('DOMContentLoaded', () => {
              if(activeNav) Navigation.focus(activeNav);
         };
 
-        // Expose modal helpers for page views (Account page uses this)
-        window.AppUI = { showModal, closeModal };
+        const setQuickActions_old = (actions, label = 'Quick actions') => {
+            const bar = document.getElementById('quick-actions-bar');
+            if (!bar) return;
+            if (!actions || !actions.length) { bar.innerHTML = ''; return; }
+
+            const btnHtml = actions.map(a => {
+                const icon = a.icon ? `<i class="ph ${a.icon}"></i>` : '';
+                const hint = a.hint ? `<span class="qa-hint">${a.hint}</span>` : '';
+                const text = a.label || '';
+                return `<button class="qa-btn focusable" tabindex="0" data-qa="${a.action}">${icon}<span>${text}</span>${hint}</button>`;
+            }).join('');
+
+            bar.innerHTML = `<div class="qa-label">${label}</div>${btnHtml}`;
+            // Include quick actions in focus graph.
+            Navigation.scan();
+        };
+
+        // Expose modal + quick action helpers for page views
+        window.AppUI = { showModal, closeModal, setQuickActions:undefined };
 
 
         document.getElementById('nav-calendar').onclick = () => showModal('date-modal');

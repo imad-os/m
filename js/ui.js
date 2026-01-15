@@ -2,6 +2,7 @@
 
 window.AppComponents = (function() {
     const Utils = window.Utils;
+    const { State, Helpers } = window.AppServices;
     const STAT_GROUPS = {
         "General": ["Ball Possession", "Fouls", "Corner Kicks", "Offsides"],
         "Expected Performance": ["expected_goals", "goals_prevented"],
@@ -20,8 +21,8 @@ window.AppComponents = (function() {
         const matchDate = new Date(m.fixture.date);
         const isToday = matchDate.toDateString() === new Date().toDateString();
         const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const homeFav = State.appConfig.favorite_teams.filter(t=>t.id==m.teams.home.id).length? "favorite" :"";
-        const awayFav = State.appConfig.favorite_teams.filter(t=>t.id==m.teams.away.id).length? "favorite" :"";
+        const homeFav = Helpers.isFav('team', m.teams.home.id) ? "favorite" :"";
+        const awayFav = Helpers.isFav('team', m.teams.away.id) ? "favorite" :"";
         if (isActuallyLive) {
             if (m.fixture.status.short === 'HT') statusText = `<span class="live-time">Half Time</span>`;
             else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${Utils.formTimeString(m.fixture.status)}</span>`;
@@ -35,7 +36,7 @@ window.AppComponents = (function() {
 
         const homeScore = m.fixture.status.short === 'NS' ? '-' : (m.goals.home ?? 0);
         const awayScore = m.fixture.status.short === 'NS' ? '-' : (m.goals.away ?? 0);
-        const badgeHtml = showBadge ? `<div class="card-league-badge"><img src="${m.league.logo}"><span>${m.league.name}</span></div>` : '';
+        const badgeHtml = showBadge ? `<div class="card-league-badge">${Utils.ImageLoader.tag(m.league.logo, m.league.name, 'league-logo')}<span>${m.league.name}</span></div>` : '';
         
         const trackIndicator = Utils.isTracked(m.fixture.id) ? `<div class="track-indicator"></div>` : '';
         const soonIndicator = Utils.isSoon(m) ? `<div class="starting-soon"><svg class="hourglass-pulse"><use href="#icon-hourglass"></use></svg></div>` : '';
@@ -49,8 +50,8 @@ window.AppComponents = (function() {
             ${badgeHtml}
             <div class="match-status">${statusText}</div>
             <div class="card-teams">
-                <div class="card-team ${homeFav}"><div class="card-team-info"><img src="${m.teams.home.logo}"><span>${m.teams.home.name}</span></div><span class="card-score">${homeScore}</span></div>
-                <div class="card-team ${awayFav}"><div class="card-team-info"><img src="${m.teams.away.logo}"><span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>
+                <div class="card-team ${homeFav}"><div class="card-team-info">${Utils.ImageLoader.tag(m.teams.home.logo, m.teams.home.name, 'team-logo')}<span>${m.teams.home.name}</span></div><span class="card-score">${homeScore}</span></div>
+                <div class="card-team ${awayFav}"><div class="card-team-info">${Utils.ImageLoader.tag(m.teams.away.logo, m.teams.away.name, 'team-logo')}<span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>
             </div>
             ${penIndicator}
         </div>`;
@@ -409,9 +410,9 @@ window.AppComponents = (function() {
         return `
             <div class="scrollable-content focusable" tabindex="0">
                 <div style="display:flex; align-items:center; justify-content:center; gap:1.5rem; background:#222; padding:0.8rem; border-radius:8px; margin-bottom:1rem; border:1px solid #333;">
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><img src="${teamHome.logo}" style="width:35px; height:35px; object-fit:contain;"><span style="font-size:1.2em; font-weight:bold; color:#4cd964">${homeWins} Wins</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">${Utils.ImageLoader.tag(teamHome.logo, teamHome.name, '', 'style="width:35px; height:35px; object-fit:contain;"')}<span style="font-size:1.2em; font-weight:bold; color:#4cd964">${homeWins} Wins</span></div>
                     <div style="font-size:1.2em; font-weight:bold; color:#aaa; padding:0 1rem; border-left:1px solid #444; border-right:1px solid #444;">${draws} Draws</div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.2em; font-weight:bold; color:#e50914">${awayWins} Wins</span><img src="${teamAway.logo}" style="width:35px; height:35px; object-fit:contain;"></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.2em; font-weight:bold; color:#e50914">${awayWins} Wins</span>${Utils.ImageLoader.tag(teamAway.logo, teamAway.name, '', 'style="width:35px; height:35px; object-fit:contain;"')}</div>
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center;">${h.map(m=>card(m)).join('')}</div>
             </div>`;
@@ -422,7 +423,7 @@ window.AppComponents = (function() {
         let html = '<div class="scrollable-content focusable" tabindex="0" style="padding-bottom: 2rem;">';
         const teamsFav = State.appConfig.favorite_teams.map(t=>t.id) ;
         s.forEach(group => {
-            const group_html =group.map(t => `<tr class="${teamsFav.includes(t.team.id)?"favorite":""}"><td>${t.rank}</td><td style="text-align:left; display:flex; align-items:center; gap:0.5rem;"><img src="${t.team.logo}" style="width:50px; height:50px; object-fit:contain;">${t.team.name}</td><td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td><td>${t.goalsDiff}</td><td><b>${t.points}</b></td></tr>`).join('');
+            const group_html = group.map(t => `<tr class="${teamsFav.includes(t.team.id)?"favorite":""}"><td>${t.rank}</td><td style="text-align:left; display:flex; align-items:center; gap:0.5rem;">${Utils.ImageLoader.tag(t.team.logo, t.team.name, '', 'style="width:50px; height:50px; object-fit:contain;"')}${t.team.name}</td><td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td><td>${t.goalsDiff}</td><td><b>${t.points}</b></td></tr>`).join('');
             if (s.length > 1) html += `<h3 style="margin-top: 1rem; color: var(--bg-focus); padding-left: 0.5rem;">${group[0].group}</h3>`;
             html += `<table class="standings-table"><thead><tr><th style="width:10%">#</th><th style="text-align:left">Team</th><th style="width:10%">P</th><th style="width:10%">W</th><th style="width:10%">D</th><th style="width:10%">L</th><th style="width:10%">GD</th><th style="width:10%">Pts</th></tr></thead><tbody>${group_html}</tbody></table>`;
         });
@@ -445,7 +446,7 @@ window.AppComponents = (function() {
                     const mainVal = type === 'goals' ? (s.goals.total||0) : (s.goals.assists||0);
                     const natStr = p.nationality ? p.nationality.substring(0,3).toUpperCase() : '';
                     const ratingClass=Utils.getRatingClass(rating);
-                    return `<tr class="${playersFav.includes(p.id)?"favorite":""}" ><td>${index + 1}</td><td class="player-info-cell"><div class="player-info-avatar"><img src="${s.team.logo}" class="player-avatar-team-logo-small"><img src="${p.photo}" class="player-avatar-photo-small"></div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name} | [${natStr}]</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td> <span  class="sub-rating ${ratingClass}">${rating}</span></td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
+                    return `<tr class="${playersFav.includes(p.id)?"favorite":""}" ><td>${index + 1}</td><td class="player-info-cell"><div class="player-info-avatar">${Utils.ImageLoader.tag(s.team.logo, s.team.name, 'player-avatar-team-logo-small')} ${Utils.ImageLoader.tag(p.photo, p.name, 'player-avatar-photo-small')}</div><div style="line-height:1.2"><div style="font-weight:bold;">${p.name}</div><div style="font-size:0.8em; color:#aaa;">${s.team.name} | [${natStr}]</div></div></td><td>${pos}</td><td>${s.games.appearences||0}</td><td> <span  class="sub-rating ${ratingClass}">${rating}</span></td><td>${shots}</td><td style="font-weight:bold; font-size:1.2em; color:var(--bg-focus);">${mainVal}</td></tr>`;
                 }).join('')}</tbody>
             </table></div>`;
     }

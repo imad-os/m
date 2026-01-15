@@ -35,17 +35,19 @@ const Helpers = {
         return (today.getMonth() < 6) ? today.getFullYear() - 1 : today.getFullYear();
     },
     isFav: (type, id) => {
+        // Backward-compatible helper; delegates to FavoritesService.
+        try {
+            if (window.AppServices && window.AppServices.FavoritesService) {
+                return window.AppServices.FavoritesService.isFavorite(type, id);
+            }
+        } catch (e) {}
+
+        // Fallback (should rarely be used)
         const idNum = Number(id);
         const { appConfig } = State;
-        if (type === 'team') {
-            return appConfig.favorite_teams && appConfig.favorite_teams.some(team => team.id === idNum);
-        }
-        if (type === 'league') {
-            return appConfig.favorite_leagues && appConfig.favorite_leagues.some(league => league.id === idNum);
-        }
-        if (type === 'player') {
-            return appConfig.favorite_players && appConfig.favorite_players.some(p => p.id === idNum);
-        }
+        if (type === 'team') return !!(appConfig.favorite_teams && appConfig.favorite_teams.some(team => team.id === idNum));
+        if (type === 'league') return !!(appConfig.favorite_leagues && appConfig.favorite_leagues.some(league => league.id === idNum));
+        if (type === 'player') return !!(appConfig.favorite_players && appConfig.favorite_players.some(p => p.id === idNum));
         return false;
     },
     
@@ -124,19 +126,22 @@ const API = {
             }
 
             
-            // Optional: Check API specific error fields if necessary
-            if (data.errors && Object.keys(data.errors).length > 0) {
-                let errorMessages = "Some data may be missing due to API errors.";
-                if(State.currentUser && State.currentUser.email === "imad@gmail.com"){
-                    errorMessages = " Details: " + JSON.stringify(data.errors);
+            // Partial-error handling (non-destructive):
+            // - Keep rendering whatever response is available.
+            // - Surface errors via toast (and store them for debugging).
+            API.lastErrors = null;
+            if (data && data.errors && Object.keys(data.errors).length > 0) {
+                API.lastErrors = data.errors;
+                let msg = "Some data may be missing due to API partial errors.";
+                if (State.currentUser && State.currentUser.email === "imad@gmail.com") {
+                    msg = "API partial errors: " + JSON.stringify(data.errors);
                 }
-                console.warn("API returned logical errors:", data.errors);
-                console.error("errorMessages:", errorMessages , State.currentUser && State.currentUser.email === "imad@gmail.com");
-                 Helpers.showPageError(errorMessages, 'alert');
-                 return null;
+                console.warn("API returned partial errors:", data.errors);
+                // Do not nuke the page; show a non-blocking notification.
+                Helpers.showToast(msg, 'alert');
             }
 
-            return data.response || [];
+            return (data && data.response) ? data.response : [];
         } catch (error) {
             console.error("API Error detected in fetch:", error, data);
             
@@ -159,6 +164,102 @@ const API = {
             // Return null to signal the app that the error was handled
             return null;
         }
+    }
+};
+
+// --- FavoritesService (single source of truth for favorites) ---
+const FavoritesService = {
+    // Normalizes historical key variants to the current ones.
+    // Supported variants:
+    // - favourite_leagues / favourit_teams (old typos)
+    // - favorite_* (current)
+    normalizeConfig: (cfg) => {
+        const c = cfg || {};
+        const toArr = (v) => Array.isArray(v) ? v : [];
+        const mergeUniqueById = (a, b) => {
+            const out = [];
+            const seen = new Set();
+            [...toArr(a), ...toArr(b)].forEach(it => {
+                const id = Number(it && it.id);
+                if (!id || seen.has(id)) return;
+                seen.add(id);
+                out.push({ ...it, id });
+            });
+            return out;
+        };
+
+        // Teams
+        c.favorite_teams = mergeUniqueById(c.favorite_teams, c.favourit_teams);
+        // Leagues
+        c.favorite_leagues = mergeUniqueById(c.favorite_leagues, c.favourite_leagues);
+        // Players
+        c.favorite_players = mergeUniqueById(c.favorite_players, c.favourite_players);
+
+        // Cleanup legacy keys (keep them in-memory only; do not persist)
+        delete c.favourit_teams;
+        delete c.favourite_leagues;
+        delete c.favourite_players;
+        return c;
+    },
+
+    ensure: () => {
+        State.appConfig = FavoritesService.normalizeConfig(State.appConfig || {});
+        State.appConfig.favorite_teams = State.appConfig.favorite_teams || [];
+        State.appConfig.favorite_leagues = State.appConfig.favorite_leagues || [];
+        State.appConfig.favorite_players = State.appConfig.favorite_players || [];
+        return State.appConfig;
+    },
+
+    _keyForType: (type) => ({ team: 'favorite_teams', league: 'favorite_leagues', player: 'favorite_players' }[type] || 'favorite_teams'),
+
+    list: (type) => {
+        const cfg = FavoritesService.ensure();
+        return cfg[FavoritesService._keyForType(type)] || [];
+    },
+
+    isFavorite: (type, id) => {
+        const idNum = Number(id);
+        if (!idNum) return false;
+        const arr = FavoritesService.list(type);
+        return arr.some(x => Number(x.id) === idNum);
+    },
+
+    add: async (type, item) => {
+        if (!State.currentUser) return false;
+        const id = Number(item && item.id);
+        if (!id) return false;
+        const cfg = FavoritesService.ensure();
+        const key = FavoritesService._keyForType(type);
+        const arr = cfg[key] || [];
+        if (arr.some(x => Number(x.id) === id)) return false;
+        arr.push({ ...item, id });
+        cfg[key] = arr;
+        State.appConfig = cfg;
+        await Storage.saveUserConfig(State.currentUser.uid, cfg);
+        return true;
+    },
+
+    remove: async (type, id) => {
+        if (!State.currentUser) return false;
+        const idNum = Number(id);
+        if (!idNum) return false;
+        const cfg = FavoritesService.ensure();
+        const key = FavoritesService._keyForType(type);
+        cfg[key] = (cfg[key] || []).filter(x => Number(x.id) !== idNum);
+        State.appConfig = cfg;
+        await Storage.saveUserConfig(State.currentUser.uid, cfg);
+        return true;
+    },
+
+    toggle: async (type, item) => {
+        const id = Number(item && item.id);
+        if (!id) return { active: false, changed: false };
+        if (FavoritesService.isFavorite(type, id)) {
+            const ok = await FavoritesService.remove(type, id);
+            return { active: false, changed: ok };
+        }
+        const ok = await FavoritesService.add(type, item);
+        return { active: true, changed: ok };
     }
 };
 
@@ -223,7 +324,9 @@ const Storage = {
 
 State.appConfig = Storage.loadUserConfigLocally() || State.appConfig;
 // Normalize config keys for backward compatibility
+State.appConfig = FavoritesService.normalizeConfig(State.appConfig);
 State.appConfig.favorite_teams = State.appConfig.favorite_teams || [];
 State.appConfig.favorite_leagues = State.appConfig.favorite_leagues || [];
 State.appConfig.favorite_players = State.appConfig.favorite_players || [];
-window.AppServices = { db, auth, State, API, Storage, Helpers };
+
+window.AppServices = { db, auth, State, API, Storage, Helpers, FavoritesService };

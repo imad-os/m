@@ -57,7 +57,12 @@
                 });
 
                 const rows = [];
-                if (teamFavorites.length > 0) rows.push({ title: "Favorites", matches: teamFavorites, isSpecial: true });
+                // Favorites rail: always show when user is signed in, even if empty.
+                if (State.currentUser) {
+                    rows.push({ title: "Favorites", matches: teamFavorites, isSpecial: true, emptyKind: (teamFavorites.length ? null : 'favorites') });
+                } else if (teamFavorites.length > 0) {
+                    rows.push({ title: "Favorites", matches: teamFavorites, isSpecial: true });
+                }
                 
                 const liveMatches = [...teamFavorites, ...leagueMatches].filter(m => ['1H','HT','2H','ET','P','BT'].includes(m.fixture.status.short));
                 const uniqueLive = Array.from(new Map(liveMatches.map(item => [item.fixture.id, item])).values());
@@ -94,25 +99,45 @@
                 } else {
                     const htmlParts = [];
                     rows.forEach((row, index) => {
+                        if(row.matches.length===0){
+                            return true;
+                        }
                         const headerHtml = row.isSpecial 
                             ? `<div class="row-header-content focusable" tabindex="0"><span>${row.title}</span></div>`
                             : `<div class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}">
-                                ${row.logo ? `<img src="${row.logo}" class="row-league-logo">` : ''} <span>${row.title}</span>
+                                ${row.logo ? Utils.ImageLoader.tag(row.logo, row.title, 'row-league-logo') : ''} <span>${row.title}</span>
                                </div>
                                <div class="fav-toggle focusable ${Helpers.isFav('league', row.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${row.id}" data-name="${row.title}">
                                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                                </div>`;
-                        const cardsHtml = row.matches.map(m => {
-                            window.AppState.renderedMatches.push(m);
-                            return Components.card(m, row.isMixed);
-                        }).join('');
+                        const cardsHtml = (row.matches && row.matches.length)
+                            ? row.matches.map(m => {
+                                window.AppState.renderedMatches.push(m);
+                                return Components.card(m, row.isMixed);
+                              }).join('')
+                            : (row.emptyKind === 'favorites'
+                               ? ``
+                               : ``);
                         htmlParts.push(`<div class="row-section" data-row-index="${index}"><div class="row-header" style="padding-left:0.5rem;">${headerHtml}</div><div class="rail">${cardsHtml}</div></div>`);
                     });
                     if (!hasRestrictions && !window.AppState.homePageLoadAllState && sortedKeys.length > 5) htmlParts.push(`<div style="text-align:center; padding: 2rem; margin-bottom: 2rem;"><button id="btn-load-all" class="styled-button focusable" tabindex="0">Load All Leagues</button></div>`);
                     container.innerHTML = htmlParts.join('');
                 }
+                const emptyFavBtn = document.getElementById('btn-empty-favs');
+                if (emptyFavBtn) emptyFavBtn.onclick = () => window.AppRouter.go('account');
                 if(document.getElementById('btn-load-all')) document.getElementById('btn-load-all').onclick = () => { window.AppState.matchesCache = null; window.AppState.homePageLoadAllState = true; window.AppViews.renderHome(container); };
                 Navigation.scan();
+                Utils.ImageLoader.scan(container);
+
+                if (window.AppUI && window.AppUI.setQuickActions) {
+                    window.AppUI.setQuickActions([
+                        { action: 'prev-day', label: 'Prev', icon: 'ph-caret-left', hint: 'CH-' },
+                        { action: 'next-day', label: 'Next', icon: 'ph-caret-right', hint: 'CH+' },
+                        { action: 'toggle-live', label: window.AppState.isLiveMode ? 'Exit Live' : 'Live', icon: 'ph-broadcast' },
+                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
+                        { action: 'account', label: 'Account', icon: 'ph-user' }
+                    ], 'Home');
+                }
             } catch (e) { container.innerHTML = "Error processing matches."; console.error(e); }
         },
 
@@ -178,16 +203,16 @@
                 container.innerHTML = `
                     <div class="page-container">
                         <div class="details-hero ${isActuallyLive?'is-live':''}" style="align-items:center; text-align:center;">
-                            <div class="details-hero-league"><img src="${league.logo}"> <span>${league.name}</span></div>
+                            <div class="details-hero-league">${Utils.ImageLoader.tag(league.logo, league.name, 'league-logo')} <span>${league.name}</span></div>
                             <div class="details-hero-content" style="justify-content:center; padding:0;">
-                                <div class="details-team"><img src="${teams.home.logo}"><h2>${teams.home.name}</h2></div>
+                                <div class="details-team">${Utils.ImageLoader.tag(teams.home.logo, teams.home.name, 'team-logo')}<h2>${teams.home.name}</h2></div>
                                 <div class="details-score-box">
                                     <div class="details-score">${goals.home?? "-"} - ${goals.away?? "-"}</div>
                                     ${penaltyDisplay}
                                     <div class="details-status">${statusDisplay}</div>
                                     <div class="details-date">${datestr}</div>
                                 </div>
-                                <div class="details-team"><img src="${teams.away.logo}"><h2>${teams.away.name}</h2></div>
+                                <div class="details-team">${Utils.ImageLoader.tag(teams.away.logo, teams.away.name, 'team-logo')}<h2>${teams.away.name}</h2></div>
                             </div>
                             <div class="venue">${venue}</div>
                         </div>
@@ -199,6 +224,16 @@
                         <div id="h2h" class="tab-content ${activeTabId === 'h2h' ? 'active' : ''}">${Components.renderH2H(h2hData, teams.home, teams.away)}</div>
                     </div>`;
                 Navigation.scan();
+                Utils.ImageLoader.scan(container);
+                // Quick actions for Match page
+                if (window.AppUI && window.AppUI.setQuickActions) {
+                    window.AppUI.setQuickActions([
+                        { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
+                        { action: 'toggle-track', label: Utils.isTracked(window.AppState.currentMatchId) ? 'Untrack' : 'Track', icon: 'ph-bell-ringing', hint: 'GUIDE' },
+                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
+                        { action: 'home', label: 'Home', icon: 'ph-house' }
+                    ], 'Match');
+                }
             } catch(e) { 
                 container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
                 console.error(e);
@@ -247,10 +282,14 @@
                 const activeTabId = tabs.length > 0 ? tabs[0].id : null;
                 const tabsHtml = tabs.map(t => `<button class="tab-button ${t.id === activeTabId ? 'active' : ''} focusable" data-tab="${t.id}" tabindex="0">${t.label}</button>`).join('');
                 
+                // Expose current league for quick-actions
+                window.AppState.currentLeagueId = Number(id);
+                window.AppState.currentLeagueName = league.name;
+
                 container.innerHTML = `
                     <div class="page-container">
                         <div class="details-hero" style="align-items:center; justify-content:center;">
-                            <img src="${league.logo}" style="height:100px; margin-bottom:1rem;">
+                            ${Utils.ImageLoader.tag(league.logo, league.name, 'league-logo', 'style="height:100px; margin-bottom:1rem;"')}
                             <h1 style="margin:0; font-size:2.5em;">${league.name}</h1>
                         </div>
                         <div class="tabs">${tabsHtml} ${favBtn}</div>
@@ -267,6 +306,16 @@
                         <div id="l-ast" class="tab-content ${activeTabId === 'l-ast' ? 'active' : ''}">${Components.renderPlayerStats(assists, 'assists')}</div>
                     </div>`;
                 Navigation.scan();
+                Utils.ImageLoader.scan(container);
+
+                if (window.AppUI && window.AppUI.setQuickActions) {
+                    window.AppUI.setQuickActions([
+                        { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
+                        { action: 'toggle-fav-league', label: Helpers.isFav('league', id) ? 'Unfavorite' : 'Favorite', icon: 'ph-heart' },
+                        { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
+                        { action: 'home', label: 'Home', icon: 'ph-house' }
+                    ], 'League');
+                }
             } catch(e) { 
                 container.innerHTML = `<div class="error-message">Error: ${e.message}</div>`; 
                 console.error(e);
@@ -313,7 +362,7 @@
                         return `
                             <div class="fav-card">
                                 <div class="fav-card-media">
-                                    ${img ? `<img src="${img}" alt="">` : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
+                                    ${img ? Utils.ImageLoader.tag(img, safeName, 'fav-img') : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
                                 </div>
                                 <div class="fav-name">${it.name || 'Unknown'}</div>
                                 ${sub ? `<div class="fav-sub">${sub}</div>` : ``}
@@ -333,7 +382,7 @@
                     return `
                         <div class="fav-card">
                             <div class="fav-card-media">
-                                ${img ? `<img src="${img}" alt="">` : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
+                                ${img ? Utils.ImageLoader.tag(img, safeName, 'fav-img') : `<div class="fav-placeholder">${safeName.slice(0,1).toUpperCase()}</div>`}
                             </div>
                             <div class="fav-name">${it.name || 'Unknown'}</div>
                             ${sub ? `<div class="fav-sub">${sub}</div>` : ``}
@@ -388,6 +437,15 @@
             if (logoutBtn) logoutBtn.onclick = () => window.AppServices.auth.signOut();
 
             Navigation.scan();
+            Utils.ImageLoader.scan(container);
+
+            if (window.AppUI && window.AppUI.setQuickActions) {
+                window.AppUI.setQuickActions([
+                    { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
+                    { action: 'refresh', label: 'Refresh', icon: 'ph-arrow-clockwise' },
+                    { action: 'home', label: 'Home', icon: 'ph-house' }
+                ], 'Account');
+            }
         },
 
         renderFavAddPage: async (container, params) => {
@@ -458,6 +516,12 @@
                     return;
                 }
 
+                if (query.length < 4) {
+                    resultsEl.innerHTML = `<div class=\"fav-empty\">Type at least 4 characters to search.</div>`;
+                    Navigation.scan();
+                    return;
+                }
+
                 resultsEl.innerHTML = `<div class="loader">Searching...</div>`;
                 const season = Helpers.getCurrentSeason();
                 let endpoint = '';
@@ -506,7 +570,7 @@
                          data-logo="${(it.logo||'').replace(/"/g,'&quot;')}"
                          data-extra="${(it.extra||'').replace(/"/g,'&quot;')}">
                         <div class="fav-add-card-media">
-                            ${it.logo ? `<img src="${it.logo}" alt="">` : `<div class="fav-placeholder">${(it.name||'?').slice(0,1).toUpperCase()}</div>`}
+                            ${it.logo ? Utils.ImageLoader.tag(it.logo, it.name, 'fav-img') : `<div class="fav-placeholder">${(it.name||'?').slice(0,1).toUpperCase()}</div>`}
                         </div>
                         <div class="fav-add-card-info">
                             <div class="fav-add-card-name">${it.name || 'Unknown'}</div>
@@ -518,6 +582,7 @@
 
                 resultsEl.innerHTML = `<div class="fav-add-grid">${cards}</div>`;
                 Navigation.scan();
+                Utils.ImageLoader.scan(resultsEl);
             }
 
             input.addEventListener('input', () => {
@@ -526,6 +591,15 @@
                 debounce = setTimeout(() => doSearch(q), 350);
             });
             btn.onclick = () => doSearch(input.value);
+
+            Navigation.scan();
+            if (window.AppUI && window.AppUI.setQuickActions) {
+                window.AppUI.setQuickActions([
+                    { action: 'back', label: 'Back', icon: 'ph-arrow-left' },
+                    { action: 'account', label: 'Account', icon: 'ph-user' },
+                    { action: 'home', label: 'Home', icon: 'ph-house' }
+                ], 'Add Favorite');
+            }
 
             setTimeout(() => Navigation.focus(input), 60);
         }

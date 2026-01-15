@@ -1,6 +1,111 @@
 "use strict";
 
 window.Utils = (function() {
+
+    // --- Image loading optimizations (TV-friendly) ---
+    // Uses IntersectionObserver when available; falls back to eager loading.
+    // Also de-duplicates concurrent loads by URL.
+    const IMG_PLACEHOLDER =
+        'data:image/svg+xml;charset=utf-8,' +
+        encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+    const _imgPromises = new Map();
+    const _imgLoaded = new Set();
+
+    function preloadImage(url) {
+        const u = (url || '').trim();
+        if (!u) return Promise.resolve(false);
+        if (_imgLoaded.has(u)) return Promise.resolve(true);
+        if (_imgPromises.has(u)) return _imgPromises.get(u);
+
+        const p = new Promise((resolve) => {
+            const img = new Image();
+            img.decoding = 'async';
+            img.onload = () => { _imgLoaded.add(u); resolve(true); };
+            img.onerror = () => resolve(false);
+            img.src = u;
+        });
+        _imgPromises.set(u, p);
+        return p;
+    }
+
+    function applyLazyImg(imgEl) {
+        if (!imgEl || imgEl.dataset && imgEl.dataset._lazyBound) return;
+        const url = imgEl.getAttribute('data-src') || '';
+        if (!url) return;
+        if (!imgEl.getAttribute('src')) imgEl.setAttribute('src', IMG_PLACEHOLDER);
+        imgEl.setAttribute('decoding', 'async');
+        imgEl.setAttribute('loading', 'lazy');
+        imgEl.dataset._lazyBound = '1';
+
+        const loadNow = async () => {
+            // Hide placeholder artifact until the real image has painted.
+            imgEl.classList.add('img-loading');
+            if (!imgEl.style.opacity) imgEl.style.opacity = '0';
+
+            const ok = await preloadImage(url);
+            if (!ok) {
+                imgEl.classList.remove('img-loading');
+                imgEl.classList.add('img-loaded');
+                imgEl.style.opacity = '1';
+                return;
+            }
+
+            imgEl.onload = () => {
+                imgEl.classList.remove('img-loading');
+                imgEl.classList.add('img-loaded');
+                imgEl.style.opacity = '1';
+                imgEl.onload = null;
+            };
+            imgEl.onerror = () => {
+                imgEl.classList.remove('img-loading');
+                imgEl.classList.add('img-loaded');
+                imgEl.style.opacity = '1';
+                imgEl.onerror = null;
+            };
+
+            imgEl.src = url;
+        };
+
+        // If already in viewport or IO unavailable, load immediately.
+        if (!('IntersectionObserver' in window)) {
+            loadNow();
+            return;
+        }
+
+        ImageLoader._ensureObserver();
+        ImageLoader._observer.observe(imgEl);
+        imgEl._loadNow = loadNow;
+    }
+
+    const ImageLoader = {
+        _observer: null,
+        _ensureObserver: () => {
+            if (ImageLoader._observer || !('IntersectionObserver' in window)) return;
+            ImageLoader._observer = new IntersectionObserver((entries) => {
+                for (const ent of entries) {
+                    if (!ent.isIntersecting) continue;
+                    const el = ent.target;
+                    try {
+                        if (el && typeof el._loadNow === 'function') el._loadNow();
+                    } finally {
+                        ImageLoader._observer.unobserve(el);
+                    }
+                }
+            }, { root: null, rootMargin: '200px', threshold: 0.01 });
+        },
+        scan: (root) => {
+            const scope = root || document;
+            const imgs = scope.querySelectorAll('img[data-src]');
+            imgs.forEach(applyLazyImg);
+        },
+        // Helper for renderers: emits an <img> tag that participates in lazy loading.
+        tag: (url, alt = '', className = '', extraAttrs = '') => {
+            const safeAlt = String(alt || '').replace(/"/g, '&quot;');
+            const safeUrl = String(url || '').replace(/"/g, '&quot;');
+            const cls = (`lazy-img ${className || ''}`).trim();
+            return `<img class="${cls}" src="${IMG_PLACEHOLDER}" data-src="${safeUrl}" alt="${safeAlt}" ${extraAttrs || ''}>`;
+        }
+    };
     
     const sounds = {
         goal: null,
@@ -91,6 +196,10 @@ window.Utils = (function() {
         return filteredMatches.length > 0;
     }
     return {
+        // image
+        IMG_PLACEHOLDER,
+        preloadImage,
+        ImageLoader,
         playSound,
         formTimeString,
         getRatingClass,
