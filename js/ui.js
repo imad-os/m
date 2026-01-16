@@ -101,41 +101,195 @@ window.AppComponents = (function() {
             });
         });
 
-        // Bracket layout (Google-style): absolute-positioned match boxes per round
-        const MATCH_H = 86;       // box height in px
-        const GAP = 24;           // vertical gap baseline
+        // Bracket layout (Google-style): absolute-positioned match boxes per round.
+        // IMPORTANT: Keep these in sync with CSS (.kb-match height).
+        // The visual organization must follow the "path to the final".
+        // We do that by ordering EACH earlier round based on the round AFTER it (back-propagation),
+        // then positioning later rounds between their source matches.
+        const MATCH_H = 132; // px
+        const GAP = 34;      // px (slightly roomier on TV)
         const VSTEP = MATCH_H + GAP;
 
         const roundCount = sortedKeys.length;
-        const firstRoundKey = sortedKeys[0];
-        const baseCount = (groups[firstRoundKey] || []).length || 1;
 
-        // Compute the required canvas height
+        // --- 1) Assign Y positions per match based on the bracket path ---
+        // positionsByRound[r] = Map(fixtureId -> topPx)
+        const positionsByRound = [];
+
+        // NOTE: Team IDs may be strings or numbers depending on API/client.
+        // Normalize to numbers so cross-round matching always works.
+        const getTeams = (m) => {
+            const hRaw = m?.teams?.home?.id;
+            const aRaw = m?.teams?.away?.id;
+            const h = (hRaw === null || hRaw === undefined || hRaw === '') ? null : Number(hRaw);
+            const a = (aRaw === null || aRaw === undefined || aRaw === '') ? null : Number(aRaw);
+            return { h, a };
+        };
+
+        const hasKnownTeams = (m) => {
+            const { h, a } = getTeams(m);
+            return !!h && !!a;
+        };
+
+        const matchHasTeam = (m, teamId) => {
+            if (!teamId) return false;
+            const { h, a } = getTeams(m);
+            return h === teamId || a === teamId;
+        };
+
+        // Reorder a previous round so it follows the bracket shows in the NEXT round.
+        // This is the key requirement: the earlier column must be organized by the later column,
+        // so the viewer can follow a team's path to the final.
+        const reorderPrevByNext = (prevMatches, nextMatches) => {
+            if (!prevMatches || !prevMatches.length) return prevMatches || [];
+            if (!nextMatches || !nextMatches.length) return prevMatches;
+
+            // If the next round is not yet determined (in-progress tournament), keep current ordering.
+            const anyKnown = nextMatches.some(hasKnownTeams);
+            if (!anyKnown) return prevMatches;
+
+            const used = new Set();
+            const out = [];
+
+            const pushMatch = (m) => {
+                const id = m?.fixture?.id;
+                if (!id || used.has(id)) return;
+                used.add(id);
+                out.push(m);
+            };
+
+            for (const nm of nextMatches) {
+                const { h, a } = getTeams(nm);
+                if (!h || !a) continue;
+
+                // Find the 2 source matches from the previous round.
+                const srcA = prevMatches.find(pm => matchHasTeam(pm, h));
+                const srcB = prevMatches.find(pm => matchHasTeam(pm, a) && pm?.fixture?.id !== srcA?.fixture?.id);
+
+                if (srcA) pushMatch(srcA);
+                if (srcB) pushMatch(srcB);
+            }
+
+            // Append remaining matches (not referenced by next round) in their current order.
+            for (const pm of prevMatches) pushMatch(pm);
+
+            return out;
+        };
+
+        const findPrevMatchTop = (prevPositions, prevRoundMatches, teamId) => {
+            if (!teamId) return null;
+            // Find the match in the previous round that contains this team.
+            // We prefer the earliest match (stable) if duplicates exist (rare).
+            for (const pm of prevRoundMatches) {
+                const { h, a } = getTeams(pm);
+                if (h === teamId || a === teamId) {
+                    const top = prevPositions.get(pm.fixture?.id);
+                    if (Number.isFinite(top)) return top;
+                }
+            }
+            return null;
+        };
+
+        const resolveCollisions = (tops, minGap) => {
+            // tops: Array<{ id, top }>
+            tops.sort((x, y) => x.top - y.top);
+            for (let i = 1; i < tops.length; i++) {
+                const prev = tops[i - 1];
+                const cur = tops[i];
+                if (cur.top < prev.top + minGap) {
+                    cur.top = prev.top + minGap;
+                }
+            }
+            // Normalize so smallest top is 0
+            const minTop = tops.length ? tops[0].top : 0;
+            if (minTop > 0) {
+                for (const t of tops) t.top -= minTop;
+            }
+            return tops;
+        };
+
+        // --- 1A) Back-propagate ordering: earlier round is reordered based on the next round ---
+        // Example: Round of 16 is ordered by the Quarter-finals pairings.
+        for (let r = roundCount - 1; r >= 1; r--) {
+            const nextKey = sortedKeys[r];
+            const prevKey = sortedKeys[r - 1];
+            groups[prevKey] = reorderPrevByNext(groups[prevKey] || [], groups[nextKey] || []);
+        }
+
+        // Round 0: after back-propagation, the order is already bracket-correct.
+        const r0Key = sortedKeys[0];
+        const r0 = (groups[r0Key] || []).slice();
+
+        const r0Pos = new Map();
+        r0.forEach((m, i) => r0Pos.set(m?.fixture?.id, i * VSTEP));
+        positionsByRound[0] = r0Pos;
+
+        // Next rounds: derive top positions from previous round team paths
+        for (let r = 1; r < roundCount; r++) {
+            const key = sortedKeys[r];
+            const prevKey = sortedKeys[r - 1];
+            const prevMatches = (groups[prevKey] || []);
+            const prevPos = positionsByRound[r - 1] || new Map();
+            const list = (groups[key] || []).slice();
+
+            const pos = new Map();
+            const computed = [];
+
+            list.forEach((m, idx) => {
+                const { h, a } = getTeams(m);
+                const hTop = findPrevMatchTop(prevPos, prevMatches, h);
+                const aTop = findPrevMatchTop(prevPos, prevMatches, a);
+
+                let top = null;
+                if (Number.isFinite(hTop) && Number.isFinite(aTop) && hTop !== aTop) {
+                    top = (hTop + aTop) / 2;
+                } else if (Number.isFinite(hTop)) {
+                    top = hTop;
+                } else if (Number.isFinite(aTop)) {
+                    top = aTop;
+                } else {
+                    // Fallback: sequential placement (keeps UI usable even if API data is odd)
+                    top = idx * (VSTEP * 2);
+                }
+
+                computed.push({ id: m?.fixture?.id, top });
+            });
+
+            // Collision resolution inside the round column
+            const fixed = resolveCollisions(computed, VSTEP);
+            fixed.forEach(t => pos.set(t.id, t.top));
+
+            // Persist ordering back: sort by resolved top so DOM order matches visual order
+            list.sort((x, y) => (pos.get(x?.fixture?.id) ?? 0) - (pos.get(y?.fixture?.id) ?? 0));
+            groups[key] = list;
+
+            positionsByRound[r] = pos;
+        }
+
+        // --- 2) Compute canvas height from positioned elements ---
         let maxBottom = 0;
         for (let r = 0; r < roundCount; r++) {
             const key = sortedKeys[r];
             const list = groups[key] || [];
-            const mult = Math.pow(2, r);
-            const offset = (VSTEP * (mult - 1)) / 2;
-            for (let i = 0; i < list.length; i++) {
-                const top = (i * VSTEP * mult) + offset;
+            const pos = positionsByRound[r] || new Map();
+            for (const m of list) {
+                const top = pos.get(m?.fixture?.id) ?? 0;
                 const bottom = top + MATCH_H;
                 if (bottom > maxBottom) maxBottom = bottom;
             }
         }
-        // Ensure at least fits base round list
-        maxBottom = Math.max(maxBottom, baseCount * VSTEP);
+        if (!Number.isFinite(maxBottom) || maxBottom < MATCH_H) maxBottom = MATCH_H;
 
         const safeTitle = (s) => (s || '').replace('Regular Season - ', '').trim();
 
-        const teamRow = (team, score, isWinner) => {
+        const teamRow = (team, score) => {
             const name = team?.name || '-';
             const logo = team?.logo || '';
             const logoTag = (Utils?.ImageLoader?.tag)
                 ? Utils.ImageLoader.tag(logo, name, 'kb-team-logo')
                 : `<img class="kb-team-logo" src="${logo}" alt="${name}">`;
 
-            const winnerClass = isWinner ? ' winner' : '';
+            const winnerClass = team.winner ? ' winner' : '';
             return `
                 <div class="kb-team${winnerClass}">
                     <div class="kb-team-left">
@@ -154,9 +308,6 @@ window.AppComponents = (function() {
 
             // Winner highlight when finished
             const isDone = ['FT', 'AET', 'PEN'].includes(m?.fixture?.status?.short);
-            const homeWin = isDone && (Number(h) > Number(a));
-            const awayWin = isDone && (Number(a) > Number(h));
-
             // Small date / time label for final column focus
             const d = m?.fixture?.date ? new Date(m.fixture.date) : null;
             const timeStr = d ? d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
@@ -174,8 +325,8 @@ window.AppComponents = (function() {
                         <span class="kb-time">${timeStr}</span>
                         ${badge}
                     </div>
-                    ${teamRow(m?.teams?.home, homeScore, homeWin)}
-                    ${teamRow(m?.teams?.away, awayScore, awayWin)}
+                    ${teamRow(m?.teams?.home, homeScore)}
+                    ${teamRow(m?.teams?.away, awayScore)}
                 </div>`;
         };
 
@@ -186,15 +337,15 @@ window.AppComponents = (function() {
 
         sortedKeys.forEach((roundName, r) => {
             const list = groups[roundName] || [];
-            const mult = Math.pow(2, r);
-            const offset = (VSTEP * (mult - 1)) / 2;
-
+            const pos = positionsByRound[r] || new Map();
             html += `<div class="kb-round" data-round-index="${r}">
                         <div class="kb-round-title">${safeTitle(roundName)}</div>
-                        <div class="kb-round-canvas">`;
+                        <div class="kb-round-canvas ${roundName.toLocaleLowerCase()}">`;
 
             list.forEach((m, i) => {
-                const top = (i * VSTEP * mult) + offset;
+                const coef = (2 ** r) - 1;
+                let top = pos.get(m?.fixture?.id) ?? (i * VSTEP);
+                top += coef*(VSTEP/2);
                 html += matchBox(m, top);
             });
 

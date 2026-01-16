@@ -554,6 +554,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if(user) { document.getElementById('auth-form').style.display='none'; document.getElementById('auth-logged-in').style.display='block'; const cfg = await Storage.loadUserConfig(user.uid); if(cfg) { State.appConfig = cfg; } }
             else { document.getElementById('auth-form').style.display='block'; document.getElementById('auth-logged-in').style.display='none'; }
+
+            setTimeout(() => {
+                window.AppRouter.go('account');
+            }, 200);
         });
 
         document.addEventListener('keydown', (e) => {
