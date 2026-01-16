@@ -341,7 +341,7 @@
                 return;
             }
             
-            const card = target.closest('.match-card, .bracket-match');
+            const card = target.closest('.match-card, .bracket-match, .kb-match');
             if (card) {
                 const action = card.dataset.action; const id = card.dataset.id;
                 if (action === 'open-match' && id) window.AppRouter.go('match', id);

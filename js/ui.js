@@ -58,38 +58,154 @@ window.AppComponents = (function() {
     }
 
     function renderKnockout(matches) {
-        if (!matches || matches.length === 0) return '<div class="scrollable-content focusable" tabindex="0">No Knockout Stage available.</div>';
+        if (!matches || matches.length === 0) {
+            return '<div class="scrollable-content focusable" tabindex="0">No Knockout Stage available.</div>';
+        }
 
+        // Group matches by round label
         const groups = {};
         matches.forEach(m => {
-            const r = m.league.round;
+            const r = (m?.league?.round || 'Knockout').trim();
             if (!groups[r]) groups[r] = [];
             groups[r].push(m);
         });
 
-        const roundOrder = ['Round of 16', '8th Finals', 'Quarter-finals', 'Semi-finals', 'Final'];
+        // Preferred ordering (API-Football common labels)
+        const roundOrder = [
+            'Round of 32',
+            'Round of 16',
+            '8th Finals',
+            'Quarter-finals',
+            'Semi-finals',
+            'Final',
+            '3rd Place Final',
+            'Match for 3rd place'
+        ];
+
         const sortedKeys = Object.keys(groups).sort((a, b) => {
-            const idxA = roundOrder.findIndex(key => a.includes(key));
-            const idxB = roundOrder.findIndex(key => b.includes(key));
-            const va = idxA === -1 ? 99 : idxA;
-            const vb = idxB === -1 ? 99 : idxB;
-            return va - vb;
+            const idxA = roundOrder.findIndex(k => a.includes(k));
+            const idxB = roundOrder.findIndex(k => b.includes(k));
+            const va = idxA === -1 ? 999 : idxA;
+            const vb = idxB === -1 ? 999 : idxB;
+            if (va !== vb) return va - vb;
+            // fallback: stable sort by name
+            return a.localeCompare(b);
         });
 
-        let html = `<div class="scrollable-content focusable" tabindex="0" style="display:flex; flex-direction:column;"><div class="bracket-container">`;
-
-        sortedKeys.forEach(roundName => {
-            const roundsMatches = groups[roundName];
-            html += `<div class="bracket-round">
-                        <div class="bracket-round-title">${roundName.replace('Regular Season - ', '')}</div>`;
-            
-            roundsMatches.forEach(m => {
-                html+=card(m);
+        // Sort matches inside each round by date
+        sortedKeys.forEach(k => {
+            groups[k].sort((x, y) => {
+                const dx = new Date(x?.fixture?.date || 0).getTime();
+                const dy = new Date(y?.fixture?.date || 0).getTime();
+                return dx - dy;
             });
-            html += `</div>`; 
         });
 
-        html += `</div></div>`;
+        // Bracket layout (Google-style): absolute-positioned match boxes per round
+        const MATCH_H = 86;       // box height in px
+        const GAP = 24;           // vertical gap baseline
+        const VSTEP = MATCH_H + GAP;
+
+        const roundCount = sortedKeys.length;
+        const firstRoundKey = sortedKeys[0];
+        const baseCount = (groups[firstRoundKey] || []).length || 1;
+
+        // Compute the required canvas height
+        let maxBottom = 0;
+        for (let r = 0; r < roundCount; r++) {
+            const key = sortedKeys[r];
+            const list = groups[key] || [];
+            const mult = Math.pow(2, r);
+            const offset = (VSTEP * (mult - 1)) / 2;
+            for (let i = 0; i < list.length; i++) {
+                const top = (i * VSTEP * mult) + offset;
+                const bottom = top + MATCH_H;
+                if (bottom > maxBottom) maxBottom = bottom;
+            }
+        }
+        // Ensure at least fits base round list
+        maxBottom = Math.max(maxBottom, baseCount * VSTEP);
+
+        const safeTitle = (s) => (s || '').replace('Regular Season - ', '').trim();
+
+        const teamRow = (team, score, isWinner) => {
+            const name = team?.name || '-';
+            const logo = team?.logo || '';
+            const logoTag = (Utils?.ImageLoader?.tag)
+                ? Utils.ImageLoader.tag(logo, name, 'kb-team-logo')
+                : `<img class="kb-team-logo" src="${logo}" alt="${name}">`;
+
+            const winnerClass = isWinner ? ' winner' : '';
+            return `
+                <div class="kb-team${winnerClass}">
+                    <div class="kb-team-left">
+                        ${logoTag}
+                        <span class="kb-team-name">${name}</span>
+                    </div>
+                    <span class="kb-team-score">${score}</span>
+                </div>`;
+        };
+
+        const matchBox = (m, topPx) => {
+            const h = m?.goals?.home;
+            const a = m?.goals?.away;
+            const homeScore = (m?.fixture?.status?.short === 'NS' || h === null || h === undefined) ? '-' : (h ?? 0);
+            const awayScore = (m?.fixture?.status?.short === 'NS' || a === null || a === undefined) ? '-' : (a ?? 0);
+
+            // Winner highlight when finished
+            const isDone = ['FT', 'AET', 'PEN'].includes(m?.fixture?.status?.short);
+            const homeWin = isDone && (Number(h) > Number(a));
+            const awayWin = isDone && (Number(a) > Number(h));
+
+            // Small date / time label for final column focus
+            const d = m?.fixture?.date ? new Date(m.fixture.date) : null;
+            const timeStr = d ? d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+            const dayStr = d ? `${String(d.getDate()).padStart(2,'0')} ${d.toLocaleString([], {month:'short'})}` : '';
+
+            const status = m?.fixture?.status?.short || '';
+            const badge = status && ['1H','HT','2H','ET','P','BT'].includes(status)
+                ? `<span class="kb-live">LIVE</span>`
+                : '';
+
+            return `
+                <div class="kb-match focusable" tabindex="0" data-action="open-match" data-id="${m?.fixture?.id}" style="top:${topPx}px;">
+                    <div class="kb-meta">
+                        <span class="kb-date">${dayStr}</span>
+                        <span class="kb-time">${timeStr}</span>
+                        ${badge}
+                    </div>
+                    ${teamRow(m?.teams?.home, homeScore, homeWin)}
+                    ${teamRow(m?.teams?.away, awayScore, awayWin)}
+                </div>`;
+        };
+
+        let html = `
+            <div class="scrollable-content focusable knockout-scroll" tabindex="0">
+                <div class="kb-wrapper" style="height:${maxBottom + 20}px;">
+        `;
+
+        sortedKeys.forEach((roundName, r) => {
+            const list = groups[roundName] || [];
+            const mult = Math.pow(2, r);
+            const offset = (VSTEP * (mult - 1)) / 2;
+
+            html += `<div class="kb-round" data-round-index="${r}">
+                        <div class="kb-round-title">${safeTitle(roundName)}</div>
+                        <div class="kb-round-canvas">`;
+
+            list.forEach((m, i) => {
+                const top = (i * VSTEP * mult) + offset;
+                html += matchBox(m, top);
+            });
+
+            html += `   </div>
+                    </div>`;
+        });
+
+        html += `
+                </div>
+            </div>`;
+
         return html;
     }
 

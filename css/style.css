@@ -1199,7 +1199,6 @@ body {
 
 .match-card.is-live {
     position: relative;
-    overflow: hidden;
 }
 
   /* The Animated Top Border */
@@ -1350,3 +1349,134 @@ body {
 .lazy-img.img-loaded {
     opacity: 1;
 }
+
+
+/* --- KNOCKOUT BRACKET V2 (Google-style) --- */
+.knockout-scroll {
+    padding: 0.5rem 1rem 2rem 1rem;
+    background: rgba(255,255,255,0.015);
+}
+
+.kb-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    gap: 2.2rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1rem 1.5rem 2rem 1.5rem;
+    min-width: 100%;
+}
+.kb-wrapper::-webkit-scrollbar { display: none; }
+.kb-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
+
+.kb-round {
+    position: relative;
+    min-width: 360px;
+    height: 100%;
+}
+
+.kb-round-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 0.8rem 0.3rem;
+}
+
+.kb-round-canvas {
+    position: relative;
+    height: 100%;
+    width: 360px;
+}
+
+.kb-match {
+    position: absolute;
+    left: 0;
+    width: 340px;
+    background: #171717;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    cursor: pointer;
+    transition: transform 0.15s ease-out, background 0.15s ease-out, border-color 0.15s ease-out;
+    will-change: transform;
+}
+
+.kb-match.focused {
+    transform: scale(1.05);
+    background: #222;
+    border-color: #fff;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.55);
+    z-index: 20;
+}
+
+.kb-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    font-size: 0.85em;
+    color: #8a8a8a;
+    margin-bottom: 0.35rem;
+}
+
+.kb-live {
+    color: var(--live-color);
+    font-weight: bold;
+}
+
+.kb-team {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+}
+
+.kb-team-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.kb-team-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.kb-team-name {
+    font-size: 1.05em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 240px;
+}
+
+.kb-team-score {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #eaeaea;
+    min-width: 20px;
+    text-align: right;
+}
+
+.kb-team.winner .kb-team-name,
+.kb-team.winner .kb-team-score {
+    color: var(--live-color);
+}
+
+/* Subtle round separator line */
+.kb-round::after {
+    content: "";
+    position: absolute;
+    top: 2.2rem;
+    right: -1.1rem;
+    width: 1px;
+    height: calc(100% - 2.2rem);
+    background: rgba(255,255,255,0.05);
+}
+.kb-round:last-child::after { display: none; }
