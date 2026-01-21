@@ -1,5 +1,5 @@
 "use strict";
-
+var first_auth_check = true;
 (function() {
     if (!window.AppServices) { console.error("AppServices not loaded!"); return; }
 
@@ -556,7 +556,12 @@ document.addEventListener('DOMContentLoaded', () => {
             else { document.getElementById('auth-form').style.display='block'; document.getElementById('auth-logged-in').style.display='none'; }
 
             setTimeout(() => {
-                window.AppRouter.go('account');
+                if(first_auth_check){
+                    first_auth_check = false;
+                }else{
+                    window.AppRouter.go('account');
+                }
+                
             }, 200);
         });
 
