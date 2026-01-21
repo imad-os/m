@@ -23,15 +23,24 @@ window.AppComponents = (function() {
         const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         const homeFav = Helpers.isFav('team', m.teams.home.id) ? "favorite" :"";
         const awayFav = Helpers.isFav('team', m.teams.away.id) ? "favorite" :"";
+        let match_status_cls="";
         if (isActuallyLive) {
-            if (m.fixture.status.short === 'HT') statusText = `<span class="live-time">Half Time</span>`;
-            else if (m.fixture.status.elapsed) statusText = `<span class="live-time">${Utils.formTimeString(m.fixture.status)}</span>`;
-            else statusText = 'LIVE';
+            if (m.fixture.status.short === 'HT'){
+                statusText = `Half Time`;
+            }else if (m.fixture.status.elapsed){
+                statusText = Utils.formTimeString(m.fixture.status);
+            }else{
+                statusText = 'LIVE';
+            }
+            match_status_cls = "live-time";
         } else if (m.fixture.status.short === 'NS') {
             statusText = isToday ? timeStr : `${matchDate.getMonth()+1}/${matchDate.getDate()} ${timeStr}`;
         } else if (['FT', 'AET', 'PEN'].includes(m.fixture.status.short)) {
             statusText = isToday ? timeStr : `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()}`;
             Utils.removeTracked(m.fixture.id)
+        }else if(['PST', 'CANC', 'ABD', 'AWD', 'WO'].includes(m.fixture.status.short)){
+            Utils.removeTracked(m.fixture.id);
+            match_status_cls = "status-cancelled";
         }
 
         const homeScore = m.fixture.status.short === 'NS' ? '-' : (m.goals.home ?? 0);
@@ -48,7 +57,7 @@ window.AppComponents = (function() {
             ${trackIndicator}
             ${soonIndicator}
             ${badgeHtml}
-            <div class="match-status">${statusText}</div>
+            <div class="match-status ${match_status_cls}">${statusText}</div>
             <div class="card-teams">
                 <div class="card-team ${homeFav}"><div class="card-team-info">${Utils.ImageLoader.tag(m.teams.home.logo, m.teams.home.name, 'team-logo')}<span>${m.teams.home.name}</span></div><span class="card-score">${homeScore}</span></div>
                 <div class="card-team ${awayFav}"><div class="card-team-info">${Utils.ImageLoader.tag(m.teams.away.logo, m.teams.away.name, 'team-logo')}<span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>

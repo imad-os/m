@@ -418,6 +418,13 @@ body {
     font-size: 1.6em; 
 }
 
+.status-cancelled {
+    color: "#e50914";
+    font-weight: bold;
+    font-size: 1.3em; 
+}
+
+
 /* SCROLLABLE CONTENT AREA (NEW) */
 .scrollable-content {
     /* REMOVED: height: 50vh; */
