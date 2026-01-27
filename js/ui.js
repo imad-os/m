@@ -562,8 +562,12 @@ window.AppComponents = (function() {
 
     function renderEvents(events, homeId) {
         if(!events || !events.length) return '<div class="scrollable-content focusable" tabindex="0">No events available.</div>';
-        
-        const timelineHtml = events.map(e => {
+        const _events = events.sort((a, b) => {
+            const timeA = a.time.elapsed + (a.time.extra ?? 0);
+            const timeB = b.time.elapsed + (b.time.extra ?? 0);
+            return timeB - timeA; // recent first
+          });
+        const timelineHtml = _events.map(e => {
             const isHome = e.team.id === homeId;
             const type = e.type.toLowerCase();
             const detail = e.detail || '';
