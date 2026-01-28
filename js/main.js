@@ -87,10 +87,10 @@ var first_auth_check = true;
             alertEl.classList.remove('visible');
             setTimeout(() => alertEl.style.display = 'none', 300);
         };
-        alertEl.onclick = () => { window.AppRouter.go('match', matchData.fixture.id); closeAlert(); };
+        alertEl.onclick = () => { window.AppRouter.go('match', matchData.fixture.id, matchData.league.season); closeAlert(); };
         setTimeout(closeAlert, 10000);
         if(window.AppState.currentMatchId===matchData.fixture.id){
-            window.AppRouter.go('match', matchData.fixture.id);
+            window.AppRouter.go('match', matchData.fixture.id, matchData.league.season);
         }
     }
 
@@ -204,50 +204,6 @@ var first_auth_check = true;
         } catch(e) { console.warn("Monitor check failed", e); }
     }
 
-    
-    async function handleQuickAction(action) {
-        try {
-            if (action === 'back') window.AppRouter.back();
-            else if (action === 'home') window.AppRouter.go('home');
-            else if (action === 'account') window.AppRouter.go('account');
-            else if (action === 'refresh') {
-                if (window.AppRouter && window.AppRouter.current) {
-                    // Force a refetch for Home
-                    if (window.AppRouter.current.name === 'home') window.AppState.matchesCache = null;
-                    window.AppRouter.go(window.AppRouter.current.name, window.AppRouter.current.params || window.AppRouter.current.id);
-                }
-            }
-            else if (action === 'prev-day') { window.AppState.currentDate = Utils.shiftDate(window.AppState.currentDate, -1); window.AppState.matchesCache = null; window.AppRouter.go('home'); }
-            else if (action === 'next-day') { window.AppState.currentDate = Utils.shiftDate(window.AppState.currentDate, +1); window.AppState.matchesCache = null; window.AppRouter.go('home'); }
-            else if (action === 'toggle-live') { window.AppState.liveOnly = !window.AppState.liveOnly; window.AppState.matchesCache = null; window.AppRouter.go('home'); }
-            else if (action === 'toggle-track') {
-                const mid = window.AppState.currentMatchId;
-                if (!mid) return;
-                if (Utils.isTracked(mid)) { Utils.removeTracked(mid); Helpers.showToast('Stopped tracking', 'info'); }
-                else { Utils.addTracked(mid); Helpers.showToast('Tracking enabled', 'info'); }
-                // keep label updated
-                if (window.AppRouter.current && window.AppRouter.current.name === 'match') window.AppRouter.go('match', window.AppRouter.current.params);
-            }
-            else if (action === 'toggle-fav-team') {
-                const tid = window.AppState.currentTeamId;
-                if (!tid || !window.AppState.currentTeamObj) return;
-                const obj = window.AppState.currentTeamObj;
-                const nowFav = FavoritesService.toggle('team', obj);
-                Helpers.showToast(nowFav ? 'Added to favorites' : 'Removed from favorites', 'info');
-                if (window.AppRouter.current && window.AppRouter.current.name === 'team') window.AppRouter.go('team', window.AppRouter.current.params);
-            }
-            else if (action === 'toggle-fav-league') {
-                const lid = window.AppState.currentLeagueId;
-                if (!lid || !window.AppState.currentLeagueObj) return;
-                const obj = window.AppState.currentLeagueObj;
-                const nowFav = FavoritesService.toggle('league', obj);
-                Helpers.showToast(nowFav ? 'Added to favorites' : 'Removed from favorites', 'info');
-                if (window.AppRouter.current && window.AppRouter.current.name === 'league') window.AppRouter.go('league', window.AppRouter.current.params);
-            }
-        } catch (err) {
-            console.warn('Quick action failed', err);
-        }
-    }
 
     function setupQuickActionsGlobalEvents() {
         // Quick Actions bar lives outside the main container; bind globally.
@@ -343,15 +299,19 @@ var first_auth_check = true;
             
             const card = target.closest('.match-card, .bracket-match, .kb-match');
             if (card) {
-                const action = card.dataset.action; const id = card.dataset.id;
+                const action = card.dataset.action; 
+                const id = card.dataset.id;
+                
                 if (action === 'open-match' && id) window.AppRouter.go('match', id);
                 return;
             }
 
             const leagueHeader = target.closest('.row-header-content');
             if (leagueHeader) {
+                const season = leagueHeader.dataset.season || null;
                 const action = leagueHeader.dataset.action; const id = leagueHeader.dataset.id;
-                if (action === 'open-league' && id) window.AppRouter.go('league', id);
+                console.log("League header clicked", action, season, id);
+                if (action === 'open-league' && id) window.AppRouter.go('league', {id, season});
                 return;
             }
 

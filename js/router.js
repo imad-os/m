@@ -7,7 +7,6 @@
 
     window.AppViews = {
         renderHome: async (container) => {
-            console.log("Rendering Home View");
             window.AppState.currentMatchId = null;
             window.AppState.currentTab = null;
             const dateHeader = document.getElementById('date-header-wrapper');
@@ -17,7 +16,7 @@
             const displayDate = window.AppState.isLiveMode ? "Live Matches" : (window.AppState.currentDate.toDateString() === new Date().toDateString() ? "Today, " + dateStr : dateStr);
             document.getElementById('date-header').textContent = displayDate;
 
-            const endpoint = window.AppState.isLiveMode ? 'fixtures?live=all' : `fixtures?date=${dateStr}&season=${Helpers.getCurrentSeason()}`;
+            const endpoint = window.AppState.isLiveMode ? 'fixtures?live=all' : `fixtures?date=${dateStr}`;
             window.AppState.renderedMatches = [];
             let matches = null;
             if (window.AppState.matchesCache && window.AppState.lastEndpoint === endpoint) matches = window.AppState.matchesCache;
@@ -83,7 +82,7 @@
                 const orphanMatches = [];
                 processedKeys.forEach(key => {
                     const group = leagueGroups[key];
-                    if (favLeagues.has(group.id) || group.matches.length >= 2) rows.push({ title: group.name, matches: group.matches, logo: group.logo, id: group.id, isSpecial: false });
+                    if (favLeagues.has(group.id) || group.matches.length >= 2) rows.push({ title: group.name, matches: group.matches, logo: group.logo, id: group.id, season: group.season, isSpecial: false });
                     else orphanMatches.push(...group.matches);
                 });
 
@@ -99,7 +98,7 @@
                     rows.forEach((row, index) => {
                         const headerHtml = row.isSpecial 
                             ? `<div class="row-header-content focusable" tabindex="0"><span>${row.title}</span></div>`
-                            : `<div class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}">
+                            : `<div class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}" data-season="${row.season}">
                                 ${row.logo ? Utils.ImageLoader.tag(row.logo, row.title, 'row-league-logo') : ''} <span>${row.title}</span>
                                </div>
                                <div class="fav-toggle focusable ${Helpers.isFav('league', row.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${row.id}" data-name="${row.title}">
@@ -215,12 +214,12 @@
             }
         },
 
-        renderLeaguePage: async (container, id) => {
+        renderLeaguePage: async (container, params) => {
+            const {id,season} = params;
             const dateHeader = document.getElementById('date-header-wrapper');
             if (dateHeader) dateHeader.style.display = 'none';
             container.innerHTML = `<div class="page-container"><div class="skeleton-detail-header"><div class="shimmer"></div></div><div class="skeleton-detail-tabs"><div class="shimmer"></div></div><div class="skeleton-detail-list"><div class="shimmer"></div></div></div>`;
             try {
-                const season = Helpers.getCurrentSeason();
                 const results = await Promise.all([
                     API.fetch(`standings?league=${id}&season=${season}`),
                     API.fetch(`fixtures?league=${id}&season=${season}`),

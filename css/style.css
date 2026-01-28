@@ -419,7 +419,7 @@ body {
 }
 
 .status-cancelled {
-    color: "#e50914";
+    color: #e50914;
     font-weight: bold;
     font-size: 1.3em; 
 }
