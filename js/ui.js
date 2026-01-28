@@ -341,7 +341,7 @@ window.AppComponents = (function() {
 
         let html = `
             <div class="scrollable-content focusable knockout-scroll" tabindex="0">
-                <div class="kb-wrapper" style="height:${maxBottom + 20}px;">
+                <div class="kb-wrapper stage-block" style="height:100%;">
         `;
 
         sortedKeys.forEach((roundName, r) => {

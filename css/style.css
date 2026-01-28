@@ -432,7 +432,7 @@ body {
     flex-grow: 1;
     overflow-y: auto; 
     overflow-x: hidden; /* Force hide horizontal scroll */
-    padding: 0 1rem 2rem 1rem;
+    /*padding: 0 1rem 2rem 1rem;*/
     outline: none;
     border: 2px solid transparent;
     border-radius: 8px;
@@ -1360,7 +1360,7 @@ body {
 
 /* --- KNOCKOUT BRACKET V2 (Google-style) --- */
 .knockout-scroll {
-    padding: 0.5rem 1rem 2rem 1rem;
+    /*padding: 0.5rem 1rem 2rem 1rem;*/
     background: rgba(255,255,255,0.015);
 }
 
@@ -1379,7 +1379,7 @@ body {
 
 .kb-round {
     position: relative;
-    min-width: 360px;
+    min-width: 230px;
     height: 100%;
 }
 
@@ -1395,13 +1395,13 @@ body {
 .kb-round-canvas {
     position: relative;
     height: 100%;
-    width: 360px;
+    /*width: 360px;*/
 }
 
 .kb-match {
     position: absolute;
     left: 0;
-    width: 340px;
+    width: 98%;
 
     background: #171717;
     border: 1px solid #2b2b2b;
