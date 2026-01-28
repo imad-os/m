@@ -24,6 +24,7 @@ window.AppComponents = (function() {
         const homeFav = Helpers.isFav('team', m.teams.home.id) ? "favorite" :"";
         const awayFav = Helpers.isFav('team', m.teams.away.id) ? "favorite" :"";
         let match_status_cls="";
+        let isLive = false;
         if (isActuallyLive) {
             if (m.fixture.status.short === 'HT'){
                 statusText = `Half Time`;
@@ -33,6 +34,7 @@ window.AppComponents = (function() {
                 statusText = 'LIVE';
             }
             match_status_cls = "live-time";
+            isLive= true;
         } else if (m.fixture.status.short === 'NS') {
             statusText = isToday ? timeStr : `${matchDate.getMonth()+1}/${matchDate.getDate()} ${timeStr}`;
         } else if (['FT', 'AET', 'PEN'].includes(m.fixture.status.short)) {
@@ -48,7 +50,7 @@ window.AppComponents = (function() {
         const badgeHtml = showBadge ? `<div class="card-league-badge">${Utils.ImageLoader.tag(m.league.logo, m.league.name, 'league-logo')}<span>${m.league.name}</span></div>` : '';
         
         const trackIndicator = Utils.isTracked(m.fixture.id) ? `<div class="track-indicator"></div>` : '';
-        const soonIndicator = Utils.isSoon(m) ? `<div class="starting-soon"><svg class="hourglass-pulse"><use href="#icon-hourglass"></use></svg></div>` : '';
+        const soonIndicator = Utils.isSoon(m) && !isLive ? `<div class="starting-soon"><svg class="hourglass-pulse"><use href="#icon-hourglass"></use></svg></div>` : '';
         let penIndicator = '';
         if (m.score.penalty.home !== null && m.score.penalty.away !== null) penIndicator = `<div style="font-size:0.8em; color:#aaa;">(P: ${m.score.penalty.home}-${m.score.penalty.away})</div>`;
 
