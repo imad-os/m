@@ -6,10 +6,10 @@
 const FOOTBALL_CONFIG = {
     // API Keys provided from your original config.js
     APIS: [
-        {"url":"https://v3.football.api-sports.io","host":"v3.football.api-sports.io", "key":"9e9fb80bd8d4c5c226e8a7f69375995a"},
-        {"url":"https://v3.football.api-sports.io","host":"v3.football.api-sports.io", "key":"d79fe49364b4f281787947da46201ee3"},
-        {"url":"https://api-football-v1.p.rapidapi.com/v3","host":"api-football-v1.p.rapidapi.com", "key":"b7e837cfb4msh0b84d927aa2291dp130d32jsn7b1570d863f8"},
+        {"url":"https://api-football-v1.p.rapidapi.com/v3","host":"api-football-v1.p.rapidapi.com", "key":"47dc452270msh179deefacf1222dp162e3ejsn23be94c2331c"},
         {"url":"https://api-football-v1.p.rapidapi.com/v3","host":"api-football-v1.p.rapidapi.com", "key":"b3a3d033ffmsh6e94bc1a2adfb2ap197138jsn33bbf80e8bb2"},
+        {"url":"https://api-football-v1.p.rapidapi.com/v3","host":"api-football-v1.p.rapidapi.com", "key":"cca156198fmshf3d7f508bb67393p1dcd50jsne575eb3e7518"},
+        {"url":"https://api-football-v1.p.rapidapi.com/v3","host":"api-football-v1.p.rapidapi.com", "key":"71d5175770mshbd9b3fecebd8bfbp178df1jsn196f26d6458a"},
         {"url":"https://v3.football.api-sports.io","host":"v3.football.api-sports.io", "key":"cb397bed4ae3bce1f341cde74671ec94"},
     ],
     GLOBAL_LEAGUES: [1, 15, 1168],
@@ -37,7 +37,8 @@ const FootballClient = {
         // Build Query String
         const queryString = new URLSearchParams(params).toString();
         const fullUrl = `${api.url}${cleanEndpoint}${queryString ? '?' + queryString : ''}`;
-
+        let err = false;
+        let data = {};
         try {
             const response = await fetch(fullUrl, {
                 method: 'GET',
@@ -52,20 +53,30 @@ const FootballClient = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            data = await response.json();
 
-            // Handle API-side errors (like rate limits) by rotating keys
-            if (recursive < 3 && data.errors && Object.keys(data.errors).length > 0) {
-                console.warn("Football API Error detected, rotating key...", data.errors);
-                currentApiIndex = (currentApiIndex + 1) % FOOTBALL_CONFIG.APIS.length;
-                return this.fetchData(endpoint, params, recursive + 1);
-            }
 
-            return data;
         } catch (error) {
-            console.error(`Football Client Error [${cleanEndpoint}]:`, error.message);
-            throw error;
+            err = error;
         }
+        // Handle API-side errors (like rate limits) by rotating keys
+        const is_api_error = (data.errors && Object.keys(data.errors).length > 0) || (err && err.message && err.message.includes && err.message.includes("403") );
+        console.log(`API issue:`, is_api_error);
+        if (recursive < 3 && ( (data.errors && Object.keys(data.errors).length > 0) || is_api_error ) ) {
+            console.warn("Football API Error detected, rotating key...", data.errors||err.message);
+            currentApiIndex = (currentApiIndex + 1) % FOOTBALL_CONFIG.APIS.length;
+            return this.fetchData(endpoint, params, recursive + 1);
+        }
+
+        if(err){
+            console.log( JSON.stringify(error_last) );
+            //console.error(`Football Client Error [${cleanEndpoint}]:`, error.message);
+            //throw error_last;
+        }
+
+        return data;
+
+
     },
 
     /**
