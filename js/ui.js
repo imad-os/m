@@ -20,7 +20,8 @@ window.AppComponents = (function() {
         m.league.season = m.league.season || (new Date(m.fixture.date)).getFullYear();
         const matchDate = new Date(m.fixture.date);
         const isToday = matchDate.toDateString() === new Date().toDateString();
-        const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        const timeStr = matchDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12: false});
+        const dateTimeStr = Utils.fullDate(m.fixture.date);
         const homeFav = Helpers.isFav('team', m.teams.home.id) ? "favorite" :"";
         const awayFav = Helpers.isFav('team', m.teams.away.id) ? "favorite" :"";
         let match_status_cls="";
@@ -36,9 +37,9 @@ window.AppComponents = (function() {
             match_status_cls = "live-time";
             isLive= true;
         } else if (m.fixture.status.short === 'NS') {
-            statusText = isToday ? timeStr : `${matchDate.getMonth()+1}/${matchDate.getDate()} ${timeStr}`;
+            statusText = isToday ? timeStr : dateTimeStr;
         } else if (['FT', 'AET', 'PEN'].includes(m.fixture.status.short)) {
-            statusText = isToday ? timeStr : `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()}`;
+            statusText = isToday ? timeStr : dateTimeStr;
             Utils.removeTracked(m.fixture.id)
         }else if(['PST', 'CANC', 'ABD', 'AWD', 'WO'].includes(m.fixture.status.short)){
             Utils.removeTracked(m.fixture.id);

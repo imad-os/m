@@ -140,7 +140,8 @@ window.Utils = (function() {
     }
     function fullDate(date){
         const matchDate = new Date(date);
-        return `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()}`;
+        // hourse and minutes must be 2 digits for better readability
+        return `${matchDate.getFullYear()}/${matchDate.getMonth()+1}/${matchDate.getDate()} ${String(matchDate.getHours()).padStart(2,'0')}:${String(matchDate.getMinutes()).padStart(2,'0')}`;
     }
     function getRatingClass(rating) {
         const rVal = parseFloat(rating);
@@ -172,11 +173,13 @@ window.Utils = (function() {
     function isSoon(m){
         
         const matchTime = new Date(m.fixture.date).getTime();
-        const hour1 = Date.now() + 1*60*60*1000;
         const matcheStatus = new Set(['NS']);
 
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
+        const willStartIn1Hour = (matchTime - now) <= ONE_HOUR && (matchTime - now) > 0;
         return (
-            matchTime <= hour1 &&
+            willStartIn1Hour &&
             matcheStatus.has(m.fixture.status.short)
           );
     }

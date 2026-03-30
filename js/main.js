@@ -193,7 +193,7 @@ var first_auth_check = true;
                     }
                     const isActuallyLive = ['1H','HT','2H','ET','P','BT'].includes(newStatusShort);
                     const detailsHero = document.querySelector(".details-hero");
-                    if(isActuallyLive && !detailsHero.classList.has("is-live")){
+                    if(isActuallyLive && detailsHero && !detailsHero.classList.has("is-live")){
                         detailsHero.classList.add("is-live")
                     }else{
                         detailsHero.classList.remove("is-live")

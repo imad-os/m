@@ -416,6 +416,7 @@ body {
     color: var(--live-color);
     font-weight: bold;
     font-size: 1.6em; 
+    z-index: 999;
 }
 
 .status-cancelled {
