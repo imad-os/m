@@ -40,18 +40,18 @@
             <img src="../assets/icon.png" alt="" style="width: 100%;">
         </div>
         <div class="sidebar-menu">
-            <div class="menu-item focusable active" data-target="home" id="nav-home" tabindex="0">
+            <a class="menu-item focusable active" data-target="home" id="nav-home" href="#/home" tabindex="0">
                 <i class="ph ph-house"></i>
                 <span>Home</span>
-            </div>
-            <div class="menu-item focusable" data-target="calendar" id="nav-calendar" tabindex="0">
+            </a>
+            <a class="menu-item focusable" data-target="calendar" id="nav-calendar" href="#/calendar" tabindex="0">
                 <i class="ph ph-calendar"></i>
                 <span>Date</span>
-            </div>
-            <div class="menu-item focusable" data-target="auth" id="nav-auth" tabindex="0">
+            </a>
+            <a class="menu-item focusable" data-target="auth" id="nav-auth" href="#/account" tabindex="0">
                 <i class="ph ph-user"></i>
                 <span>Account</span>
-            </div>
+            </a>
         </div>
         <div class="sidebar-footer">
              <div class="time-display" id="clock">--:--</div>
@@ -63,7 +63,13 @@
 
     <main id="main-view">
         <div id="date-header-wrapper">
+            <button id="btn-home-prev-day" class="icon-button focusable date-nav-btn" tabindex="0" aria-label="Previous date">
+                <i class="ph ph-caret-left"></i>
+            </button>
             <div id="date-header">Today</div>
+            <button id="btn-home-next-day" class="icon-button focusable date-nav-btn" tabindex="0" aria-label="Next date">
+                <i class="ph ph-caret-right"></i>
+            </button>
             <div class="ch-guide">
                 <span>CH</span>
                 <i class="ph ph-caret-up"></i>

@@ -30,6 +30,9 @@
         updateViewportMode();
         softenTVFocusOnPointer();
         enhanceWebInputBehavior();
+        if (window.AppRouter && typeof window.AppRouter.enableWebHistory === "function") {
+            window.AppRouter.enableWebHistory();
+        }
         window.addEventListener("resize", updateViewportMode);
     });
 })();

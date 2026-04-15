@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lite Football TV</title>
+    <script>
+        (function () {
+            var ua = (navigator.userAgent || "").toLowerCase();
+
+            var isTv =
+                ua.indexOf("tizen") !== -1 ||
+                ua.indexOf("webos") !== -1 ||
+                ua.indexOf("smart-tv") !== -1 ||
+                ua.indexOf("smarttv") !== -1 ||
+                ua.indexOf("hbbtv") !== -1 ||
+                ua.indexOf("appletv") !== -1 ||
+                ua.indexOf("aft") !== -1 ||
+                ua.indexOf("viera") !== -1 ||
+                ua.indexOf("netcast") !== -1;
+
+            var isMobileOrTablet =
+                /android|iphone|ipad|ipod|mobile|phone|tablet/i.test(ua);
+
+            var isDesktopPc =
+                !isMobileOrTablet &&
+                !isTv &&
+                /windows nt|macintosh|linux x86_64|x11/i.test(ua);
+
+            if (!isTv && (isMobileOrTablet || isDesktopPc)) {
+                window.location.replace("website/");
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="css/style.css?v=7">
     
     <!-- Firebase SDKs -->

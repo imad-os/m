@@ -98,9 +98,9 @@
                     rows.forEach((row, index) => {
                         const headerHtml = row.isSpecial 
                             ? `<div class="row-header-content focusable" tabindex="0"><span>${row.title}</span></div>`
-                            : `<div class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}" data-season="${row.season}">
+                            : `<a class="row-header-content clickable focusable" tabindex="0" data-action="open-league" data-id="${row.id}" data-season="${row.season}" href="${window.AppRouter && window.AppRouter.href ? window.AppRouter.href('league', { id: row.id, season: row.season }) : `#/league/${row.id}/${row.season || ''}`}">
                                 ${row.logo ? Utils.ImageLoader.tag(row.logo, row.title, 'row-league-logo') : ''} <span>${row.title}</span>
-                               </div>
+                               </a>
                                <div class="fav-toggle focusable ${Helpers.isFav('league', row.id) ? 'active' : ''}" tabindex="0" data-type="league" data-id="${row.id}" data-name="${row.title}">
                                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                                </div>`;
@@ -556,29 +556,142 @@
     window.AppRouter = {
         stack: [],
         current: { name: 'home', params: null },
+        historyEnabled: false,
+
+        isWebLinkMode: function() {
+            return document.body.classList.contains('web-mode') || window.location.pathname.includes('/website/');
+        },
+
+        href: function(name, params = null) {
+            const encode = encodeURIComponent;
+            const dateStr = Helpers.formatDate(window.AppState?.currentDate || new Date());
+            const query = new URLSearchParams();
+            if (name === 'home') {
+                query.set('date', dateStr);
+                if (window.AppState?.isLiveMode) query.set('live', '1');
+                const qs = query.toString();
+                return `#/home${qs ? `?${qs}` : ''}`;
+            }
+            if (name === 'match') return `#/match/${encode(params)}`;
+            if (name === 'league') {
+                const lid = params && params.id ? params.id : '';
+                const season = params && params.season ? params.season : '';
+                return `#/league/${encode(lid)}/${encode(season)}`;
+            }
+            if (name === 'account') return '#/account';
+            if (name === 'fav-add') {
+                if (params && typeof params === 'object') {
+                    Object.keys(params).forEach((k) => {
+                        if (params[k] !== null && params[k] !== undefined && params[k] !== '') query.set(k, String(params[k]));
+                    });
+                }
+                const qs = query.toString();
+                return `#/fav-add${qs ? `?${qs}` : ''}`;
+            }
+            return '#/home';
+        },
+
+        parseHashRoute: function() {
+            const raw = window.location.hash || '#/home';
+            const clean = raw.startsWith('#') ? raw.slice(1) : raw;
+            const [pathRaw, queryRaw = ''] = clean.split('?');
+            const path = (pathRaw || '/home').replace(/^\/+/, '');
+            const parts = path.split('/').filter(Boolean);
+            const query = new URLSearchParams(queryRaw);
+            const route = parts[0] || 'home';
+
+            if (route === 'match' && parts[1]) {
+                return { name: 'match', params: decodeURIComponent(parts[1]) };
+            }
+            if (route === 'league' && parts[1]) {
+                const id = decodeURIComponent(parts[1]);
+                const season = parts[2] ? decodeURIComponent(parts[2]) : (query.get('season') || '');
+                return { name: 'league', params: { id, season } };
+            }
+            if (route === 'account') return { name: 'account', params: null };
+            if (route === 'fav-add') {
+                return {
+                    name: 'fav-add',
+                    params: {
+                        type: query.get('type') || 'team',
+                        teamId: query.get('teamId') || null,
+                        leagueId: query.get('leagueId') || null,
+                        scopeName: query.get('scopeName') || ''
+                    }
+                };
+            }
+            if (route === 'calendar') return { name: 'home', params: { openCalendar: true } };
+
+            const date = query.get('date');
+            if (date && window.AppState) {
+                const parsed = new Date(`${date}T00:00:00`);
+                if (!Number.isNaN(parsed.getTime())) window.AppState.currentDate = parsed;
+            }
+            if (window.AppState) window.AppState.isLiveMode = query.get('live') === '1';
+            return { name: 'home', params: null };
+        },
+
+        applyNavState: function() {
+            const targets = [
+                { id: 'nav-home', names: new Set(['home', 'match', 'league']) },
+                { id: 'nav-auth', names: new Set(['account', 'fav-add']) }
+            ];
+            const allItems = document.querySelectorAll('#sidebar .menu-item');
+            allItems.forEach((el) => el.classList.remove('active'));
+            targets.forEach((t) => {
+                if (t.names.has(this.current.name)) {
+                    const el = document.getElementById(t.id);
+                    if (el) el.classList.add('active');
+                }
+            });
+        },
+
+        enableWebHistory: function() {
+            if (!this.isWebLinkMode() || this.historyEnabled) return;
+            this.historyEnabled = true;
+            window.addEventListener('hashchange', () => {
+                this.current = this.parseHashRoute();
+                this.render();
+                if (window.location.hash.startsWith('#/calendar') && window.AppUI?.showModal) {
+                    window.AppUI.showModal('date-modal');
+                }
+            });
+        },
 
         go: function(name, params = null) {
-            this.stack.push(this.current);
+            if (this.isWebLinkMode()) {
+                const nextHref = this.href(name, params);
+                if (window.location.hash !== nextHref) {
+                    window.location.hash = nextHref;
+                    return;
+                }
+            } else {
+                this.stack.push(this.current);
+            }
             this.current = { name, params };
             this.render();
         },
 
         back: function() {
+            if (this.isWebLinkMode()) {
+                if (window.history.length > 1) window.history.back();
+                else this.go('home');
+                return;
+            }
             if (this.stack.length > 0) {
                 this.current = this.stack.pop();
                 this.render();
+            } else if (this.current.name !== 'home') {
+                this.go('home');
             } else {
-                if (this.current.name !== 'home') {
-                    this.go('home');
-                } else {
-                    const sidebar = document.querySelector('#sidebar .active');
-                    if (sidebar) Navigation.focus(sidebar);
-                }
+                const sidebar = document.querySelector('#sidebar .active');
+                if (sidebar) Navigation.focus(sidebar);
             }
         },
 
         render: function() {
-            console.log("Router render:", this.current);
+            if (this.isWebLinkMode()) this.current = this.parseHashRoute();
+            this.applyNavState();
             window.AppState.currentMatchId = null;
             window.AppState.currentTab = null;
             const container = document.getElementById('content-container');

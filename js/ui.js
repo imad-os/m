@@ -56,7 +56,7 @@ window.AppComponents = (function() {
         if (m.score.penalty.home !== null && m.score.penalty.away !== null) penIndicator = `<div style="font-size:0.8em; color:#aaa;">(P: ${m.score.penalty.home}-${m.score.penalty.away})</div>`;
 
         return `
-        <div id="match-card-${m.fixture.id}" class="match-card focusable ${isActuallyLive?'is-live':''}" tabindex="0" data-action="open-match" data-id="${m.fixture.id}" data-season="${m.league.season}">
+        <a id="match-card-${m.fixture.id}" class="match-card focusable ${isActuallyLive?'is-live':''}" tabindex="0" data-action="open-match" data-id="${m.fixture.id}" data-season="${m.league.season}" href="${window.AppRouter && window.AppRouter.href ? window.AppRouter.href('match', m.fixture.id) : `#/match/${m.fixture.id}`}">
             ${trackIndicator}
             ${soonIndicator}
             ${badgeHtml}
@@ -66,7 +66,7 @@ window.AppComponents = (function() {
                 <div class="card-team ${awayFav}"><div class="card-team-info">${Utils.ImageLoader.tag(m.teams.away.logo, m.teams.away.name, 'team-logo')}<span>${m.teams.away.name}</span></div><span class="card-score">${awayScore}</span></div>
             </div>
             ${penIndicator}
-        </div>`;
+        </a>`;
     }
 
     function renderKnockout(matches) {
@@ -331,7 +331,7 @@ window.AppComponents = (function() {
                 : '';
 
             return `
-                <div class="kb-match focusable" tabindex="0" data-action="open-match" data-id="${m?.fixture?.id}" style="top:${topPx}px;">
+                <a class="kb-match focusable" tabindex="0" data-action="open-match" data-id="${m?.fixture?.id}" href="${window.AppRouter && window.AppRouter.href ? window.AppRouter.href('match', m?.fixture?.id) : `#/match/${m?.fixture?.id}`}" style="top:${topPx}px;">
                     <div class="kb-meta">
                         <span class="kb-date">${dayStr}</span>
                         <span class="kb-time">${timeStr}</span>
@@ -339,7 +339,7 @@ window.AppComponents = (function() {
                     </div>
                     ${teamRow(m?.teams?.home, homeScore)}
                     ${teamRow(m?.teams?.away, awayScore)}
-                </div>`;
+                </a>`;
         };
 
         let html = `

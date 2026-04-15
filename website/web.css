@@ -20,12 +20,41 @@ body.web-mode #sidebar:focus-within {
     width: 230px;
 }
 
+body.web-mode #sidebar .sidebar-logo {
+    width: 56px;
+    height: 56px;
+}
+
+body.web-mode #sidebar .sidebar-logo img {
+    width: 56px !important;
+    height: 56px;
+    object-fit: contain;
+}
+
+body.web-mode .menu-item {
+    text-decoration: none;
+    min-height: 52px;
+}
+
+body.web-mode #date-header-wrapper {
+    display: flex;
+    align-items: center;
+}
+
 body.web-mode #main-view {
     min-height: 100vh;
 }
 
 body.web-mode #date-header-wrapper {
     padding-left: 1.2rem;
+}
+
+body.web-mode .date-nav-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex: 0 0 40px;
+    font-size: 1.1rem;
 }
 
 body.web-mode .row-header {
@@ -49,7 +78,50 @@ body.web-mode .match-card {
 }
 
 body.web-mode .card-team span {
-    max-width: 230px;
+    max-width: clamp(130px, 13vw, 240px);
+    font-size: clamp(0.95rem, 1.05vw, 1.2rem);
+}
+
+body.web-mode .card-team img {
+    width: clamp(2rem, 2.2vw, 2.8rem);
+    height: clamp(2rem, 2.2vw, 2.8rem);
+}
+
+body.web-mode .details-team img {
+    width: clamp(3rem, 4vw, 4.4rem);
+    height: clamp(3rem, 4vw, 4.4rem);
+}
+
+body.web-mode .details-team h2 {
+    font-size: clamp(0.95rem, 1.5vw, 1.65rem);
+}
+
+body.web-mode .details-score {
+    font-size: clamp(1.8rem, 4vw, 3.5rem);
+}
+
+body.web-mode .tabs {
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 0.75rem;
+}
+
+body.web-mode .tab-button {
+    font-size: clamp(0.86rem, 1.05vw, 1.1rem);
+    padding: 0.8rem 0.1rem;
+    min-width: 74px;
+}
+
+body.web-mode .details-hero h1 {
+    font-size: clamp(1.35rem, 2.2vw, 2.2rem) !important;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+body.web-mode .details-hero .league-logo {
+    max-height: clamp(56px, 9vw, 92px) !important;
+    width: auto;
 }
 
 body.web-mode .toast-container {
@@ -89,8 +161,14 @@ body.web-mode .modal-content {
     }
 
     body.web-mode .sidebar-logo {
-        width: 40px;
+        width: 36px;
+        height: 36px;
         margin: 0;
+    }
+
+    body.web-mode .sidebar-logo img {
+        width: 36px !important;
+        height: 36px;
     }
 
     body.web-mode .sidebar-menu {
@@ -104,7 +182,9 @@ body.web-mode .modal-content {
     body.web-mode .menu-item {
         width: auto;
         margin-bottom: 0;
-        padding: 0.5rem 0.7rem;
+        padding: 0.42rem 0.6rem;
+        min-height: 40px;
+        border-radius: 7px;
     }
 
     body.web-mode .menu-item span,
@@ -139,11 +219,18 @@ body.web-mode .modal-content {
     }
 
     body.web-mode #date-header {
-        font-size: 1.2rem;
+        font-size: 1.05rem;
     }
 
     body.web-mode .ch-guide {
         font-size: 0.68rem;
+    }
+
+    body.web-mode .date-nav-btn {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        font-size: 0.92rem;
     }
 
     body.web-mode #content-container {
@@ -254,14 +341,16 @@ body.web-mode .modal-content {
     body.web-mode .tabs {
         justify-content: flex-start;
         overflow-x: auto;
-        gap: 0.6rem;
+        gap: 0.45rem;
         padding: 0 0.35rem;
+        flex-wrap: nowrap;
     }
 
     body.web-mode .tab-button {
         white-space: nowrap;
-        font-size: 0.92rem;
-        padding: 0.75rem 0;
+        font-size: 0.82rem;
+        padding: 0.62rem 0.15rem;
+        min-width: 66px;
     }
 
     body.web-mode .standings-table {

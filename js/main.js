@@ -87,10 +87,10 @@ var first_auth_check = true;
             alertEl.classList.remove('visible');
             setTimeout(() => alertEl.style.display = 'none', 300);
         };
-        alertEl.onclick = () => { window.AppRouter.go('match', matchData.fixture.id, matchData.league.season); closeAlert(); };
+        alertEl.onclick = () => { window.AppRouter.go('match', matchData.fixture.id); closeAlert(); };
         setTimeout(closeAlert, 10000);
         if(window.AppState.currentMatchId===matchData.fixture.id){
-            window.AppRouter.go('match', matchData.fixture.id, matchData.league.season);
+            window.AppRouter.go('match', matchData.fixture.id);
         }
     }
 
@@ -299,6 +299,8 @@ var first_auth_check = true;
             
             const card = target.closest('.match-card, .bracket-match, .kb-match');
             if (card) {
+                e.preventDefault();
+                e.stopPropagation();
                 const action = card.dataset.action; 
                 const id = card.dataset.id;
                 
@@ -308,6 +310,8 @@ var first_auth_check = true;
 
             const leagueHeader = target.closest('.row-header-content');
             if (leagueHeader) {
+                e.preventDefault();
+                e.stopPropagation();
                 const season = leagueHeader.dataset.season || null;
                 const action = leagueHeader.dataset.action; const id = leagueHeader.dataset.id;
                 console.log("League header clicked", action, season, id);
@@ -453,9 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.AppUI = { showModal, closeModal };
 
 
-        document.getElementById('nav-calendar').onclick = () => showModal('date-modal');
-        document.getElementById('nav-auth').onclick = () => { window.AppRouter.go('account'); };
-        document.getElementById('nav-home').onclick = () => { 
+        document.getElementById('nav-calendar').onclick = (e) => { e.preventDefault(); showModal('date-modal'); };
+        document.getElementById('nav-auth').onclick = (e) => { e.preventDefault(); window.AppRouter.go('account'); };
+        document.getElementById('nav-home').onclick = (e) => { 
+            e.preventDefault();
             if (window.AppRouter.current.name === 'home') { const content = document.querySelector('#content-container .focusable'); if(content) Navigation.focus(content); } 
             else window.AppRouter.go('home'); 
         };
@@ -463,6 +468,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateDate = () => { document.getElementById('modal-current-date').textContent = Helpers.formatDate(window.AppState.currentDate); window.AppRouter.go('home'); };
         document.getElementById('btn-prev-day').onclick = () => { window.AppState.currentDate.setDate(window.AppState.currentDate.getDate()-1); window.AppState.matchesCache = null; updateDate(); };
         document.getElementById('btn-next-day').onclick = () => { window.AppState.currentDate.setDate(window.AppState.currentDate.getDate()+1); window.AppState.matchesCache = null; updateDate(); };
+        const homePrev = document.getElementById('btn-home-prev-day');
+        const homeNext = document.getElementById('btn-home-next-day');
+        if (homePrev) homePrev.onclick = () => { window.AppState.currentDate.setDate(window.AppState.currentDate.getDate()-1); window.AppState.matchesCache = null; updateDate(); };
+        if (homeNext) homeNext.onclick = () => { window.AppState.currentDate.setDate(window.AppState.currentDate.getDate()+1); window.AppState.matchesCache = null; updateDate(); };
         document.getElementById('btn-live-toggle').onclick = () => { window.AppState.isLiveMode = !window.AppState.isLiveMode; window.AppState.matchesCache = null; updateDate(); };
         document.querySelectorAll('.modal-close').forEach(b => b.onclick = closeModal);
 
