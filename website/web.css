@@ -1,14 +1,30 @@
 /* Web-only overrides: keep original logic/CSS, adapt layout for PC + mobile */
+html {
+    width: 100%;
+    overflow-x: hidden;
+}
+
 body.web-mode {
     --font-base: 16px;
     --card-width: min(360px, 88vw);
-    overflow: auto;
-    height: auto;
+    overflow: hidden;
+    overflow-x: hidden;
+    height: 100vh;
+    height: 100dvh;
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-x: none;
+    touch-action: pan-y pinch-zoom;
 }
 
 body.web-mode #app-wrapper {
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 body.web-mode #sidebar {
@@ -43,6 +59,10 @@ body.web-mode #date-header-wrapper {
 
 body.web-mode #main-view {
     min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
 }
 
 body.web-mode #date-header-wrapper {
@@ -70,6 +90,8 @@ body.web-mode .rail {
     padding: 1rem;
     gap: 1rem;
     scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pinch-zoom;
 }
 
 body.web-mode .match-card {
@@ -137,10 +159,14 @@ body.web-mode .modal-content {
     body.web-mode {
         --font-base: 15px;
         --card-width: min(92vw, 460px);
+        width: 100vw;
+        width: 100dvw;
     }
 
     body.web-mode #app-wrapper {
         flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
     }
 
     body.web-mode #sidebar {
@@ -210,7 +236,10 @@ body.web-mode .modal-content {
     }
 
     body.web-mode #main-view {
-        overflow: visible;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     body.web-mode #date-header-wrapper {
@@ -235,6 +264,9 @@ body.web-mode .modal-content {
 
     body.web-mode #content-container {
         padding: 0.4rem 0.35rem 1rem;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
     }
 
     body.web-mode .row-header {
@@ -250,6 +282,9 @@ body.web-mode .modal-content {
     body.web-mode .rail {
         padding: 0.55rem;
         gap: 0.75rem;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scroll-snap-type: x mandatory;
     }
